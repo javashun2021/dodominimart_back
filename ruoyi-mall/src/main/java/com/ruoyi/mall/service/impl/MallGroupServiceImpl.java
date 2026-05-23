@@ -183,6 +183,10 @@ public class MallGroupServiceImpl implements IMallGroupService
             completeGroup(groupOrder, activity);
         }
 
+        // 填充 activity（含商品图片、价格阶梯）和 members，与 getGroupDetail 返回结构一致
+        activity.setTiers(activityMapper.selectTiersByActivityId(activityId));
+        groupOrder.setActivity(activity);
+        groupOrder.setMembers(memberMapper.selectMembersByGroupOrderId(groupOrder.getGroupOrderId()));
         return groupOrder;
     }
 
@@ -243,6 +247,12 @@ public class MallGroupServiceImpl implements IMallGroupService
         for (MallGroupOrder go : list)
         {
             go.setMembers(memberMapper.selectMembersByGroupOrderId(go.getGroupOrderId()));
+            MallGroupActivity act = activityMapper.selectActivityById(go.getActivityId());
+            if (act != null)
+            {
+                act.setTiers(activityMapper.selectTiersByActivityId(act.getActivityId()));
+                go.setActivity(act);
+            }
         }
         return list;
     }
