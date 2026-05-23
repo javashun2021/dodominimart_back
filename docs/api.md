@@ -69,7 +69,8 @@ App 冷启动时调用一次，获取店铺信息、客服链接、公告、订�
     "messengerLink": "https://m.me/j/AbCdEfGhIjKlMnOp",
     "announcement": "满₱200免配送费！本周五特惠，全场9折！",
     "deliveryFee": "30",
-    "minOrderAmount": "100"
+    "minOrderAmount": "100",
+    "gcashEnabled": true
   }
 }
 ```
@@ -83,6 +84,7 @@ App 冷启动时调用一次，获取店铺信息、客服链接、公告、订�
 | `announcement` | string | 公告文本，**空字符串表示无公告**，App 端据此决定是否显示横幅 |
 | `deliveryFee` | string | 配送费（PHP），`"0"` = 免配送费 |
 | `minOrderAmount` | string | 最低起订金额（PHP），`"0"` = 不限制 |
+| `gcashEnabled` | boolean | `true` = GCash 在线支付可用，`false` = 仅 COD。App 端据此决定是否显示 GCash 选项，管理员可在后台「系统管理 → 参数设置」中实时切换（参数键 `mall.gcash.enabled`） |
 
 **Flutter 示例：**
 

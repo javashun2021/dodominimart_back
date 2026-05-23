@@ -40,6 +40,9 @@ public class ApiConfigController
         data.put("deliveryFee",     val("app.delivery.fee",     "0"));
         data.put("minOrderAmount",  val("app.min.order.amount", "0"));
 
+        // 支付方式开关
+        data.put("gcashEnabled", "true".equalsIgnoreCase(val("mall.gcash.enabled", "false")));
+
         return AjaxResult.success("ok").put("data", data);
     }
 
