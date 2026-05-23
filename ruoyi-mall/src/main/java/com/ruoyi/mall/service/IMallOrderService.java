@@ -18,8 +18,9 @@ public interface IMallOrderService
 
     /**
      * 创建订单（事务）：校验库存 → 生成订单 → 插入明细 → 扣减库存
+     * @param paymentMethod "COD" 或 "GCASH"，null 时默认 COD
      */
-    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark);
+    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod);
 
     /** 变更订单状态（Admin 使用） */
     int updateOrderStatus(Long orderId, String status, String updateBy);

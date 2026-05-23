@@ -118,3 +118,13 @@ CREATE TABLE IF NOT EXISTS mall_group_member (
     UNIQUE KEY uk_group_member (group_order_id, member_id),
     KEY idx_member (member_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团成员表';
+
+-- ─────────────────────────────────────────────
+-- 8. GCash 支付开关（后台"参数设置"中控制）
+--    mall.gcash.enabled = true  → 开启
+--    mall.gcash.enabled = false → 关闭（默认）
+-- ─────────────────────────────────────────────
+INSERT INTO sys_config(config_name, config_key, config_value, config_type, create_by, create_time, remark)
+VALUES ('GCash支付开关', 'mall.gcash.enabled', 'false', 'Y', 'admin', NOW(),
+        '是否启用GCash在线支付：true=开启，false=关闭。可在后台【系统管理→参数设置】实时修改，无需重启。')
+ON DUPLICATE KEY UPDATE config_name = config_name;

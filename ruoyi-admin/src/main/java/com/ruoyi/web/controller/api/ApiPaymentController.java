@@ -19,6 +19,7 @@ import com.ruoyi.mall.domain.MallPaymentRecord;
 import com.ruoyi.mall.mapper.MallPaymentRecordMapper;
 import com.ruoyi.mall.service.IGCashService;
 import com.ruoyi.mall.service.IMallOrderService;
+import com.ruoyi.system.service.ISysConfigService;
 
 /**
  * 支付接口
@@ -40,6 +41,9 @@ public class ApiPaymentController extends BaseApiController
     @Autowired
     private MallPaymentRecordMapper paymentRecordMapper;
 
+    @Autowired
+    private ISysConfigService configService;
+
     /**
      * 发起 GCash 支付
      * POST /api/v1/orders/{id}/pay
@@ -50,6 +54,11 @@ public class ApiPaymentController extends BaseApiController
                           @RequestParam(defaultValue = "GCASH") String paymentMethod,
                           HttpServletRequest request)
     {
+        if (!"true".equalsIgnoreCase(configService.selectConfigByKey("mall.gcash.enabled")))
+        {
+            return AjaxResult.error("GCash payment is currently unavailable");
+        }
+
         Long memberId = getCurrentMemberId(request);
         MallOrder order = orderService.selectOrderById(id);
         if (order == null || !order.getMemberId().equals(memberId))

@@ -17,6 +17,7 @@ import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.service.IMallOrderService;
+import com.ruoyi.system.service.ISysConfigService;
 
 /**
  * 订单接口（需 JWT）
@@ -32,9 +33,12 @@ public class ApiOrderController extends BaseApiController
     @Autowired
     private IMallOrderService orderService;
 
+    @Autowired
+    private ISysConfigService configService;
+
     /**
      * 下单
-     * Body: { "addressId": 1, "remark": "...", "items": [{ "productId": 1, "quantity": 2 }] }
+     * Body: { "addressId": 1, "paymentMethod": "COD|GCASH", "remark": "...", "items": [...] }
      */
     @PostMapping
     public AjaxResult createOrder(@RequestBody Map<String, Object> body, HttpServletRequest request)
@@ -47,7 +51,14 @@ public class ApiOrderController extends BaseApiController
             return AjaxResult.error("addressId is required");
         }
         Long addressId = Long.valueOf(addressIdObj.toString());
-        String remark = (String) body.getOrDefault("remark", "");
+        String remark        = (String) body.getOrDefault("remark", "");
+        String paymentMethod = body.get("paymentMethod") != null
+                ? body.get("paymentMethod").toString().toUpperCase() : "COD";
+
+        if ("GCASH".equals(paymentMethod) && !isGcashEnabled())
+        {
+            return AjaxResult.error("GCash payment is currently unavailable");
+        }
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> rawItems = (List<Map<String, Object>>) body.get("items");
@@ -67,13 +78,18 @@ public class ApiOrderController extends BaseApiController
 
         try
         {
-            MallOrder order = orderService.createOrder(memberId, addressId, items, remark);
+            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod);
             return AjaxResult.success("Order placed successfully").put("data", order);
         }
         catch (RuntimeException e)
         {
             return AjaxResult.error(e.getMessage());
         }
+    }
+
+    private boolean isGcashEnabled()
+    {
+        return "true".equalsIgnoreCase(configService.selectConfigByKey("mall.gcash.enabled"));
     }
 
     /**

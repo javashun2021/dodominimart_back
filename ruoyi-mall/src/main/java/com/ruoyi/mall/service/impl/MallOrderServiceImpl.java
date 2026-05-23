@@ -77,7 +77,7 @@ public class MallOrderServiceImpl implements IMallOrderService
 
     @Override
     @Transactional
-    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark)
+    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod)
     {
         MallAddress address = addressMapper.selectAddressById(addressId);
         if (address == null || !address.getMemberId().equals(memberId))
@@ -129,6 +129,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setAddressSnapshot(buildAddressSnapshot(address));
         order.setTotalAmount(total);
         order.setStatus("0");
+        order.setPaymentMethod(paymentMethod != null ? paymentMethod.toUpperCase() : "COD");
         order.setRemark(remark != null ? remark : "");
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
