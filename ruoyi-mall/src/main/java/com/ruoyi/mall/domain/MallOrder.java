@@ -38,6 +38,15 @@ public class MallOrder implements Serializable
     private String updateBy;
     private Date updateTime;
 
+    /** 接单跑腿人ID */
+    private Long runnerMemberId;
+    /** 接单时间 */
+    private Date runnerAcceptedTime;
+    /** 跑腿费（PHP） */
+    private java.math.BigDecimal deliveryFee;
+    /** 跑腿费是否已结算 0否 1是（仅GCash订单需关注） */
+    private String runnerFeeSettled;
+
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
 
@@ -91,6 +100,18 @@ public class MallOrder implements Serializable
 
     public Date getUpdateTime() { return updateTime; }
     public void setUpdateTime(Date updateTime) { this.updateTime = updateTime; }
+
+    public Long   getRunnerMemberId()        { return runnerMemberId; }
+    public void   setRunnerMemberId(Long v)  { this.runnerMemberId = v; }
+
+    public Date   getRunnerAcceptedTime()       { return runnerAcceptedTime; }
+    public void   setRunnerAcceptedTime(Date v) { this.runnerAcceptedTime = v; }
+
+    public java.math.BigDecimal getDeliveryFee()                         { return deliveryFee; }
+    public void                 setDeliveryFee(java.math.BigDecimal v)   { this.deliveryFee = v; }
+
+    public String getRunnerFeeSettled()        { return runnerFeeSettled; }
+    public void   setRunnerFeeSettled(String v){ this.runnerFeeSettled = v; }
 
     public List<MallOrderItem> getItems() { return items; }
     public void setItems(List<MallOrderItem> items) { this.items = items; }

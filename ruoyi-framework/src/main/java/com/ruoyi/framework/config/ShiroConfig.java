@@ -303,6 +303,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/group-orders/my", "jwtAuth");
         filterChainDefinitionMap.put("/api/v1/group-orders/*", "anon");
         filterChainDefinitionMap.put("/api/v1/payment/callback", "anon");
+        filterChainDefinitionMap.put("/api/v1/runner/stats/*", "anon");
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
 
         Map<String, Filter> filters = new LinkedHashMap<>();

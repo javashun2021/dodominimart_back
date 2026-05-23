@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallRunnerRatingMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallRunnerRating" id="RatingResult">
+        <id     property="ratingId"       column="rating_id"        />
+        <result property="orderId"        column="order_id"         />
+        <result property="runnerMemberId" column="runner_member_id" />
+        <result property="raterMemberId"  column="rater_member_id"  />
+        <result property="score"          column="score"            />
+        <result property="comment"        column="comment"          />
+        <result property="createTime"     column="create_time"      />
+        <result property="raterNickName"  column="rater_nick_name"  />
+        <result property="raterAvatarUrl" column="rater_avatar_url" />
+    </resultMap>
+
+    <select id="selectByOrderId" parameterType="Long" resultMap="RatingResult">
+        select r.*, m.nick_name as rater_nick_name, m.avatar_url as rater_avatar_url
+        from mall_runner_rating r
+        left join mall_member m on m.member_id = r.rater_member_id
+        where r.order_id = #{orderId}
+    </select>
+
+    <select id="selectByRunnerMemberId" parameterType="Long" resultMap="RatingResult">
+        select r.*, m.nick_name as rater_nick_name, m.avatar_url as rater_avatar_url
+        from mall_runner_rating r
+        left join mall_member m on m.member_id = r.rater_member_id
+        where r.runner_member_id = #{runnerMemberId}
+        order by r.create_time desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.mall.domain.MallRunnerRating" useGeneratedKeys="true" keyProperty="ratingId">
+        insert into mall_runner_rating(order_id, runner_member_id, rater_member_id, score, comment, create_time)
+        values(#{orderId}, #{runnerMemberId}, #{raterMemberId}, #{score}, #{comment}, #{createTime})
+    </insert>
+
+    <select id="countByRunnerMemberId" parameterType="Long" resultType="int">
+        select count(1) from mall_runner_rating where runner_member_id = #{runnerMemberId}
+    </select>
+
+    <select id="avgScoreByRunnerMemberId" parameterType="Long" resultType="java.math.BigDecimal">
+        select avg(score) from mall_runner_rating where runner_member_id = #{runnerMemberId}
+    </select>
+
+</mapper>

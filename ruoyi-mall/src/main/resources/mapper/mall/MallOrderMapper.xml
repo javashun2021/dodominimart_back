@@ -17,16 +17,21 @@
         <result property="paidAmount"       column="paid_amount"       />
         <result property="paymentTime"      column="payment_time"      />
         <result property="cancelReason"     column="cancel_reason"     />
-        <result property="orderSource"      column="order_source"      />
-        <result property="createTime"       column="create_time"       />
-        <result property="updateBy"         column="update_by"         />
-        <result property="updateTime"       column="update_time"       />
+        <result property="orderSource"        column="order_source"         />
+        <result property="createTime"         column="create_time"          />
+        <result property="updateBy"           column="update_by"            />
+        <result property="updateTime"         column="update_time"          />
+        <result property="runnerMemberId"     column="runner_member_id"     />
+        <result property="runnerAcceptedTime" column="runner_accepted_time" />
+        <result property="deliveryFee"        column="delivery_fee"         />
+        <result property="runnerFeeSettled"   column="runner_fee_settled"   />
     </resultMap>
 
     <sql id="selectOrderVo">
         select order_id, order_no, member_id, address_snapshot, total_amount, status,
                remark, payment_method, payment_status, payment_no, paid_amount, payment_time,
-               cancel_reason, order_source, create_time, update_by, update_time
+               cancel_reason, order_source, create_time, update_by, update_time,
+               runner_member_id, runner_accepted_time, delivery_fee, runner_fee_settled
         from mall_order
     </sql>
 
@@ -68,6 +73,44 @@
             update_time = #{updateTime}
         </set>
         where order_id = #{orderId}
+    </update>
+
+    <select id="selectAvailableForRunner" resultMap="MallOrderResult">
+        <include refid="selectOrderVo"/>
+        where status = '1' and runner_member_id is null
+        order by create_time asc
+    </select>
+
+    <select id="selectByRunnerMemberId" parameterType="Long" resultMap="MallOrderResult">
+        <include refid="selectOrderVo"/>
+        where runner_member_id = #{runnerMemberId}
+        order by runner_accepted_time desc
+    </select>
+
+    <update id="updateRunnerInfo" parameterType="com.ruoyi.mall.domain.MallOrder">
+        update mall_order
+        set runner_member_id     = #{runnerMemberId},
+            runner_accepted_time = #{runnerAcceptedTime},
+            delivery_fee         = #{deliveryFee},
+            status               = #{status}
+        where order_id = #{orderId}
+    </update>
+
+    <select id="selectUnsettledRunnerOrders" resultMap="MallOrderResult">
+        <include refid="selectOrderVo"/>
+        where payment_method = 'GCASH'
+          and runner_member_id is not null
+          and runner_fee_settled = '0'
+          and status = '3'
+        order by runner_member_id, create_time desc
+    </select>
+
+    <update id="settleRunnerFee">
+        update mall_order set runner_fee_settled = '1'
+        where order_id in
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </update>
 
 </mapper>

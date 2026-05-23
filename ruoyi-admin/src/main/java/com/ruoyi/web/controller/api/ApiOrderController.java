@@ -16,7 +16,9 @@ import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
+import com.ruoyi.mall.domain.MallRunnerRating;
 import com.ruoyi.mall.service.IMallOrderService;
+import com.ruoyi.mall.service.IMallRunnerService;
 import com.ruoyi.system.service.ISysConfigService;
 
 /**
@@ -35,6 +37,9 @@ public class ApiOrderController extends BaseApiController
 
     @Autowired
     private ISysConfigService configService;
+
+    @Autowired
+    private IMallRunnerService runnerService;
 
     /**
      * 下单
@@ -123,6 +128,32 @@ public class ApiOrderController extends BaseApiController
             return AjaxResult.error("Order not found");
         }
         return AjaxResult.success("ok").put("data", order);
+    }
+
+    /**
+     * 顾客评价跑腿人
+     * Body: { "score": 5, "comment": "..." }
+     */
+    @PostMapping("/{id}/rate-runner")
+    public AjaxResult rateRunner(@PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        MallRunnerRating rating = new MallRunnerRating();
+        rating.setOrderId(id);
+        rating.setRaterMemberId(memberId);
+        rating.setScore(Integer.valueOf(body.get("score").toString()));
+        rating.setComment(body.get("comment") != null ? body.get("comment").toString() : null);
+        try
+        {
+            runnerService.rateRunner(rating);
+            return AjaxResult.success("Rating submitted");
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
     }
 
     /**
