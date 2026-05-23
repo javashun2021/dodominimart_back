@@ -1,6 +1,7 @@
 package com.ruoyi.mall.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.mall.domain.MallFlashSale;
 
 public interface MallFlashSaleMapper
@@ -19,7 +20,7 @@ public interface MallFlashSaleMapper
     int updateFlashSale(MallFlashSale flashSale);
 
     /** 乐观锁：sold_count+quantity，仅当剩余库存充足时更新 */
-    int incrementSoldCount(Long saleId, int quantity);
+    int incrementSoldCount(@Param("saleId") Long saleId, @Param("quantity") int quantity);
 
     int deleteFlashSaleById(Long saleId);
 }
