@@ -44,6 +44,9 @@
                      '2':'<span class="badge" style="background:#5bc0de">配送中</span>',
                      '3':'<span class="badge badge-success">已完成</span>',
                      '4':'<span class="badge badge-default">已取消</span>'};
+    var sourceMap  = {'NORMAL':     '<span class="badge badge-default">普通</span>',
+                      'FLASH_SALE': '<span class="badge" style="background:#e74c3c">限时优惠</span>',
+                      'GROUP':      '<span class="badge" style="background:#8e44ad">拼团</span>'};
 
     $(function() {
         $.table.init({
@@ -53,6 +56,9 @@
                 {checkbox: true},
                 {field: 'orderNo',      title: '订单编号'},
                 {field: 'totalAmount',  title: '金额(PHP)', formatter: function(v) { return '₱' + v; }},
+                {field: 'orderSource',  title: '来源', align: 'center',
+                    formatter: function(v) { return sourceMap[v] || v; }
+                },
                 {field: 'status',       title: '状态', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }
                 },

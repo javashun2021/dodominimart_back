@@ -2,10 +2,11 @@
 -- 执行前请确保已执行 ry_20190215.sql 和 mall.sql
 
 -- ─────────────────────────────────────────────
--- 1. mall_order 新增支付字段
+-- 1. mall_order 新增支付字段 + 订单来源字段
 -- ─────────────────────────────────────────────
 ALTER TABLE mall_order
-    ADD COLUMN payment_method VARCHAR(10)   NOT NULL DEFAULT 'COD'    COMMENT '支付方式 COD/GCASH' AFTER remark,
+    ADD COLUMN order_source   VARCHAR(20)   NOT NULL DEFAULT 'NORMAL'  COMMENT '来源 NORMAL/FLASH_SALE/GROUP' AFTER remark,
+    ADD COLUMN payment_method VARCHAR(10)   NOT NULL DEFAULT 'COD'    COMMENT '支付方式 COD/GCASH' AFTER order_source,
     ADD COLUMN payment_status VARCHAR(10)   NOT NULL DEFAULT 'UNPAID'  COMMENT '支付状态 UNPAID/PAID/REFUNDED' AFTER payment_method,
     ADD COLUMN payment_no     VARCHAR(64)   DEFAULT NULL               COMMENT 'GCash Reference ID' AFTER payment_status,
     ADD COLUMN paid_amount    DECIMAL(10,2) DEFAULT NULL               COMMENT '实际支付金额' AFTER payment_no,

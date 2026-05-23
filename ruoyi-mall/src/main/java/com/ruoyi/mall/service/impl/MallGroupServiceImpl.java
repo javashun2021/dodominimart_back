@@ -299,7 +299,9 @@ public class MallGroupServiceImpl implements IMallGroupService
             order.setAddressSnapshot(buildAddressSnapshot(address));
             order.setTotalAmount(subtotal);
             order.setStatus("1");
+            order.setPaymentMethod("COD");
             order.setRemark("拼团成功");
+            order.setOrderSource("GROUP");
             order.setCreateTime(new Date());
             orderMapper.insertOrder(order);
 

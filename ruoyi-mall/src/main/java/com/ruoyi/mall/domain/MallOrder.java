@@ -32,6 +32,8 @@ public class MallOrder implements Serializable
     private BigDecimal paidAmount;
     private Date paymentTime;
     private String cancelReason;
+    /** 来源：NORMAL / FLASH_SALE / GROUP */
+    private String orderSource;
     private Date createTime;
     private String updateBy;
     private Date updateTime;
@@ -77,6 +79,9 @@ public class MallOrder implements Serializable
 
     public String getCancelReason() { return cancelReason; }
     public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
+
+    public String getOrderSource() { return orderSource; }
+    public void setOrderSource(String orderSource) { this.orderSource = orderSource; }
 
     public Date getCreateTime() { return createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }

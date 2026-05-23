@@ -17,6 +17,7 @@
         <result property="paidAmount"       column="paid_amount"       />
         <result property="paymentTime"      column="payment_time"      />
         <result property="cancelReason"     column="cancel_reason"     />
+        <result property="orderSource"      column="order_source"      />
         <result property="createTime"       column="create_time"       />
         <result property="updateBy"         column="update_by"         />
         <result property="updateTime"       column="update_time"       />
@@ -25,7 +26,7 @@
     <sql id="selectOrderVo">
         select order_id, order_no, member_id, address_snapshot, total_amount, status,
                remark, payment_method, payment_status, payment_no, paid_amount, payment_time,
-               cancel_reason, create_time, update_by, update_time
+               cancel_reason, order_source, create_time, update_by, update_time
         from mall_order
     </sql>
 
@@ -49,9 +50,9 @@
 
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
-                               payment_method, payment_status, create_time)
+                               payment_method, payment_status, order_source, create_time)
         values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
-               #{paymentMethod}, 'UNPAID', #{createTime})
+               #{paymentMethod}, 'UNPAID', #{orderSource}, #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">

@@ -86,6 +86,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
 
         BigDecimal total = BigDecimal.ZERO;
+        boolean hasFlashSale = false;
         for (MallOrderItem item : items)
         {
             MallProduct product = productMapper.selectProductById(item.getProductId());
@@ -112,6 +113,7 @@ public class MallOrderServiceImpl implements IMallOrderService
                     throw new RuntimeException("Flash sale stock sold out: " + product.getName());
                 }
                 unitPrice = flashSale.getFlashPrice();
+                hasFlashSale = true;
             }
 
             item.setPrice(unitPrice);
@@ -131,6 +133,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setStatus("0");
         order.setPaymentMethod(paymentMethod != null ? paymentMethod.toUpperCase() : "COD");
         order.setRemark(remark != null ? remark : "");
+        order.setOrderSource(hasFlashSale ? "FLASH_SALE" : "NORMAL");
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
 
