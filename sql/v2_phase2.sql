@@ -128,3 +128,22 @@ INSERT INTO sys_config(config_name, config_key, config_value, config_type, creat
 VALUES ('GCash支付开关', 'mall.gcash.enabled', 'false', 'Y', 'admin', NOW(),
         '是否启用GCash在线支付：true=开启，false=关闭。可在后台【系统管理→参数设置】实时修改，无需重启。')
 ON DUPLICATE KEY UPDATE config_name = config_name;
+
+-- ─────────────────────────────────────────────
+-- 9. 后台菜单：限时优惠 + 拼团管理
+--    挂在"商城管理"(2000)下，ID 2005/2006
+-- ─────────────────────────────────────────────
+INSERT INTO sys_menu VALUES(2005, '限时优惠', 2000, 5, '/mall/flashsale', 'C', '0', 'mall:flashsale:view', 'fa fa-bolt',       'admin', now(), 'admin', now(), '限时特价活动管理');
+INSERT INTO sys_menu VALUES(2006, '拼团活动', 2000, 6, '/mall/group',     'C', '0', 'mall:group:view',     'fa fa-users',      'admin', now(), 'admin', now(), '拼团活动管理');
+
+-- 限时优惠按钮
+INSERT INTO sys_menu VALUES(2050, '优惠查询', 2005, 1, '#', 'F', '0', 'mall:flashsale:list',   '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2051, '优惠新增', 2005, 2, '#', 'F', '0', 'mall:flashsale:add',    '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2052, '优惠修改', 2005, 3, '#', 'F', '0', 'mall:flashsale:edit',   '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2053, '优惠删除', 2005, 4, '#', 'F', '0', 'mall:flashsale:remove', '#', 'admin', now(), 'admin', now(), '');
+
+-- 拼团活动按钮
+INSERT INTO sys_menu VALUES(2060, '拼团查询', 2006, 1, '#', 'F', '0', 'mall:group:list',   '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2061, '拼团新增', 2006, 2, '#', 'F', '0', 'mall:group:add',    '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2062, '拼团修改', 2006, 3, '#', 'F', '0', 'mall:group:edit',   '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2063, '拼团删除', 2006, 4, '#', 'F', '0', 'mall:group:remove', '#', 'admin', now(), 'admin', now(), '');
