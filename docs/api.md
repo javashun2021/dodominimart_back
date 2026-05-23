@@ -1138,7 +1138,112 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 ---
 
-### 6.5 我的拼团列表（需 JWT）
+### 6.5 活动下开放中的拼团单列表（无需登录）
+
+`GET /api/v1/group-orders?activityId={id}`
+
+用于在活动详情页展示当前可加入的拼团，返回该活动下 `status=0`（拼团中）的所有拼团单。
+
+**Query 参数：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `activityId` | long | 必填，拼团活动 ID |
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": [
+    {
+      "groupOrderId": 12,
+      "inviteCode": "3YW4UA4",
+      "activityTitle": "西瓜拼团活动",
+      "productName": "西瓜",
+      "currentSize": 2,
+      "minGroupSize": 5,
+      "currentPrice": 30.00,
+      "status": "0",
+      "expireTime": "2026-06-02T10:00:00.000+08:00",
+      "createTime": "2026-06-01T10:00:00.000+08:00",
+      "members": [
+        {
+          "memberId": 1,
+          "quantity": 1,
+          "joinedTime": "2026-06-01T10:00:00.000+08:00",
+          "nickName": "张三",
+          "avatarUrl": "https://lh3.googleusercontent.com/..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `groupOrderId` | long | 拼团单 ID |
+| `inviteCode` | string | 邀请码，可直接用于 6.4 加入接口 |
+| `activityTitle` | string | 活动名称 |
+| `productName` | string | 商品名称 |
+| `currentSize` | int | 当前参与人数 |
+| `minGroupSize` | int | 成团所需最少人数 |
+| `currentPrice` | decimal | 当前档位单价（PHP） |
+| `expireTime` | datetime | 拼团截止时间 |
+| `members` | array | 当前参与成员（含昵称、头像） |
+
+> App 展示逻辑建议：列表按 `currentSize` 降序排列（离成团最近的优先展示），点击某条直接调用 **6.4 加入拼团**。
+
+---
+
+### 6.6 发起人提前结团（需 JWT）
+
+`POST /api/v1/group-orders/{inviteCode}/close`
+
+发起人在满足最少成团人数后，可主动触发结团，系统立即为所有成员生成订单，无需等待活动截止时间。
+
+**前置条件：**
+- 调用者必须是该团的**发起人**
+- 团状态必须为 `"0"`（拼团中）
+- `currentSize >= minGroupSize`
+
+**无请求体**
+
+**成功响应：**（同 6.3 团详情，`status` 已变为 `"1"`）
+
+```json
+{
+  "code": 0,
+  "msg": "Group closed successfully",
+  "data": {
+    "groupOrderId": 100,
+    "inviteCode": "AB3K7QZ",
+    "currentSize": 5,
+    "currentPrice": 25.00,
+    "status": "1",
+    "successTime": "2026-06-01T14:30:00.000+08:00",
+    "members": [ { "...": "..." } ],
+    "activity": { "...": "..." }
+  }
+}
+```
+
+> 结团后每位成员的独立 `mall_order` 已自动创建，`orderSource = "GROUP"`，`status = "1"`（已确认），`paymentMethod = "COD"`。成员可去订单列表查看。
+
+**失败情况：**
+
+| code | msg | 原因 |
+|------|-----|------|
+| 500 | `Group not found` | 邀请码无效 |
+| 500 | `Group is no longer active` | 团已成功或失败 |
+| 500 | `Only the initiator can close the group` | 调用者不是发起人 |
+| 500 | `Minimum group size not reached yet` | 当前人数 < 最少成团人数 |
+
+---
+
+### 6.7 我的拼团列表（需 JWT）
 
 `GET /api/v1/group-orders/my`
 
@@ -1263,6 +1368,7 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 商品 | GET | `/api/v1/products/{id}` | 否 |
 | 限时优惠 | GET | `/api/v1/flash-sales` | 否 |
 | 拼团 | GET | `/api/v1/group-activities` | 否 |
+| 拼团 | GET | `/api/v1/group-orders` | 否 |
 | 拼团 | GET | `/api/v1/group-orders/{inviteCode}` | 否 |
 | 订单 | POST | `/api/v1/orders` | **是** |
 | 订单 | GET | `/api/v1/orders` | **是** |
@@ -1272,6 +1378,7 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 拼团 | POST | `/api/v1/group-orders` | **是** |
 | 拼团 | GET | `/api/v1/group-orders/my` | **是** |
 | 拼团 | POST | `/api/v1/group-orders/{inviteCode}/join` | **是** |
+| 拼团 | POST | `/api/v1/group-orders/{inviteCode}/close` | **是** |
 | 会员 | GET | `/api/v1/member/profile` | **是** |
 | 会员 | PUT | `/api/v1/member/profile` | **是** |
 | 会员 | GET | `/api/v1/member/addresses` | **是** |

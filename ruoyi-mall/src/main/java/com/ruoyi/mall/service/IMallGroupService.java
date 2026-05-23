@@ -39,4 +39,10 @@ public interface IMallGroupService
 
     /** 定时任务：扫描过期未成团 → 标记失败 */
     void expireGroups();
+
+    /**
+     * 发起人提前结团：当 current_size >= min_group_size 时，发起人可主动关团并立即生成订单
+     * @throws RuntimeException 非发起人 / 人数不足 / 团不在进行中
+     */
+    MallGroupOrder closeGroup(String inviteCode, Long memberId);
 }

@@ -286,6 +286,26 @@ public class MallGroupServiceImpl implements IMallGroupService
         }
     }
 
+    @Override
+    @Transactional
+    public MallGroupOrder closeGroup(String inviteCode, Long memberId)
+    {
+        MallGroupOrder groupOrder = groupOrderMapper.selectGroupOrderByInviteCode(inviteCode);
+        if (groupOrder == null)
+            throw new RuntimeException("Group not found");
+        if (!"0".equals(groupOrder.getStatus()))
+            throw new RuntimeException("Group is no longer active");
+        if (!memberId.equals(groupOrder.getInitiatorMemberId()))
+            throw new RuntimeException("Only the initiator can close the group");
+
+        MallGroupActivity activity = activityMapper.selectActivityById(groupOrder.getActivityId());
+        if (groupOrder.getCurrentSize() < activity.getMinGroupSize())
+            throw new RuntimeException("Minimum group size not reached yet");
+
+        completeGroup(groupOrder, activity);
+        return getGroupDetail(inviteCode);
+    }
+
     // ---- private helpers ----
 
     @Transactional
@@ -337,6 +357,7 @@ public class MallGroupServiceImpl implements IMallGroupService
     private BigDecimal calcTierPrice(Long activityId, int currentSize)
     {
         List<MallGroupTier> tiers = activityMapper.selectTiersByActivityId(activityId);
+        if (tiers.isEmpty()) return BigDecimal.ZERO;
         for (MallGroupTier t : tiers)
         {
             if (currentSize >= t.getMinQuantity()
@@ -345,7 +366,11 @@ public class MallGroupServiceImpl implements IMallGroupService
                 return t.getPrice();
             }
         }
-        return tiers.isEmpty() ? BigDecimal.ZERO : tiers.get(tiers.size() - 1).getPrice();
+        // below first tier threshold → use first tier price (highest)
+        // above all tiers → use last tier price (lowest/best discount)
+        return currentSize < tiers.get(0).getMinQuantity()
+                ? tiers.get(0).getPrice()
+                : tiers.get(tiers.size() - 1).getPrice();
     }
 
     private String generateInviteCode()

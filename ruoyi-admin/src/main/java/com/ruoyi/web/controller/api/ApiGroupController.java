@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallGroupActivity;
+import com.ruoyi.mall.domain.MallGroupMember;
 import com.ruoyi.mall.domain.MallGroupOrder;
 import com.ruoyi.mall.service.IMallGroupService;
 
@@ -29,6 +31,25 @@ public class ApiGroupController extends BaseApiController
 {
     @Autowired
     private IMallGroupService groupService;
+
+    /**
+     * 某活动下开放中的拼团单列表（公开，供 App 展示可加入的团）
+     * GET /api/v1/group-orders?activityId=1
+     */
+    @GetMapping("/group-orders")
+    public AjaxResult listOpenGroups(@RequestParam Long activityId)
+    {
+        MallGroupOrder query = new MallGroupOrder();
+        query.setActivityId(activityId);
+        query.setStatus("0");
+        List<MallGroupOrder> list = groupService.selectGroupOrderList(query);
+        for (MallGroupOrder go : list)
+        {
+            List<MallGroupMember> members = groupService.selectGroupMembers(go.getGroupOrderId());
+            go.setMembers(members);
+        }
+        return AjaxResult.success().put("data", list);
+    }
 
     /** 当前进行中的拼团活动列表（含价格阶梯） */
     @GetMapping("/group-activities")
@@ -78,6 +99,26 @@ public class ApiGroupController extends BaseApiController
         MallGroupOrder detail = groupService.getGroupDetail(inviteCode);
         if (detail == null) return AjaxResult.error("Group not found");
         return AjaxResult.success().put("data", detail);
+    }
+
+    /**
+     * 发起人提前结团（需 JWT）
+     * 条件：调用者必须是发起人，且 current_size >= min_group_size
+     */
+    @PostMapping("/group-orders/{inviteCode}/close")
+    public AjaxResult closeGroup(@PathVariable("inviteCode") String inviteCode,
+                                 HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        try
+        {
+            MallGroupOrder result = groupService.closeGroup(inviteCode, memberId);
+            return AjaxResult.success("Group closed successfully").put("data", result);
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
     }
 
     /**

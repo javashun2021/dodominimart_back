@@ -299,6 +299,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/categories", "anon");
         filterChainDefinitionMap.put("/api/v1/flash-sales", "anon");
         filterChainDefinitionMap.put("/api/v1/group-activities", "anon");
+        filterChainDefinitionMap.put("/api/v1/group-orders", "anon");
         filterChainDefinitionMap.put("/api/v1/group-orders/my", "jwtAuth");
         filterChainDefinitionMap.put("/api/v1/group-orders/*", "anon");
         filterChainDefinitionMap.put("/api/v1/payment/callback", "anon");
