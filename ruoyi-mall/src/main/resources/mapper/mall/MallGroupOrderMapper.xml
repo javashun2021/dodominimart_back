@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallGroupOrderMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallGroupOrder" id="GroupOrderResult">
+        <id     property="groupOrderId"      column="group_order_id"      />
+        <result property="activityId"        column="activity_id"         />
+        <result property="productId"         column="product_id"          />
+        <result property="initiatorMemberId" column="initiator_member_id" />
+        <result property="inviteCode"        column="invite_code"         />
+        <result property="currentSize"       column="current_size"        />
+        <result property="currentPrice"      column="current_price"       />
+        <result property="status"            column="status"              />
+        <result property="expireTime"        column="expire_time"         />
+        <result property="successTime"       column="success_time"        />
+        <result property="createTime"        column="create_time"         />
+    </resultMap>
+
+    <select id="selectGroupOrderList" parameterType="com.ruoyi.mall.domain.MallGroupOrder" resultMap="GroupOrderResult">
+        select * from mall_group_order
+        <where>
+            <if test="activityId != null">AND activity_id = #{activityId}</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectGroupOrderById" parameterType="Long" resultMap="GroupOrderResult">
+        select * from mall_group_order where group_order_id = #{groupOrderId}
+    </select>
+
+    <select id="selectGroupOrderByInviteCode" parameterType="String" resultMap="GroupOrderResult">
+        select * from mall_group_order where invite_code = #{inviteCode}
+    </select>
+
+    <select id="selectMyGroups" parameterType="Long" resultMap="GroupOrderResult">
+        select go.* from mall_group_order go
+        inner join mall_group_member gm on gm.group_order_id = go.group_order_id
+        where gm.member_id = #{memberId}
+        order by go.create_time desc
+    </select>
+
+    <select id="selectExpiredGroups" resultMap="GroupOrderResult">
+        select * from mall_group_order
+        where status = '0' and expire_time &lt; now()
+    </select>
+
+    <insert id="insertGroupOrder" parameterType="com.ruoyi.mall.domain.MallGroupOrder"
+            useGeneratedKeys="true" keyProperty="groupOrderId">
+        insert into mall_group_order(activity_id, product_id, initiator_member_id, invite_code,
+                                     current_size, current_price, status, expire_time, create_time)
+        values(#{activityId}, #{productId}, #{initiatorMemberId}, #{inviteCode},
+               #{currentSize}, #{currentPrice}, #{status}, #{expireTime}, #{createTime})
+    </insert>
+
+    <update id="updateGroupOrder" parameterType="com.ruoyi.mall.domain.MallGroupOrder">
+        update mall_group_order
+        <set>
+            <if test="currentSize != null">current_size  = #{currentSize},</if>
+            <if test="currentPrice != null">current_price = #{currentPrice},</if>
+            <if test="status != null">status        = #{status},</if>
+            <if test="successTime != null">success_time  = #{successTime},</if>
+        </set>
+        where group_order_id = #{groupOrderId}
+    </update>
+
+</mapper>

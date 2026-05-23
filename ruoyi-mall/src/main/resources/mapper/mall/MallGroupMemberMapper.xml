@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallGroupMemberMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallGroupMember" id="MemberResult">
+        <id     property="id"           column="id"             />
+        <result property="groupOrderId" column="group_order_id" />
+        <result property="memberId"     column="member_id"      />
+        <result property="quantity"     column="quantity"       />
+        <result property="orderId"      column="order_id"       />
+        <result property="addressId"    column="address_id"     />
+        <result property="joinedTime"   column="joined_time"    />
+        <result property="nickName"     column="nick_name"      />
+        <result property="avatarUrl"    column="avatar_url"     />
+    </resultMap>
+
+    <select id="selectMembersByGroupOrderId" parameterType="Long" resultMap="MemberResult">
+        select gm.*, m.nick_name, m.avatar_url
+        from mall_group_member gm
+        left join mall_member m on m.member_id = gm.member_id
+        where gm.group_order_id = #{groupOrderId}
+        order by gm.joined_time asc
+    </select>
+
+    <select id="selectMember" resultMap="MemberResult">
+        select id, group_order_id, member_id, quantity, order_id, address_id, joined_time
+        from mall_group_member
+        where group_order_id = #{groupOrderId} and member_id = #{memberId}
+    </select>
+
+    <insert id="insertMember" parameterType="com.ruoyi.mall.domain.MallGroupMember"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into mall_group_member(group_order_id, member_id, quantity, address_id, joined_time)
+        values(#{groupOrderId}, #{memberId}, #{quantity}, #{addressId}, #{joinedTime})
+    </insert>
+
+    <update id="updateMemberOrderId">
+        update mall_group_member set order_id = #{orderId} where id = #{id}
+    </update>
+
+</mapper>

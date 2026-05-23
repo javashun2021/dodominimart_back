@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <form class="form-horizontal m" id="form-flashsale-edit">
+        <input type="hidden" name="saleId" th:value="${flashSale.saleId}">
+        <div class="form-group">
+            <label class="col-sm-3 control-label">活动名称：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="text" name="title" th:value="${flashSale.title}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">商品：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="text" th:value="${flashSale.productName}" readonly>
+                <input type="hidden" name="productId" th:value="${flashSale.productId}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">活动价(PHP)：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="number" step="0.01" min="0" name="flashPrice" th:value="${flashSale.flashPrice}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">活动限量：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="number" min="1" name="stockLimit" th:value="${flashSale.stockLimit}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">每人限购：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="number" min="1" name="perLimit" th:value="${flashSale.perLimit}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">开始时间：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="datetime-local" name="startTime"
+                       th:value="${#dates.format(flashSale.startTime, 'yyyy-MM-dd\'T\'HH:mm')}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">结束时间：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="datetime-local" name="endTime"
+                       th:value="${#dates.format(flashSale.endTime, 'yyyy-MM-dd\'T\'HH:mm')}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">状态：</label>
+            <div class="col-sm-8">
+                <div class="radio-box">
+                    <input type="radio" id="s0" name="status" value="0" th:checked="${flashSale.status == '0'}">
+                    <label for="s0">未开始</label>
+                </div>
+                <div class="radio-box">
+                    <input type="radio" id="s1" name="status" value="1" th:checked="${flashSale.status == '1'}">
+                    <label for="s1">进行中</label>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div th:include="include :: footer"></div>
+<script>
+    var prefix = ctx + "mall/flashsale";
+    function submitHandler() {
+        if ($.validate.form()) {
+            $.operate.save(prefix + "/edit", $('#form-flashsale-edit').serialize());
+        }
+    }
+</script>
+</body>
+</html>

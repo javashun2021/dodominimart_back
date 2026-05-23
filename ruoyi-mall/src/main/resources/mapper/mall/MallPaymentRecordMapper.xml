@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallPaymentRecordMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallPaymentRecord" id="PaymentRecordResult">
+        <id     property="recordId"   column="record_id"   />
+        <result property="orderId"    column="order_id"    />
+        <result property="memberId"   column="member_id"   />
+        <result property="amount"     column="amount"      />
+        <result property="paymentNo"  column="payment_no"  />
+        <result property="gcashRaw"   column="gcash_raw"   />
+        <result property="status"     column="status"      />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <insert id="insertPaymentRecord" parameterType="com.ruoyi.mall.domain.MallPaymentRecord"
+            useGeneratedKeys="true" keyProperty="recordId">
+        insert into mall_payment_record(order_id, member_id, amount, payment_no, status, create_time, update_time)
+        values(#{orderId}, #{memberId}, #{amount}, #{paymentNo}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="selectByPaymentNo" parameterType="String" resultMap="PaymentRecordResult">
+        select * from mall_payment_record where payment_no = #{paymentNo}
+    </select>
+
+    <select id="selectByOrderId" parameterType="Long" resultMap="PaymentRecordResult">
+        select * from mall_payment_record where order_id = #{orderId} order by create_time desc limit 1
+    </select>
+
+    <update id="updateStatus">
+        update mall_payment_record
+        set status = #{status},
+            gcash_raw = #{gcashRaw},
+            update_time = now()
+        where record_id = #{recordId}
+    </update>
+
+</mapper>

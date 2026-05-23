@@ -11,6 +11,11 @@
         <result property="totalAmount"      column="total_amount"      />
         <result property="status"           column="status"            />
         <result property="remark"           column="remark"            />
+        <result property="paymentMethod"    column="payment_method"    />
+        <result property="paymentStatus"    column="payment_status"    />
+        <result property="paymentNo"        column="payment_no"        />
+        <result property="paidAmount"       column="paid_amount"       />
+        <result property="paymentTime"      column="payment_time"      />
         <result property="cancelReason"     column="cancel_reason"     />
         <result property="createTime"       column="create_time"       />
         <result property="updateBy"         column="update_by"         />
@@ -19,7 +24,8 @@
 
     <sql id="selectOrderVo">
         select order_id, order_no, member_id, address_snapshot, total_amount, status,
-               remark, cancel_reason, create_time, update_by, update_time
+               remark, payment_method, payment_status, payment_no, paid_amount, payment_time,
+               cancel_reason, create_time, update_by, update_time
         from mall_order
     </sql>
 
@@ -42,14 +48,20 @@
     </select>
 
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
-        insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark, create_time)
-        values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark}, #{createTime})
+        insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
+                               payment_method, payment_status, create_time)
+        values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
+               #{paymentMethod}, 'UNPAID', #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">
         update mall_order
         <set>
             <if test="status != null">status = #{status},</if>
+            <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
+            <if test="paymentNo != null">payment_no = #{paymentNo},</if>
+            <if test="paidAmount != null">paid_amount = #{paidAmount},</if>
+            <if test="paymentTime != null">payment_time = #{paymentTime},</if>
             <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             update_time = #{updateTime}

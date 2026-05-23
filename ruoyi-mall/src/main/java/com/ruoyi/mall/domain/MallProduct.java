@@ -1,8 +1,10 @@
 package com.ruoyi.mall.domain;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.base.BaseEntity;
+import com.ruoyi.mall.domain.MallGroupActivity;
 
 /**
  * 商品表 mall_product
@@ -38,6 +40,17 @@ public class MallProduct extends BaseEntity
     /** 删除标志（0存在 2删除） */
     private String delFlag;
 
+    /** 非DB：限时优惠活动价，无活动时为 null */
+    private BigDecimal flashPrice;
+    /** 非DB：限时优惠结束时间 */
+    private Date flashSaleEndTime;
+    /** 非DB：限时优惠剩余库存 */
+    private Integer flashStockLeft;
+    /** 非DB：限时优惠活动ID（下单时占库存用） */
+    private Long flashSaleId;
+    /** 非DB：当前进行中的拼团活动 */
+    private MallGroupActivity groupActivity;
+
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
 
@@ -67,4 +80,19 @@ public class MallProduct extends BaseEntity
 
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public BigDecimal getFlashPrice() { return flashPrice; }
+    public void setFlashPrice(BigDecimal flashPrice) { this.flashPrice = flashPrice; }
+
+    public Date getFlashSaleEndTime() { return flashSaleEndTime; }
+    public void setFlashSaleEndTime(Date flashSaleEndTime) { this.flashSaleEndTime = flashSaleEndTime; }
+
+    public Integer getFlashStockLeft() { return flashStockLeft; }
+    public void setFlashStockLeft(Integer flashStockLeft) { this.flashStockLeft = flashStockLeft; }
+
+    public Long getFlashSaleId() { return flashSaleId; }
+    public void setFlashSaleId(Long flashSaleId) { this.flashSaleId = flashSaleId; }
+
+    public MallGroupActivity getGroupActivity() { return groupActivity; }
+    public void setGroupActivity(MallGroupActivity groupActivity) { this.groupActivity = groupActivity; }
 }

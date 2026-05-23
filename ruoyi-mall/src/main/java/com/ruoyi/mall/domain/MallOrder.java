@@ -23,6 +23,14 @@ public class MallOrder implements Serializable
      */
     private String status;
     private String remark;
+    /** 支付方式：COD / GCASH */
+    private String paymentMethod;
+    /** 支付状态：UNPAID / PAID / REFUNDED */
+    private String paymentStatus;
+    /** GCash Reference ID */
+    private String paymentNo;
+    private BigDecimal paidAmount;
+    private Date paymentTime;
     private String cancelReason;
     private Date createTime;
     private String updateBy;
@@ -51,6 +59,21 @@ public class MallOrder implements Serializable
 
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public String getPaymentNo() { return paymentNo; }
+    public void setPaymentNo(String paymentNo) { this.paymentNo = paymentNo; }
+
+    public BigDecimal getPaidAmount() { return paidAmount; }
+    public void setPaidAmount(BigDecimal paidAmount) { this.paidAmount = paidAmount; }
+
+    public Date getPaymentTime() { return paymentTime; }
+    public void setPaymentTime(Date paymentTime) { this.paymentTime = paymentTime; }
 
     public String getCancelReason() { return cancelReason; }
     public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }

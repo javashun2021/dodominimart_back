@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallFlashSaleMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallFlashSale" id="MallFlashSaleResult">
+        <id     property="saleId"      column="sale_id"      />
+        <result property="productId"   column="product_id"   />
+        <result property="title"       column="title"        />
+        <result property="flashPrice"  column="flash_price"  />
+        <result property="stockLimit"  column="stock_limit"  />
+        <result property="soldCount"   column="sold_count"   />
+        <result property="perLimit"    column="per_limit"    />
+        <result property="startTime"   column="start_time"   />
+        <result property="endTime"     column="end_time"     />
+        <result property="status"      column="status"       />
+        <result property="createTime"  column="create_time"  />
+        <result property="productName" column="product_name" />
+    </resultMap>
+
+    <select id="selectFlashSaleList" parameterType="com.ruoyi.mall.domain.MallFlashSale" resultMap="MallFlashSaleResult">
+        select fs.*, p.name as product_name
+        from mall_flash_sale fs
+        left join mall_product p on p.product_id = fs.product_id
+        <where>
+            <if test="productId != null">AND fs.product_id = #{productId}</if>
+            <if test="status != null and status != ''">AND fs.status = #{status}</if>
+            <if test="title != null and title != ''">AND fs.title like concat('%', #{title}, '%')</if>
+        </where>
+        order by fs.create_time desc
+    </select>
+
+    <select id="selectFlashSaleById" parameterType="Long" resultMap="MallFlashSaleResult">
+        select fs.*, p.name as product_name
+        from mall_flash_sale fs
+        left join mall_product p on p.product_id = fs.product_id
+        where fs.sale_id = #{saleId}
+    </select>
+
+    <select id="selectActiveByProductId" parameterType="Long" resultMap="MallFlashSaleResult">
+        select sale_id, product_id, title, flash_price, stock_limit, sold_count, per_limit,
+               start_time, end_time, status, create_time
+        from mall_flash_sale
+        where product_id = #{productId}
+          and status = '1'
+          and now() between start_time and end_time
+        limit 1
+    </select>
+
+    <insert id="insertFlashSale" parameterType="com.ruoyi.mall.domain.MallFlashSale" useGeneratedKeys="true" keyProperty="saleId">
+        insert into mall_flash_sale(product_id, title, flash_price, stock_limit, sold_count,
+                                    per_limit, start_time, end_time, status, create_time)
+        values(#{productId}, #{title}, #{flashPrice}, #{stockLimit}, 0,
+               #{perLimit}, #{startTime}, #{endTime}, #{status}, #{createTime})
+    </insert>
+
+    <update id="updateFlashSale" parameterType="com.ruoyi.mall.domain.MallFlashSale">
+        update mall_flash_sale
+        <set>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="flashPrice != null">flash_price = #{flashPrice},</if>
+            <if test="stockLimit != null">stock_limit = #{stockLimit},</if>
+            <if test="perLimit != null">per_limit = #{perLimit},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where sale_id = #{saleId}
+    </update>
+
+    <!-- 乐观锁防超卖：sold_count + quantity，仅当 sold_count + quantity <= stock_limit 时执行 -->
+    <update id="incrementSoldCount">
+        update mall_flash_sale
+        set sold_count = sold_count + #{quantity}
+        where sale_id = #{saleId}
+          and sold_count + #{quantity} &lt;= stock_limit
+    </update>
+
+    <update id="deleteFlashSaleById" parameterType="Long">
+        update mall_flash_sale set status = '2' where sale_id = #{saleId}
+    </update>
+
+</mapper>

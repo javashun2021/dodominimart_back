@@ -4,42 +4,76 @@
 <mapper namespace="com.ruoyi.mall.mapper.MallProductMapper">
 
     <resultMap type="com.ruoyi.mall.domain.MallProduct" id="MallProductResult">
-        <id     property="productId"    column="product_id"   />
-        <result property="categoryId"   column="category_id"  />
-        <result property="name"         column="name"         />
-        <result property="description"  column="description"  />
-        <result property="price"        column="price"        />
-        <result property="stock"        column="stock"        />
-        <result property="imageUrl"     column="image_url"    />
-        <result property="status"       column="status"       />
-        <result property="sort"         column="sort"         />
-        <result property="delFlag"      column="del_flag"     />
-        <result property="createBy"     column="create_by"    />
-        <result property="createTime"   column="create_time"  />
-        <result property="updateBy"     column="update_by"    />
-        <result property="updateTime"   column="update_time"  />
+        <id     property="productId"       column="product_id"      />
+        <result property="categoryId"      column="category_id"     />
+        <result property="name"            column="name"            />
+        <result property="description"     column="description"     />
+        <result property="price"           column="price"           />
+        <result property="stock"           column="stock"           />
+        <result property="imageUrl"        column="image_url"       />
+        <result property="status"          column="status"          />
+        <result property="sort"            column="sort"            />
+        <result property="delFlag"         column="del_flag"        />
+        <result property="createBy"        column="create_by"       />
+        <result property="createTime"      column="create_time"     />
+        <result property="updateBy"        column="update_by"       />
+        <result property="updateTime"      column="update_time"     />
+        <result property="flashPrice"      column="flash_price"     />
+        <result property="flashSaleEndTime" column="flash_end_time" />
+        <result property="flashStockLeft"  column="flash_stock_left"/>
+        <result property="flashSaleId"     column="flash_sale_id"   />
+        <association property="groupActivity" javaType="com.ruoyi.mall.domain.MallGroupActivity">
+            <id     property="activityId"   column="ga_activity_id"    />
+            <result property="title"        column="ga_title"          />
+            <result property="minGroupSize" column="ga_min_group_size" />
+            <result property="endTime"      column="ga_end_time"       />
+            <result property="bestPrice"    column="ga_best_price"     />
+        </association>
     </resultMap>
 
     <sql id="selectProductVo">
-        select product_id, category_id, name, description, price, stock, image_url, status, sort,
-               del_flag, create_by, create_time, update_by, update_time
-        from mall_product
+        select p.product_id, p.category_id, p.name, p.description, p.price, p.stock,
+               p.image_url, p.status, p.sort, p.del_flag, p.create_by, p.create_time,
+               p.update_by, p.update_time,
+               fs.sale_id       as flash_sale_id,
+               fs.flash_price   as flash_price,
+               fs.end_time      as flash_end_time,
+               (fs.stock_limit - fs.sold_count) as flash_stock_left,
+               ga.activity_id  as ga_activity_id,
+               ga.title        as ga_title,
+               ga.min_group_size as ga_min_group_size,
+               ga.end_time     as ga_end_time,
+               gt.min_price    as ga_best_price
+        from mall_product p
+        left join mall_flash_sale fs
+            on fs.product_id = p.product_id
+           and fs.status = '1'
+           and now() between fs.start_time and fs.end_time
+        left join mall_group_activity ga
+            on ga.product_id = p.product_id
+           and ga.status = '0'
+           and now() between ga.start_time and ga.end_time
+        left join (
+            select activity_id, min(price) as min_price
+            from mall_group_tier
+            group by activity_id
+        ) gt on gt.activity_id = ga.activity_id
     </sql>
 
     <select id="selectProductList" parameterType="com.ruoyi.mall.domain.MallProduct" resultMap="MallProductResult">
         <include refid="selectProductVo"/>
         <where>
-            and del_flag = '0'
-            <if test="categoryId != null">AND category_id = #{categoryId}</if>
-            <if test="name != null and name != ''">AND name like concat('%', #{name}, '%')</if>
-            <if test="status != null and status != ''">AND status = #{status}</if>
+            and p.del_flag = '0'
+            <if test="categoryId != null">AND p.category_id = #{categoryId}</if>
+            <if test="name != null and name != ''">AND p.name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''">AND p.status = #{status}</if>
         </where>
-        order by sort asc, create_time desc
+        order by p.sort asc, p.create_time desc
     </select>
 
     <select id="selectProductById" parameterType="Long" resultMap="MallProductResult">
         <include refid="selectProductVo"/>
-        where product_id = #{productId} and del_flag = '0'
+        where p.product_id = #{productId} and p.del_flag = '0'
     </select>
 
     <insert id="insertProduct" parameterType="com.ruoyi.mall.domain.MallProduct" useGeneratedKeys="true" keyProperty="productId">

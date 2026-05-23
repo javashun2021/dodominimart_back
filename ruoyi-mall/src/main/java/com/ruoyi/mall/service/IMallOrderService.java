@@ -1,5 +1,6 @@
 package com.ruoyi.mall.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
@@ -25,4 +26,7 @@ public interface IMallOrderService
 
     /** 会员取消订单（仅 PENDING 状态可取消） */
     int cancelOrder(Long orderId, Long memberId, String reason);
+
+    /** 标记订单支付成功（GCash 回调时调用） */
+    void markOrderPaid(String orderNo, String paymentNo, BigDecimal amount);
 }

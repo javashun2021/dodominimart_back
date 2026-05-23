@@ -7,7 +7,7 @@ ruoyi:
   # 版权年份
   copyrightYear: 2019
   # 文件上传路径
-  profile: /Users/song/ruoyi/upload
+  profile: D:/ruoyi/uploadPath/
   # 获取ip地址开关
   addressEnabled: true
 
@@ -130,8 +130,20 @@ mall:
     # token 有效期（秒），默认 30 天
     expiration: 2592000
   google:
-    # Google OAuth2 Client ID（用于验证 idToken 的 aud 字段）
-    clientId: 600271771039-s6l4o1pctc5t4pq4gg0qo7l0h6oi2l22.apps.googleusercontent.com
+    # Google OAuth2 Client ID 列表（支持多个，用逗号分隔）
+    # Android/Web 用 Web application 类型；iOS 用 iOS 类型
+    #clientId: 600271771039-p4bmnq6r0np6bignuiqempniupeb7oqt.apps.googleusercontent.com
+    # Android/Web 用 Web application 类型；iOS 用 iOS 类型
+    clientIds: 600271771039-arouc217r401svt1q2grf409lbj70860.apps.googleusercontent.com,600271771039-p4bmnq6r0np6bignuiqempniupeb7oqt.apps.googleusercontent.com
+  gcash:
+    # GCash for Business API 配置（正式上线前替换为真实值）
+    api-base-url: https://api.gcash.com/
+    api-key: ${GCASH_API_KEY:your-gcash-api-key}
+    api-secret: ${GCASH_API_SECRET:your-gcash-api-secret}
+    merchant-id: ${GCASH_MERCHANT_ID:your-merchant-id}
+    # 支付回调地址（需能被 GCash 服务器访问，本地开发可用 ngrok）
+    callback-url: ${GCASH_CALLBACK_URL:http://your-domain/api/v1/payment/callback}
+
 
 # 代码生成
 gen:

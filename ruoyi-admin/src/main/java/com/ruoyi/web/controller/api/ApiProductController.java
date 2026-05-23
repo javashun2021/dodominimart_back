@@ -11,7 +11,9 @@ import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallCategory;
 import com.ruoyi.mall.domain.MallProduct;
+import com.ruoyi.mall.domain.MallFlashSale;
 import com.ruoyi.mall.service.IMallCategoryService;
+import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallProductService;
 
 /**
@@ -29,6 +31,9 @@ public class ApiProductController extends BaseApiController
 
     @Autowired
     private IMallProductService productService;
+
+    @Autowired
+    private IMallFlashSaleService flashSaleService;
 
     /** 分类列表 */
     @GetMapping("/categories")
@@ -58,6 +63,16 @@ public class ApiProductController extends BaseApiController
         query.setStatus("0");
         List<MallProduct> list = productService.selectProductList(query);
         return pageResult(new PageInfo<>(list));
+    }
+
+    /** 当前进行中的限时优惠列表（首页 Banner 用） */
+    @GetMapping("/flash-sales")
+    public AjaxResult listFlashSales()
+    {
+        MallFlashSale query = new MallFlashSale();
+        query.setStatus("1");
+        List<MallFlashSale> list = flashSaleService.selectFlashSaleList(query);
+        return AjaxResult.success("ok").put("data", list);
     }
 
     /** 商品详情 */

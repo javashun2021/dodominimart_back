@@ -12,10 +12,15 @@ import com.ruoyi.mall.domain.MallAddress;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallProduct;
+import java.math.BigDecimal;
+import com.ruoyi.mall.domain.MallPaymentRecord;
 import com.ruoyi.mall.mapper.MallAddressMapper;
+import com.ruoyi.mall.mapper.MallFlashSaleMapper;
 import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
+import com.ruoyi.mall.mapper.MallPaymentRecordMapper;
 import com.ruoyi.mall.mapper.MallProductMapper;
+import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallOrderService;
 
 @Service
@@ -29,6 +34,10 @@ public class MallOrderServiceImpl implements IMallOrderService
     private MallProductMapper productMapper;
     @Autowired
     private MallAddressMapper addressMapper;
+    @Autowired
+    private IMallFlashSaleService flashSaleService;
+    @Autowired
+    private MallPaymentRecordMapper paymentRecordMapper;
 
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
@@ -90,8 +99,23 @@ public class MallOrderServiceImpl implements IMallOrderService
             }
             item.setProductName(product.getName());
             item.setProductImage(product.getImageUrl());
-            item.setPrice(product.getPrice());
-            item.setSubtotal(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+
+            // 检查限时优惠，有则使用活动价并占库存
+            BigDecimal unitPrice = product.getPrice();
+            com.ruoyi.mall.domain.MallFlashSale flashSale =
+                    flashSaleService.selectActiveByProductId(product.getProductId());
+            if (flashSale != null)
+            {
+                boolean occupied = flashSaleService.occupyStock(flashSale.getSaleId(), item.getQuantity());
+                if (!occupied)
+                {
+                    throw new RuntimeException("Flash sale stock sold out: " + product.getName());
+                }
+                unitPrice = flashSale.getFlashPrice();
+            }
+
+            item.setPrice(unitPrice);
+            item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
             total = total.add(item.getSubtotal());
 
             // 扣减库存
@@ -147,6 +171,35 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setCancelReason(reason != null ? reason : "");
         order.setUpdateTime(new Date());
         return orderMapper.updateOrder(order);
+    }
+
+    @Override
+    @Transactional
+    public void markOrderPaid(String orderNo, String paymentNo, BigDecimal amount)
+    {
+        MallOrder order = orderMapper.selectOrderByOrderNo(orderNo);
+        if (order == null)
+        {
+            throw new RuntimeException("Order not found: " + orderNo);
+        }
+        if ("PAID".equals(order.getPaymentStatus()))
+        {
+            return; // 幂等：已支付则忽略重复回调
+        }
+        order.setPaymentStatus("PAID");
+        order.setPaymentNo(paymentNo);
+        order.setPaidAmount(amount);
+        order.setPaymentTime(new Date());
+        order.setStatus("1"); // 支付成功自动已确认
+        order.setUpdateTime(new Date());
+        orderMapper.updateOrder(order);
+
+        // 更新支付流水状态
+        MallPaymentRecord record = paymentRecordMapper.selectByOrderId(order.getOrderId());
+        if (record != null)
+        {
+            paymentRecordMapper.updateStatus(record.getRecordId(), "SUCCESS", null);
+        }
     }
 
     private String generateOrderNo()
