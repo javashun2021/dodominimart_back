@@ -1,5 +1,6 @@
 package com.ruoyi.mall.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.mall.domain.MallPaymentRecord;
 
 public interface MallPaymentRecordMapper
@@ -10,5 +11,5 @@ public interface MallPaymentRecordMapper
 
     MallPaymentRecord selectByOrderId(Long orderId);
 
-    int updateStatus(Long recordId, String status, String gcashRaw);
+    int updateStatus(@Param("recordId") Long recordId, @Param("status") String status, @Param("gcashRaw") String gcashRaw);
 }
