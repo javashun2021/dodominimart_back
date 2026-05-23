@@ -25,8 +25,21 @@
 <div class="container-div">
     <div class="row">
         <div class="col-sm-12">
+            <!-- 搜索栏 -->
+            <div style="margin-top:12px;margin-bottom:12px;background:#fff;padding:12px 16px;border-radius:4px;border:1px solid #e3e3e3;">
+                <span style="font-size:14px;">Runner 会员ID：</span>
+                <input type="number" id="search-runner-id" placeholder="输入会员ID精确筛选"
+                       style="width:200px;height:32px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;margin:0 8px;"/>
+                <button class="btn btn-primary btn-sm" onclick="loadData()">
+                    <i class="fa fa-search"></i>&nbsp;搜索
+                </button>
+                <button class="btn btn-default btn-sm" onclick="$('#search-runner-id').val('');loadData();">
+                    <i class="fa fa-refresh"></i>&nbsp;重置
+                </button>
+            </div>
+
             <!-- 顶部工具栏 -->
-            <div class="toolbar-bar" style="margin-top:12px;">
+            <div class="toolbar-bar">
                 <button class="btn btn-success btn-sm" id="btn-batch-settle" onclick="batchSettle()">
                     <i class="fa fa-check-square-o"></i>&nbsp;批量结算
                 </button>
@@ -64,7 +77,9 @@
         $('#settle-list-container').html(
             '<div class="empty-tip" id="loading-tip"><i class="fa fa-spinner fa-spin fa-2x"></i><br>加载中...</div>'
         );
-        $.get(prefix + '/unsettled', function(res) {
+        var runnerId = $.trim($('#search-runner-id').val());
+        var url = prefix + '/unsettled' + (runnerId ? '?runnerMemberId=' + runnerId : '');
+        $.get(url, function(res) {
             if (res.code !== 0) {
                 $.modal.alertWarning('加载失败：' + res.msg);
                 return;

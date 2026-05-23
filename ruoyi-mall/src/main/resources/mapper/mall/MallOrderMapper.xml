@@ -96,12 +96,13 @@
         where order_id = #{orderId}
     </update>
 
-    <select id="selectUnsettledRunnerOrders" resultMap="MallOrderResult">
+    <select id="selectUnsettledRunnerOrders" parameterType="Long" resultMap="MallOrderResult">
         <include refid="selectOrderVo"/>
         where payment_method = 'GCASH'
           and runner_member_id is not null
           and runner_fee_settled = '0'
           and status = '3'
+          <if test="_parameter != null">and runner_member_id = #{runnerMemberId}</if>
         order by runner_member_id, create_time desc
     </select>
 

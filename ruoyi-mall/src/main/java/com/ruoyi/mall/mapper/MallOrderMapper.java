@@ -25,7 +25,7 @@ public interface MallOrderMapper
     int updateRunnerInfo(MallOrder order);
 
     /** 查询未结算的 GCash 跑腿订单（payment_method=GCASH, runner_member_id IS NOT NULL, runner_fee_settled=0, status=3） */
-    List<MallOrder> selectUnsettledRunnerOrders();
+    List<MallOrder> selectUnsettledRunnerOrders(@org.apache.ibatis.annotations.Param("runnerMemberId") Long runnerMemberId);
 
     /** 批量标记跑腿费已结算 */
     int settleRunnerFee(List<Long> orderIds);

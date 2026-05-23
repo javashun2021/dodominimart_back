@@ -86,9 +86,9 @@ public class MallRunnerController extends BaseController
     @RequiresPermissions("mall:runner:settle")
     @GetMapping("/unsettled")
     @ResponseBody
-    public AjaxResult unsettled()
+    public AjaxResult unsettled(@org.springframework.web.bind.annotation.RequestParam(required = false) Long runnerMemberId)
     {
-        List<Map<String, Object>> list = runnerService.getUnsettledOrders();
+        List<Map<String, Object>> list = runnerService.getUnsettledOrders(runnerMemberId);
         return AjaxResult.success().put("data", list);
     }
 

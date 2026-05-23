@@ -182,9 +182,9 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     // ---- Admin：结算 ----
 
     @Override
-    public List<Map<String, Object>> getUnsettledOrders()
+    public List<Map<String, Object>> getUnsettledOrders(Long runnerMemberId)
     {
-        List<MallOrder> orders = orderMapper.selectUnsettledRunnerOrders();
+        List<MallOrder> orders = orderMapper.selectUnsettledRunnerOrders(runnerMemberId);
         Map<Long, Map<String, Object>> grouped = new java.util.LinkedHashMap<>();
         for (MallOrder o : orders)
         {

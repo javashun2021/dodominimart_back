@@ -49,7 +49,7 @@ public interface IMallRunnerService
     // ---- Admin：结算 ----
 
     /** 未结算的 GCash 跑腿订单，按 runner 分组 */
-    List<Map<String, Object>> getUnsettledOrders();
+    List<Map<String, Object>> getUnsettledOrders(Long runnerMemberId);
 
     /** 批量标记已结算 */
     void settleRunnerFee(List<Long> orderIds);
