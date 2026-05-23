@@ -1,11 +1,16 @@
 package com.ruoyi.web.controller.mall;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +32,15 @@ public class MallFlashSaleController extends BaseController
 
     @Autowired
     private IMallFlashSaleService flashSaleService;
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder)
+    {
+        // datetime-local 格式：2026-05-23T19:39
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+        sdf.setLenient(false);
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(sdf, true));
+    }
 
     @RequiresPermissions("mall:flashsale:view")
     @GetMapping
