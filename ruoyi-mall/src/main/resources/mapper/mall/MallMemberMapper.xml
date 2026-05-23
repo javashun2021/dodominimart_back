@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallMemberMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallMember" id="MallMemberResult">
+        <id     property="memberId"     column="member_id"    />
+        <result property="googleId"     column="google_id"    />
+        <result property="appleId"      column="apple_id"     />
+        <result property="email"        column="email"        />
+        <result property="nickName"     column="nick_name"    />
+        <result property="avatarUrl"    column="avatar_url"   />
+        <result property="phone"        column="phone"        />
+        <result property="status"       column="status"       />
+        <result property="createTime"   column="create_time"  />
+        <result property="updateTime"   column="update_time"  />
+    </resultMap>
+
+    <sql id="selectMemberVo">
+        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, create_time, update_time
+        from mall_member
+    </sql>
+
+    <select id="selectMemberList" parameterType="com.ruoyi.mall.domain.MallMember" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/>
+        <where>
+            <if test="email != null and email != ''">AND email like concat('%', #{email}, '%')</if>
+            <if test="nickName != null and nickName != ''">AND nick_name like concat('%', #{nickName}, '%')</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectMemberById" parameterType="Long" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where member_id = #{memberId}
+    </select>
+
+    <select id="selectMemberByGoogleId" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where google_id = #{googleId}
+    </select>
+
+    <select id="selectMemberByAppleId" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where apple_id = #{appleId}
+    </select>
+
+    <select id="selectMemberByEmail" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where email = #{email}
+    </select>
+
+    <insert id="insertMember" parameterType="com.ruoyi.mall.domain.MallMember" useGeneratedKeys="true" keyProperty="memberId">
+        insert into mall_member(google_id, apple_id, email, nick_name, avatar_url, phone, status, create_time)
+        values(#{googleId}, #{appleId}, #{email}, #{nickName}, #{avatarUrl}, #{phone}, #{status}, #{createTime})
+    </insert>
+
+    <update id="updateMember" parameterType="com.ruoyi.mall.domain.MallMember">
+        update mall_member
+        <set>
+            <if test="nickName != null">nick_name = #{nickName},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = #{updateTime}
+        </set>
+        where member_id = #{memberId}
+    </update>
+
+</mapper>

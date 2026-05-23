@@ -122,8 +122,19 @@ xss:
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
 
+# 商城 JWT 配置
+mall:
+  jwt:
+    # 签名密钥（生产环境请换成 32 位以上随机字符串）
+    secret: dodominimart-jwt-secret-key-2025
+    # token 有效期（秒），默认 30 天
+    expiration: 2592000
+  google:
+    # Google OAuth2 Client ID（用于验证 idToken 的 aud 字段）
+    clientId: 600271771039-s6l4o1pctc5t4pq4gg0qo7l0h6oi2l22.apps.googleusercontent.com
+
 # 代码生成
-gen: 
+gen:
   # 作者
   author: ruoyi
   # 默认生成包路径 system 需改成自己的模块名称 如 system monitor tool

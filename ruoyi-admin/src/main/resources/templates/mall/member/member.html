@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="member-form">
+                <div class="select-list">
+                    <ul>
+                        <li>邮箱：<input type="text" name="email"/></li>
+                        <li>昵称：<input type="text" name="nickName"/></li>
+                        <li>
+                            状态：
+                            <select name="status">
+                                <option value="">全部</option>
+                                <option value="0">正常</option>
+                                <option value="1">禁用</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script>
+    var prefix = ctx + "mall/member";
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "会员",
+            columns: [
+                {checkbox: true},
+                {field: 'memberId',   title: '会员ID'},
+                {field: 'avatarUrl',  title: '头像', formatter: function(v) {
+                    return v ? '<img src="' + v + '" height="36" style="border-radius:50%">' : '<i class="fa fa-user-circle fa-2x text-muted"></i>';
+                }},
+                {field: 'nickName',   title: '昵称'},
+                {field: 'email',      title: '邮箱'},
+                {field: 'phone',      title: '手机号'},
+                {field: 'status',     title: '状态', align: 'center',
+                    formatter: function(v) {
+                        return v === '0'
+                            ? '<span class="badge badge-primary">正常</span>'
+                            : '<span class="badge badge-danger">禁用</span>';
+                    }
+                },
+                {field: 'createTime', title: '注册时间', sortable: true}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

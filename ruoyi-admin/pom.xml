@@ -45,6 +45,13 @@
             <artifactId>ruoyi-framework</artifactId>
             <version>${ruoyi.version}</version>
         </dependency>
+
+        <!-- 商城模块-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-mall</artifactId>
+            <version>${ruoyi.version}</version>
+        </dependency>
         
     </dependencies>
 

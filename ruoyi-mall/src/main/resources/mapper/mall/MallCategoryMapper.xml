@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallCategoryMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallCategory" id="MallCategoryResult">
+        <id     property="categoryId"   column="category_id"  />
+        <result property="name"         column="name"         />
+        <result property="iconUrl"      column="icon_url"     />
+        <result property="sort"         column="sort"         />
+        <result property="status"       column="status"       />
+        <result property="createBy"     column="create_by"    />
+        <result property="createTime"   column="create_time"  />
+        <result property="updateBy"     column="update_by"    />
+        <result property="updateTime"   column="update_time"  />
+    </resultMap>
+
+    <sql id="selectCategoryVo">
+        select category_id, name, icon_url, sort, status, create_by, create_time, update_by, update_time
+        from mall_category
+    </sql>
+
+    <select id="selectCategoryList" parameterType="com.ruoyi.mall.domain.MallCategory" resultMap="MallCategoryResult">
+        <include refid="selectCategoryVo"/>
+        <where>
+            <if test="name != null and name != ''">AND name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        order by sort asc
+    </select>
+
+    <select id="selectCategoryById" parameterType="Integer" resultMap="MallCategoryResult">
+        <include refid="selectCategoryVo"/>
+        where category_id = #{categoryId}
+    </select>
+
+    <insert id="insertCategory" parameterType="com.ruoyi.mall.domain.MallCategory" useGeneratedKeys="true" keyProperty="categoryId">
+        insert into mall_category(name, icon_url, sort, status, create_by, create_time)
+        values(#{name}, #{iconUrl}, #{sort}, #{status}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateCategory" parameterType="com.ruoyi.mall.domain.MallCategory">
+        update mall_category
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="iconUrl != null">icon_url = #{iconUrl},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where category_id = #{categoryId}
+    </update>
+
+    <delete id="deleteCategoryById" parameterType="Integer">
+        delete from mall_category where category_id = #{categoryId}
+    </delete>
+
+</mapper>

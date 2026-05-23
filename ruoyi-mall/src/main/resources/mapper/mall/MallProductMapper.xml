@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallProductMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallProduct" id="MallProductResult">
+        <id     property="productId"    column="product_id"   />
+        <result property="categoryId"   column="category_id"  />
+        <result property="name"         column="name"         />
+        <result property="description"  column="description"  />
+        <result property="price"        column="price"        />
+        <result property="stock"        column="stock"        />
+        <result property="imageUrl"     column="image_url"    />
+        <result property="status"       column="status"       />
+        <result property="sort"         column="sort"         />
+        <result property="delFlag"      column="del_flag"     />
+        <result property="createBy"     column="create_by"    />
+        <result property="createTime"   column="create_time"  />
+        <result property="updateBy"     column="update_by"    />
+        <result property="updateTime"   column="update_time"  />
+    </resultMap>
+
+    <sql id="selectProductVo">
+        select product_id, category_id, name, description, price, stock, image_url, status, sort,
+               del_flag, create_by, create_time, update_by, update_time
+        from mall_product
+    </sql>
+
+    <select id="selectProductList" parameterType="com.ruoyi.mall.domain.MallProduct" resultMap="MallProductResult">
+        <include refid="selectProductVo"/>
+        <where>
+            and del_flag = '0'
+            <if test="categoryId != null">AND category_id = #{categoryId}</if>
+            <if test="name != null and name != ''">AND name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        order by sort asc, create_time desc
+    </select>
+
+    <select id="selectProductById" parameterType="Long" resultMap="MallProductResult">
+        <include refid="selectProductVo"/>
+        where product_id = #{productId} and del_flag = '0'
+    </select>
+
+    <insert id="insertProduct" parameterType="com.ruoyi.mall.domain.MallProduct" useGeneratedKeys="true" keyProperty="productId">
+        insert into mall_product(category_id, name, description, price, stock, image_url, status, sort,
+                                 del_flag, create_by, create_time)
+        values(#{categoryId}, #{name}, #{description}, #{price}, #{stock}, #{imageUrl}, #{status}, #{sort},
+               #{delFlag}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateProduct" parameterType="com.ruoyi.mall.domain.MallProduct">
+        update mall_product
+        <set>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where product_id = #{productId}
+    </update>
+
+    <update id="deleteProductById" parameterType="Long">
+        update mall_product set del_flag = '2' where product_id = #{productId}
+    </update>
+
+    <update id="deleteProductByIds" parameterType="Long">
+        update mall_product set del_flag = '2' where product_id in
+        <foreach collection="array" item="productId" open="(" separator="," close=")">
+            #{productId}
+        </foreach>
+    </update>
+
+</mapper>

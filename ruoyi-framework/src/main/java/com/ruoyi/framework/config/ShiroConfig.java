@@ -17,16 +17,19 @@ import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.CookieRememberMeManager;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.framework.jwt.JwtUtils;
 import com.ruoyi.framework.shiro.realm.UserRealm;
 import com.ruoyi.framework.shiro.session.OnlineSessionDAO;
 import com.ruoyi.framework.shiro.session.OnlineSessionFactory;
 import com.ruoyi.framework.shiro.web.filter.LogoutFilter;
 import com.ruoyi.framework.shiro.web.filter.captcha.CaptchaValidateFilter;
+import com.ruoyi.framework.shiro.web.filter.jwt.JwtAuthFilter;
 import com.ruoyi.framework.shiro.web.filter.online.OnlineSessionFilter;
 import com.ruoyi.framework.shiro.web.filter.sync.SyncOnlineSessionFilter;
 import com.ruoyi.framework.shiro.web.session.OnlineWebSessionManager;
@@ -74,6 +77,9 @@ public class ShiroConfig
     // 设置Cookie的过期时间，秒为单位
     @Value("${shiro.cookie.maxAge}")
     private int maxAge;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     // 登录地址
     @Value("${shiro.user.loginUrl}")
@@ -285,12 +291,20 @@ public class ShiroConfig
         // 系统权限列表
         // filterChainDefinitionMap.putAll(SpringUtils.getBean(IMenuService.class).selectPermsAll());
 
+        // App API：auth 和 config 公开，其余 /api/** 需要 JWT
+        filterChainDefinitionMap.put("/api/v1/auth/**", "anon");
+        filterChainDefinitionMap.put("/api/v1/config", "anon");
+        filterChainDefinitionMap.put("/api/v1/products/**", "anon");
+        filterChainDefinitionMap.put("/api/v1/categories", "anon");
+        filterChainDefinitionMap.put("/api/**", "jwtAuth");
+
         Map<String, Filter> filters = new LinkedHashMap<>();
         filters.put("onlineSession", onlineSessionFilter());
         filters.put("syncOnlineSession", syncOnlineSessionFilter());
         filters.put("captchaValidate", captchaValidateFilter());
         // 注销成功，则跳转到指定页面
         filters.put("logout", logoutFilter());
+        filters.put("jwtAuth", jwtAuthFilter());
         shiroFilterFactoryBean.setFilters(filters);
 
         // 所有请求需要认证
@@ -355,6 +369,14 @@ public class ShiroConfig
         cookieRememberMeManager.setCookie(rememberMeCookie());
         cookieRememberMeManager.setCipherKey(Base64.decode("fCq+/xW488hMTCD+cmJ3aQ=="));
         return cookieRememberMeManager;
+    }
+
+    /**
+     * JWT 鉴权过滤器（/api/** 路径使用）
+     */
+    public JwtAuthFilter jwtAuthFilter()
+    {
+        return new JwtAuthFilter(jwtUtils);
     }
 
     /**
