@@ -24,6 +24,8 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.page.TableDataInfo;
 import com.ruoyi.framework.web.base.BaseController;
 import com.ruoyi.mall.domain.MallGroupActivity;
+import com.ruoyi.mall.domain.MallGroupMember;
+import com.ruoyi.mall.domain.MallGroupOrder;
 import com.ruoyi.mall.domain.MallGroupTier;
 import com.ruoyi.mall.service.IMallGroupService;
 
@@ -104,6 +106,34 @@ public class MallGroupActivityController extends BaseController
     public AjaxResult remove(Long activityId)
     {
         return toAjax(groupService.deleteActivityById(activityId));
+    }
+
+    // ---- 拼团单监控 ----
+
+    @RequiresPermissions("mall:group:view")
+    @GetMapping("/orders")
+    public String orders()
+    {
+        return prefix + "/orders";
+    }
+
+    @RequiresPermissions("mall:group:list")
+    @PostMapping("/orders/list")
+    @ResponseBody
+    public TableDataInfo orderList(MallGroupOrder query)
+    {
+        startPage();
+        return getDataTable(groupService.selectGroupOrderList(query));
+    }
+
+    @RequiresPermissions("mall:group:view")
+    @GetMapping("/orders/{groupOrderId}/members")
+    public String members(@PathVariable Long groupOrderId, ModelMap mmap)
+    {
+        mmap.put("groupOrderId", groupOrderId);
+        List<MallGroupMember> members = groupService.selectGroupMembers(groupOrderId);
+        mmap.put("members", members);
+        return prefix + "/members";
     }
 
     /** 将前端传入的 tiersJson（格式：minQty,maxQty,price;...）解析为 MallGroupTier 列表 */

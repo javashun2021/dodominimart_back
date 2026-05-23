@@ -44,6 +44,18 @@ public class MallGroupServiceImpl implements IMallGroupService
     @Autowired private com.ruoyi.mall.mapper.MallPaymentRecordMapper paymentRecordMapper;
 
     @Override
+    public List<MallGroupOrder> selectGroupOrderList(MallGroupOrder query)
+    {
+        return groupOrderMapper.selectGroupOrderList(query);
+    }
+
+    @Override
+    public List<MallGroupMember> selectGroupMembers(Long groupOrderId)
+    {
+        return memberMapper.selectMembersByGroupOrderId(groupOrderId);
+    }
+
+    @Override
     public List<MallGroupActivity> selectActivityList(MallGroupActivity query)
     {
         List<MallGroupActivity> list = activityMapper.selectActivityList(query);

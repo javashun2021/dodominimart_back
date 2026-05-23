@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="order-form">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            状态：
+                            <select name="status">
+                                <option value="">全部</option>
+                                <option value="0">拼团中</option>
+                                <option value="1">成功</option>
+                                <option value="2">失败</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/group";
+
+    var statusMap = {
+        '0': '<span class="badge" style="background:#f0ad4e">拼团中</span>',
+        '1': '<span class="badge badge-success">已成团</span>',
+        '2': '<span class="badge badge-default">已失败</span>'
+    };
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/orders/list",
+            modalName: "拼团单",
+            columns: [
+                {checkbox: true},
+                {field: 'inviteCode',    title: '邀请码'},
+                {field: 'activityTitle', title: '活动名称'},
+                {field: 'productName',   title: '商品'},
+                {field: 'currentSize',   title: '当前人数', align: 'center',
+                    formatter: function(v, row) {
+                        return '<b>' + v + '</b> / ' + row.minGroupSize;
+                    }
+                },
+                {field: 'currentPrice',  title: '当前档价(PHP)', align: 'right',
+                    formatter: function(v) { return v ? '₱' + v : '-'; }
+                },
+                {field: 'status',        title: '状态', align: 'center',
+                    formatter: function(v) { return statusMap[v] || v; }
+                },
+                {field: 'expireTime',    title: '过期时间'},
+                {field: 'createTime',    title: '创建时间'},
+                {title: '操作', align: 'center',
+                    formatter: function(v, row) {
+                        return '<a class="btn btn-info btn-xs" href="' + prefix + '/orders/' + row.groupOrderId + '/members"><i class="fa fa-users"></i> 查看成员</a>';
+                    }
+                }
+            ]
+        });
+    });
+</script>
+</body>
+</html>

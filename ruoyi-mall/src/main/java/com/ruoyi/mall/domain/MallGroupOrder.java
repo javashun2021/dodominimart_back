@@ -26,6 +26,10 @@ public class MallGroupOrder
     private List<MallGroupMember> members;
     /** 非DB：活动信息 */
     private MallGroupActivity activity;
+    /** 非DB：后台列表展示 */
+    private String activityTitle;
+    private String productName;
+    private Integer minGroupSize;
 
     public Long getGroupOrderId() { return groupOrderId; }
     public void setGroupOrderId(Long groupOrderId) { this.groupOrderId = groupOrderId; }
@@ -65,4 +69,13 @@ public class MallGroupOrder
 
     public MallGroupActivity getActivity() { return activity; }
     public void setActivity(MallGroupActivity activity) { this.activity = activity; }
+
+    public String getActivityTitle() { return activityTitle; }
+    public void setActivityTitle(String activityTitle) { this.activityTitle = activityTitle; }
+
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+
+    public Integer getMinGroupSize() { return minGroupSize; }
+    public void setMinGroupSize(Integer minGroupSize) { this.minGroupSize = minGroupSize; }
 }

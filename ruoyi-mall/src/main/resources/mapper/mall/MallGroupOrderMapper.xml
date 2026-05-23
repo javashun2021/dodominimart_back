@@ -15,15 +15,21 @@
         <result property="expireTime"        column="expire_time"         />
         <result property="successTime"       column="success_time"        />
         <result property="createTime"        column="create_time"         />
+        <result property="activityTitle"     column="activity_title"      />
+        <result property="productName"       column="product_name"        />
+        <result property="minGroupSize"      column="min_group_size"      />
     </resultMap>
 
     <select id="selectGroupOrderList" parameterType="com.ruoyi.mall.domain.MallGroupOrder" resultMap="GroupOrderResult">
-        select * from mall_group_order
+        select go.*, a.title as activity_title, a.min_group_size, p.name as product_name
+        from mall_group_order go
+        left join mall_group_activity a on a.activity_id = go.activity_id
+        left join mall_product p on p.product_id = go.product_id
         <where>
-            <if test="activityId != null">AND activity_id = #{activityId}</if>
-            <if test="status != null and status != ''">AND status = #{status}</if>
+            <if test="activityId != null">AND go.activity_id = #{activityId}</if>
+            <if test="status != null and status != ''">AND go.status = #{status}</if>
         </where>
-        order by create_time desc
+        order by go.create_time desc
     </select>
 
     <select id="selectGroupOrderById" parameterType="Long" resultMap="GroupOrderResult">
