@@ -148,3 +148,8 @@ INSERT INTO sys_menu VALUES(2060, '拼团查询', 2006, 1, '#', 'F', '0', 'mall:
 INSERT INTO sys_menu VALUES(2061, '拼团新增', 2006, 2, '#', 'F', '0', 'mall:group:add',    '#', 'admin', now(), 'admin', now(), '');
 INSERT INTO sys_menu VALUES(2062, '拼团修改', 2006, 3, '#', 'F', '0', 'mall:group:edit',   '#', 'admin', now(), 'admin', now(), '');
 INSERT INTO sys_menu VALUES(2063, '拼团删除', 2006, 4, '#', 'F', '0', 'mall:group:remove', '#', 'admin', now(), 'admin', now(), '');
+
+-- 拼团单监控菜单及按钮
+INSERT INTO sys_menu VALUES(2007, '拼团单监控', 2006, 1, '/mall/group/orders', 'C', '0', 'mall:group:order:view',    'fa fa-list-ul', 'admin', now(), 'admin', now(), '拼团单进度监控');
+INSERT INTO sys_menu VALUES(2064, '拼团单查询', 2007, 1, '#', 'F', '0', 'mall:group:order:list',    '#', 'admin', now(), 'admin', now(), '');
+INSERT INTO sys_menu VALUES(2065, '查看成员',   2007, 2, '#', 'F', '0', 'mall:group:order:members', '#', 'admin', now(), 'admin', now(), '');
