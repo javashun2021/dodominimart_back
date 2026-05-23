@@ -291,7 +291,18 @@ await storage.delete(key: 'jwt_token');
         "stock": 100,
         "imageUrl": "/profile/upload/2025/cola.jpg",
         "status": "0",
-        "sort": 1
+        "sort": 1,
+        "flashSaleId": 3,
+        "flashPrice": 25.00,
+        "flashSaleEndTime": "2025-06-01T23:59:59.000+08:00",
+        "flashStockLeft": 48,
+        "groupActivity": {
+          "activityId": 2,
+          "title": "家庭拼团享批发价",
+          "minGroupSize": 5,
+          "endTime": "2025-06-30T23:59:59.000+08:00",
+          "bestPrice": 20.00
+        }
       }
     ]
   }
@@ -304,10 +315,25 @@ await storage.delete(key: 'jwt_token');
 | `categoryId` | int | 所属分类 ID |
 | `name` | string | 商品名称 |
 | `description` | string | 描述，可能为 null |
-| `price` | decimal | 售价（PHP） |
+| `price` | decimal | 原价（PHP） |
 | `stock` | int | 当前库存 |
-| `imageUrl` | string | 商品图片 URL，可能为 null |
+| `imageUrl` | string | 商品图片相对路径，可能为 null |
 | `status` | string | `"0"` = 上架（接口只返回上架商品） |
+| `flashSaleId` | long | 当前限时优惠活动 ID，**无活动时为 null** |
+| `flashPrice` | decimal | 限时活动价，**无活动时为 null** |
+| `flashSaleEndTime` | datetime | 限时活动结束时间，无活动时为 null |
+| `flashStockLeft` | int | 限时活动剩余库存，无活动时为 null |
+| `groupActivity` | object | 当前进行中的拼团活动，**无活动时为 null** |
+| `groupActivity.activityId` | long | 拼团活动 ID |
+| `groupActivity.title` | string | 活动名称 |
+| `groupActivity.minGroupSize` | int | 最少成团人数 |
+| `groupActivity.endTime` | datetime | 活动截止时间 |
+| `groupActivity.bestPrice` | decimal | 最低档位单价 |
+
+> **展示逻辑建议：**
+> - `flashPrice != null` → 显示限时特价标签 + 倒计时
+> - `groupActivity != null` → 显示拼团入口按钮（最低价 `bestPrice`，成团需 `minGroupSize` 人）
+> - 两者均为 null → 按正常商品展示
 
 ---
 
@@ -315,7 +341,7 @@ await storage.delete(key: 'jwt_token');
 
 `GET /api/v1/products/{id}`
 
-**响应示例：**
+**响应示例：**（含限时优惠和拼团活动，字段含义同 3.2）
 
 ```json
 {
@@ -330,7 +356,18 @@ await storage.delete(key: 'jwt_token');
     "stock": 100,
     "imageUrl": "/profile/upload/2025/cola.jpg",
     "status": "0",
-    "sort": 1
+    "sort": 1,
+    "flashSaleId": 3,
+    "flashPrice": 25.00,
+    "flashSaleEndTime": "2025-06-01T23:59:59.000+08:00",
+    "flashStockLeft": 48,
+    "groupActivity": {
+      "activityId": 2,
+      "title": "家庭拼团享批发价",
+      "minGroupSize": 5,
+      "endTime": "2025-06-30T23:59:59.000+08:00",
+      "bestPrice": 20.00
+    }
   }
 }
 ```
@@ -343,17 +380,71 @@ await storage.delete(key: 'jwt_token');
 
 ---
 
+### 3.4 限时优惠列表
+
+`GET /api/v1/flash-sales`
+
+> 无需登录。返回当前 `status = "1"（进行中）` 且在有效时间内的所有活动。
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": [
+    {
+      "saleId": 3,
+      "productId": 1,
+      "productName": "可口可乐 330ml",
+      "title": "周末特惠",
+      "flashPrice": 25.00,
+      "stockLimit": 100,
+      "soldCount": 52,
+      "perLimit": 2,
+      "startTime": "2025-06-01T00:00:00.000+08:00",
+      "endTime": "2025-06-01T23:59:59.000+08:00",
+      "status": "1"
+    }
+  ]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `saleId` | long | 活动 ID |
+| `productId` | long | 商品 ID |
+| `productName` | string | 商品名称 |
+| `title` | string | 活动名称 |
+| `flashPrice` | decimal | 活动价（PHP） |
+| `stockLimit` | int | 活动限量总数 |
+| `soldCount` | int | 已售数量 |
+| `perLimit` | int | 每人限购数量 |
+| `startTime` | datetime | 开始时间 |
+| `endTime` | datetime | 结束时间 |
+| `status` | string | `"0"` 未开始，`"1"` 进行中，`"2"` 已结束 |
+
+---
+
 ## 四、订单接口（需 JWT）
 
 ### 订单状态说明
 
 | status | 含义 | 可进行的操作 |
 |--------|------|------------|
-| `"0"` | 待确认 | 会员可取消 |
+| `"0"` | 待确认 | 会员可取消；COD 等待骑手接单；GCASH 等待支付 |
 | `"1"` | 已确认 | — |
 | `"2"` | 配送中 | — |
 | `"3"` | 已完成 | — |
 | `"4"` | 已取消 | — |
+
+### 支付状态说明（paymentStatus）
+
+| paymentStatus | 含义 |
+|---------------|------|
+| `"UNPAID"` | 未支付（COD 默认；GCASH 待跳转） |
+| `"PAID"` | 已支付（GCash 回调确认后） |
+| `"REFUNDED"` | 已退款 |
 
 ---
 
@@ -361,13 +452,14 @@ await storage.delete(key: 'jwt_token');
 
 `POST /api/v1/orders`
 
-> 当前仅支持货到付款（COD），无需传支付方式。
+> 支持 COD（货到付款）和 GCASH（在线支付）。GCASH 下单后需调用 4.5 发起支付。
 
 **请求体：**
 
 ```json
 {
   "addressId": 3,
+  "paymentMethod": "GCASH",
   "remark": "请放在门口",
   "items": [
     { "productId": 1, "quantity": 2 },
@@ -379,6 +471,7 @@ await storage.delete(key: 'jwt_token');
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `addressId` | long | 是 | 收货地址 ID（必须属于当前会员） |
+| `paymentMethod` | string | 否 | `"COD"`（默认）或 `"GCASH"` |
 | `remark` | string | 否 | 备注 |
 | `items` | array | 是 | 商品列表，不能为空 |
 | `items[].productId` | long | 是 | 商品 ID |
@@ -546,6 +639,52 @@ await storage.delete(key: 'jwt_token');
 |------|-----|------|
 | 500 | `Order not found` | 订单不存在或不属于当前会员 |
 | 500 | `Order cannot be cancelled` | 订单状态不是待确认 |
+
+---
+
+### 4.5 发起 GCash 支付
+
+`POST /api/v1/orders/{id}/pay`
+
+> 需 JWT。仅 `paymentMethod = "GCASH"` 且 `paymentStatus = "UNPAID"` 的订单可调用。
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "msg": "Payment initiated",
+  "data": {
+    "paymentUrl": "https://api.gcash.com/checkout/xxx",
+    "orderId": 1001,
+    "amount": 105.00
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `paymentUrl` | string | GCash 支付跳转 URL，App 用 `launchUrl` 打开 |
+| `orderId` | long | 订单 ID |
+| `amount` | decimal | 支付金额（PHP） |
+
+**Flutter 示例：**
+
+```dart
+final res = await dio.post('/api/v1/orders/$orderId/pay');
+final url = res.data['data']['paymentUrl'];
+await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+// 支付完成后 GCash 会回调后端，订单状态自动更新
+// App 可轮询 GET /api/v1/orders/{id} 确认 paymentStatus == "PAID"
+```
+
+**失败情况：**
+
+| code | msg | 原因 |
+|------|-----|------|
+| 500 | `Order not found` | 订单不存在或不属于当前会员 |
+| 500 | `Order is not a GCASH order` | 支付方式不是 GCASH |
+| 500 | `Order already paid` | 已支付 |
 
 ---
 
@@ -736,7 +875,244 @@ await storage.delete(key: 'jwt_token');
 
 ---
 
-## 六、通用错误
+## 六、拼团接口
+
+拼团流程：**发起拼团 → 分享邀请码 → 好友加入 → 人数达标自动成团 → 每人生成独立订单**
+
+价格阶梯逻辑：每次有人加入，系统根据当前人数匹配最优档位，`currentPrice` 实时更新。成团时所有成员均按最终 `currentPrice` 计价。
+
+### 6.1 拼团活动列表（无需登录）
+
+`GET /api/v1/group-activities`
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": [
+    {
+      "activityId": 2,
+      "productId": 1,
+      "productName": "可口可乐 330ml",
+      "productImage": "/profile/upload/2025/cola.jpg",
+      "originalPrice": 35.00,
+      "title": "家庭拼团享批发价",
+      "minGroupSize": 5,
+      "durationHours": 24,
+      "startTime": "2025-06-01T00:00:00.000+08:00",
+      "endTime": "2025-06-30T23:59:59.000+08:00",
+      "status": "0",
+      "tiers": [
+        { "tierId": 1, "minQuantity": 2, "maxQuantity": 4, "price": 30.00 },
+        { "tierId": 2, "minQuantity": 5, "maxQuantity": 9, "price": 25.00 },
+        { "tierId": 3, "minQuantity": 10, "maxQuantity": null, "price": 20.00 }
+      ]
+    }
+  ]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `activityId` | long | 活动 ID |
+| `productId` | long | 商品 ID |
+| `productName` | string | 商品名称 |
+| `productImage` | string | 商品图片相对路径 |
+| `originalPrice` | decimal | 商品原价（PHP） |
+| `title` | string | 活动名称 |
+| `minGroupSize` | int | 最少成团人数 |
+| `durationHours` | int | 发起拼团后的有效时长（小时） |
+| `startTime` | datetime | 活动开始时间 |
+| `endTime` | datetime | 活动结束时间 |
+| `status` | string | `"0"` 进行中，`"1"` 已结束 |
+| `tiers` | array | 价格阶梯，按 `minQuantity` 升序排列 |
+| `tiers[].minQuantity` | int | 达到该档所需最少人数 |
+| `tiers[].maxQuantity` | int | 该档最多人数，**null = 无上限** |
+| `tiers[].price` | decimal | 该档单价（PHP） |
+
+---
+
+### 6.2 发起拼团（需 JWT）
+
+`POST /api/v1/group-orders`
+
+**请求体：**
+
+```json
+{
+  "activityId": 2,
+  "quantity": 3,
+  "addressId": 5
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `activityId` | long | 是 | 拼团活动 ID |
+| `quantity` | int | 否 | 本人购买数量，默认 `1` |
+| `addressId` | long | 否 | 成团后自动创建订单时使用的收货地址 ID |
+
+**成功响应：**
+
+```json
+{
+  "code": 0,
+  "msg": "Group created",
+  "data": {
+    "groupOrderId": 100,
+    "activityId": 2,
+    "productId": 1,
+    "inviteCode": "AB3K7QZ",
+    "currentSize": 1,
+    "currentPrice": 30.00,
+    "status": "0",
+    "expireTime": "2025-06-02T10:00:00.000+08:00",
+    "createTime": "2025-06-01T10:00:00.000+08:00"
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `groupOrderId` | long | 拼团单 ID |
+| `inviteCode` | string | **邀请码**（7位大写字母+数字），用于生成分享链接和好友加入 |
+| `currentSize` | int | 当前参与人数 |
+| `currentPrice` | decimal | 当前档位单价（PHP） |
+| `status` | string | `"0"` 拼团中，`"1"` 成功，`"2"` 失败 |
+| `expireTime` | datetime | 拼团截止时间（createTime + durationHours） |
+
+**失败情况：**
+
+| code | msg | 原因 |
+|------|-----|------|
+| 500 | `Group activity is not available` | 活动不存在或已结束 |
+| 500 | `Activity is not in valid time range` | 当前时间不在活动期间 |
+
+---
+
+### 6.3 团详情（无需登录，用于分享页）
+
+`GET /api/v1/group-orders/{inviteCode}`
+
+> 好友收到分享链接后，用邀请码查看团状态和成员列表。
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": {
+    "groupOrderId": 100,
+    "inviteCode": "AB3K7QZ",
+    "currentSize": 3,
+    "currentPrice": 30.00,
+    "status": "0",
+    "expireTime": "2025-06-02T10:00:00.000+08:00",
+    "members": [
+      {
+        "memberId": 1,
+        "quantity": 2,
+        "joinedTime": "2025-06-01T10:00:00.000+08:00",
+        "nickName": "张三",
+        "avatarUrl": "https://lh3.googleusercontent.com/..."
+      }
+    ],
+    "activity": {
+      "activityId": 2,
+      "title": "家庭拼团享批发价",
+      "minGroupSize": 5,
+      "endTime": "2025-06-30T23:59:59.000+08:00",
+      "tiers": [
+        { "tierId": 1, "minQuantity": 2, "maxQuantity": 4, "price": 30.00 },
+        { "tierId": 2, "minQuantity": 5, "maxQuantity": 9, "price": 25.00 },
+        { "tierId": 3, "minQuantity": 10, "maxQuantity": null, "price": 20.00 }
+      ]
+    }
+  }
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `members` | 当前参与成员列表 |
+| `members[].nickName` | 成员昵称（来自 Google 账号） |
+| `activity.tiers` | 完整价格阶梯，App 可展示进度条（当前人数 vs 各档位） |
+
+**失败情况：**
+
+| code | msg | 原因 |
+|------|-----|------|
+| 500 | `Group not found` | 邀请码无效 |
+
+---
+
+### 6.4 加入拼团（需 JWT）
+
+`POST /api/v1/group-orders/{inviteCode}/join`
+
+**请求体：**
+
+```json
+{
+  "quantity": 2,
+  "addressId": 5
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `quantity` | int | 否 | 本人购买数量，默认 `1` |
+| `addressId` | long | 否 | 成团后创建订单时使用的收货地址 ID |
+
+**成功响应：**（同 6.3 团详情，返回加入后的最新状态）
+
+若加入后人数 ≥ `minGroupSize`，`status` 直接变为 `"1"`（成功），系统自动为每位成员创建 `mall_order`，可通过订单接口查看。
+
+**失败情况：**
+
+| code | msg | 原因 |
+|------|-----|------|
+| 500 | `Group not found` | 邀请码无效 |
+| 500 | `Group is no longer active` | 拼团已成功或失败 |
+| 500 | `Group has expired` | 超过截止时间 |
+| 500 | `Already joined this group` | 已加入过该拼团 |
+
+---
+
+### 6.5 我的拼团列表（需 JWT）
+
+`GET /api/v1/group-orders/my`
+
+**响应示例：**
+
+```json
+{
+  "code": 0,
+  "msg": "ok",
+  "data": [
+    {
+      "groupOrderId": 100,
+      "inviteCode": "AB3K7QZ",
+      "productId": 1,
+      "currentSize": 5,
+      "currentPrice": 25.00,
+      "status": "1",
+      "expireTime": "2025-06-02T10:00:00.000+08:00",
+      "successTime": "2025-06-01T14:30:00.000+08:00",
+      "members": [ ... ]
+    }
+  ]
+}
+```
+
+> `status = "1"` 且 `successTime` 不为 null 表示已成团，关联的 `mall_order` 已自动创建，可去订单列表查看。
+
+---
+
+## 七、通用错误
 
 ### 401 — 未登录 / Token 无效
 
@@ -808,10 +1184,17 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 商品 | GET | `/api/v1/categories` | 否 |
 | 商品 | GET | `/api/v1/products` | 否 |
 | 商品 | GET | `/api/v1/products/{id}` | 否 |
+| 限时优惠 | GET | `/api/v1/flash-sales` | 否 |
+| 拼团 | GET | `/api/v1/group-activities` | 否 |
+| 拼团 | GET | `/api/v1/group-orders/{inviteCode}` | 否 |
 | 订单 | POST | `/api/v1/orders` | **是** |
 | 订单 | GET | `/api/v1/orders` | **是** |
 | 订单 | GET | `/api/v1/orders/{id}` | **是** |
 | 订单 | POST | `/api/v1/orders/{id}/cancel` | **是** |
+| 订单 | POST | `/api/v1/orders/{id}/pay` | **是** |
+| 拼团 | POST | `/api/v1/group-orders` | **是** |
+| 拼团 | GET | `/api/v1/group-orders/my` | **是** |
+| 拼团 | POST | `/api/v1/group-orders/{inviteCode}/join` | **是** |
 | 会员 | GET | `/api/v1/member/profile` | **是** |
 | 会员 | PUT | `/api/v1/member/profile` | **是** |
 | 会员 | GET | `/api/v1/member/addresses` | **是** |
