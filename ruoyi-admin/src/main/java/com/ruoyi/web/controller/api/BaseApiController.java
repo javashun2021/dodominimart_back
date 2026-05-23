@@ -1,9 +1,11 @@
 package com.ruoyi.web.controller.api;
 
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.base.AjaxResult;
+import com.ruoyi.framework.jwt.JwtUtils;
 import com.ruoyi.framework.shiro.web.filter.jwt.JwtAuthFilter;
 
 /**
@@ -11,14 +13,28 @@ import com.ruoyi.framework.shiro.web.filter.jwt.JwtAuthFilter;
  */
 public abstract class BaseApiController
 {
+    @Autowired
+    private JwtUtils jwtUtils;
+
     protected Long getCurrentMemberId(HttpServletRequest request)
     {
+        // 正常路径：JwtAuthFilter 已解析并写入 attribute
         Object memberId = request.getAttribute(JwtAuthFilter.ATTR_MEMBER_ID);
-        if (memberId == null)
+        if (memberId != null)
         {
-            throw new RuntimeException("Not authenticated");
+            return (Long) memberId;
         }
-        return (Long) memberId;
+        // 兜底：请求经过 Shiro anon 路由（如 POST 与 GET 共享同一 URL），直接从 header 解析
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer "))
+        {
+            String token = header.substring(7).trim();
+            if (jwtUtils.validateToken(token))
+            {
+                return jwtUtils.getMemberIdFromToken(token);
+            }
+        }
+        throw new RuntimeException("Not authenticated");
     }
 
     protected void startPage(int pageNum, int pageSize)

@@ -1059,6 +1059,7 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   "data": {
     "groupOrderId": 100,
     "inviteCode": "AB3K7QZ",
+    "initiatorMemberId": 1,
     "currentSize": 3,
     "currentPrice": 30.00,
     "status": "0",
@@ -1093,9 +1094,25 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 | 字段 | 说明 |
 |------|------|
+| `initiatorMemberId` | 发起人的会员 ID |
 | `members` | 当前参与成员列表 |
 | `members[].nickName` | 成员昵称（来自 Google 账号） |
 | `activity.tiers` | 完整价格阶梯，App 可展示进度条（当前人数 vs 各档位） |
+
+**App 端按钮显示逻辑：**
+
+```dart
+final myMemberId = ...; // 登录时保存的 memberId，未登录为 null
+final isInitiator = myMemberId != null &&
+    myMemberId == group['initiatorMemberId'];
+final canClose = isInitiator &&
+    group['status'] == '0' &&
+    group['currentSize'] >= group['activity']['minGroupSize'];
+
+// 按钮展示规则：
+// isInitiator == true  → 只显示 "Close & Complete Group Buy"（canClose 时可点击）
+// isInitiator == false → 只显示 "Join Group Buy"（status == '0' 且未加入时可点击）
+```
 
 **失败情况：**
 
@@ -1294,7 +1311,246 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 ---
 
-## 七、通用错误
+## 七、跑腿接口
+
+跑腿功能允许社区会员申请成为 runner，接取已确认订单帮忙配送，送达后顾客现金支付 20 PHP 配送费（GCash 订单由店铺统一结算）。
+
+### 7.1 查询本人申请状态
+
+```
+GET /api/v1/runner/application
+Authorization: Bearer {token}
+```
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "操作成功",
+  "data": {
+    "appId": 1,
+    "memberId": 42,
+    "realName": "Juan dela Cruz",
+    "idNumber": "1234-5678",
+    "phone": "09171234567",
+    "idPhotoUrl": "/profile/upload/runner/id_photo.jpg",
+    "status": "0",
+    "rejectReason": null,
+    "applyTime": "2024-01-10 10:00:00",
+    "reviewTime": null,
+    "reviewer": null
+  }
+}
+```
+
+`status` 取值：`"0"` 待审核 | `"1"` 已通过 | `"2"` 已拒绝  
+`data` 为 `null` 表示尚未申请。
+
+---
+
+### 7.2 提交跑腿申请
+
+同一会员只能有一条申请记录；若之前申请被拒绝可重新提交（覆盖更新）；已通过则不允许重复提交。
+
+```
+POST /api/v1/runner/application
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**请求体**
+
+```json
+{
+  "realName": "Juan dela Cruz",
+  "idNumber": "1234-5678",
+  "phone": "09171234567",
+  "idPhotoUrl": "/profile/upload/runner/id_photo.jpg"
+}
+```
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "Application submitted",
+  "data": { /* 同 7.1 响应 data 结构 */ }
+}
+```
+
+---
+
+### 7.3 可接单列表（仅已审核通过的 runner）
+
+返回 `status = "1"`（Admin 已确认）且尚未被任何 runner 接单的订单。
+
+```
+GET /api/v1/runner/available-orders
+Authorization: Bearer {token}
+```
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "操作成功",
+  "data": [
+    {
+      "orderId": 101,
+      "orderNo": "ORD20240110001",
+      "addressSnapshot": "{\"label\":\"Home\",\"fullAddress\":\"Blk 5 Lot 3, Phase 2\"}",
+      "totalAmount": 185.00,
+      "deliveryFee": 20.00,
+      "paymentMethod": "COD",
+      "createTime": "2024-01-10 09:30:00",
+      "items": [
+        { "productName": "Coca-Cola 1.5L", "quantity": 2 }
+      ]
+    }
+  ]
+}
+```
+
+若 runner 资格未通过，返回 `{ "code": 500, "msg": "Runner not approved" }`。
+
+---
+
+### 7.4 接单（我来送）
+
+```
+POST /api/v1/runner/orders/{orderId}/accept
+Authorization: Bearer {token}
+```
+
+业务规则：
+- 订单 `status` 必须为 `"1"`（已确认）
+- 订单尚未被其他 runner 接单
+- 不能接自己的订单
+- 接单成功后 `status → "2"`（配送中），同时写入 `runnerMemberId`、`runnerAcceptedTime`、`deliveryFee = 20`
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "Order accepted",
+  "data": { /* 订单完整信息，含 runnerMemberId、deliveryFee */ }
+}
+```
+
+---
+
+### 7.5 确认送达
+
+```
+POST /api/v1/runner/orders/{orderId}/complete
+Authorization: Bearer {token}
+```
+
+业务规则：
+- 只有接单的 runner 本人可操作
+- 订单 `status` 必须为 `"2"`（配送中）
+- 完成后 `status → "3"`（已完成）
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "Order completed",
+  "data": { /* 订单完整信息 */ }
+}
+```
+
+---
+
+### 7.6 我的配送历史
+
+```
+GET /api/v1/runner/my-deliveries
+Authorization: Bearer {token}
+```
+
+返回当前 runner 接过的所有订单（按 `createTime` 倒序）。
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "操作成功",
+  "data": [ /* 订单列表 */ ]
+}
+```
+
+---
+
+### 7.7 顾客评价跑腿人
+
+订单完成后（`status = "3"`），顾客可对 runner 进行一次评价。
+
+```
+POST /api/v1/orders/{id}/rate-runner
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**请求体**
+
+```json
+{
+  "score": 5,
+  "comment": "Very fast delivery!"
+}
+```
+
+`score` 为 1–5 的整数。`comment` 可为 `null`。
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "Rating submitted"
+}
+```
+
+错误情况：
+- `"Order does not belong to you"` — 非本人订单
+- `"Order is not completed yet"` — 订单未完成
+- `"Already rated"` — 已评价过
+
+---
+
+### 7.8 跑腿人统计（公开，无需登录）
+
+```
+GET /api/v1/runner/stats/{memberId}
+```
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "操作成功",
+  "data": {
+    "memberId": 42,
+    "nickName": "Juan",
+    "avatarUrl": "/profile/upload/avatar/42.jpg",
+    "totalDeliveries": 18,
+    "ratingCount": 15,
+    "averageScore": 4.8
+  }
+}
+```
+
+---
+
+## 八、通用错误
 
 ### 401 — 未登录 / Token 无效
 
@@ -1311,7 +1567,7 @@ Flutter 端收到 `code = 401` 时，跳转到登录页并清除本地 token。
 
 ---
 
-## 七、Flutter 对接建议
+## 九、Flutter 对接建议
 
 ### Token 存储
 
@@ -1354,7 +1610,7 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 
 ---
 
-## 八、接口汇总
+## 十、接口汇总
 
 | 分组 | 方法 | 路径 | 需要登录 |
 |------|------|------|---------|
@@ -1385,3 +1641,11 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 会员 | POST | `/api/v1/member/addresses` | **是** |
 | 会员 | PUT | `/api/v1/member/addresses/{id}` | **是** |
 | 会员 | DELETE | `/api/v1/member/addresses/{id}` | **是** |
+| 跑腿 | GET | `/api/v1/runner/application` | **是** |
+| 跑腿 | POST | `/api/v1/runner/application` | **是** |
+| 跑腿 | GET | `/api/v1/runner/available-orders` | **是** |
+| 跑腿 | POST | `/api/v1/runner/orders/{orderId}/accept` | **是** |
+| 跑腿 | POST | `/api/v1/runner/orders/{orderId}/complete` | **是** |
+| 跑腿 | GET | `/api/v1/runner/my-deliveries` | **是** |
+| 订单 | POST | `/api/v1/orders/{id}/rate-runner` | **是** |
+| 跑腿 | GET | `/api/v1/runner/stats/{memberId}` | 否 |
