@@ -453,6 +453,8 @@ await storage.delete(key: 'jwt_token');
 `POST /api/v1/orders`
 
 > 支持 COD（货到付款）和 GCASH（在线支付）。GCASH 下单后需调用 4.5 发起支付。
+>
+> **注意：** GCASH 支付受后台开关控制（`mall.gcash.enabled`）。开关关闭时，`paymentMethod=GCASH` 的下单请求会返回错误。App 端可在首页/支付页提前调用任意接口判断服务状态，或根据错误码提示用户改用 COD。
 
 **请求体：**
 
@@ -515,6 +517,7 @@ await storage.delete(key: 'jwt_token');
 | 500 | `Address not found` | 地址不属于当前会员 |
 | 500 | `商品 xxx 库存不足` | 库存不够 |
 | 500 | `商品 xxx 已下架` | 商品下架 |
+| 500 | `GCash payment is currently unavailable` | GCash 开关已关闭，改用 COD |
 
 ---
 
@@ -647,6 +650,8 @@ await storage.delete(key: 'jwt_token');
 `POST /api/v1/orders/{id}/pay`
 
 > 需 JWT。仅 `paymentMethod = "GCASH"` 且 `paymentStatus = "UNPAID"` 的订单可调用。
+>
+> **GCash 开关：** 后台【系统管理 → 参数设置】中 `mall.gcash.enabled` 为 `false` 时，此接口直接返回错误，无需跳转。App 建议在支付页展示"GCash 暂不可用"提示，引导用户切换 COD。
 
 **响应示例：**
 
@@ -682,6 +687,7 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 | code | msg | 原因 |
 |------|-----|------|
+| 500 | `GCash payment is currently unavailable` | 后台开关已关闭 |
 | 500 | `Order not found` | 订单不存在或不属于当前会员 |
 | 500 | `Order is not a GCASH order` | 支付方式不是 GCASH |
 | 500 | `Order already paid` | 已支付 |
