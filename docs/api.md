@@ -399,13 +399,15 @@ await storage.delete(key: 'jwt_token');
       "saleId": 3,
       "productId": 1,
       "productName": "可口可乐 330ml",
+      "productImage": "/profile/upload/2026/05/cola.jpg",
+      "originalPrice": 35.00,
       "title": "周末特惠",
       "flashPrice": 25.00,
       "stockLimit": 100,
       "soldCount": 52,
       "perLimit": 2,
-      "startTime": "2025-06-01T00:00:00.000+08:00",
-      "endTime": "2025-06-01T23:59:59.000+08:00",
+      "startTime": "2026-05-23T23:06",
+      "endTime": "2026-05-25T20:06",
       "status": "1"
     }
   ]
@@ -417,14 +419,16 @@ await storage.delete(key: 'jwt_token');
 | `saleId` | long | 活动 ID |
 | `productId` | long | 商品 ID |
 | `productName` | string | 商品名称 |
+| `productImage` | string | 商品图片路径 |
+| `originalPrice` | decimal | 商品原价（PHP），用于展示划线价 |
 | `title` | string | 活动名称 |
-| `flashPrice` | decimal | 活动价（PHP） |
+| `flashPrice` | decimal | 活动特价（PHP） |
 | `stockLimit` | int | 活动限量总数 |
 | `soldCount` | int | 已售数量 |
 | `perLimit` | int | 每人限购数量 |
 | `startTime` | datetime | 开始时间 |
-| `endTime` | datetime | 结束时间 |
-| `status` | string | `"0"` 未开始，`"1"` 进行中，`"2"` 已结束 |
+| `endTime` | datetime | 结束时间（App 可用于展示倒计时） |
+| `status` | string | 固定返回 `"1"`（进行中），其他状态不返回） |
 
 ---
 
