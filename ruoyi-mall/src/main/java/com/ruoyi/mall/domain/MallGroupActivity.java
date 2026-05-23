@@ -2,6 +2,7 @@ package com.ruoyi.mall.domain;
 
 import java.util.Date;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * 拼团活动表 mall_group_activity
@@ -13,7 +14,9 @@ public class MallGroupActivity
     private String title;
     private Integer minGroupSize;
     private Integer durationHours;
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private Date startTime;
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private Date endTime;
     /** 0进行中 1已结束 */
     private String status;

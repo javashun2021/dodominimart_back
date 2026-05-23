@@ -2,6 +2,7 @@ package com.ruoyi.mall.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * 限时优惠活动表 mall_flash_sale
@@ -15,7 +16,9 @@ public class MallFlashSale
     private Integer stockLimit;
     private Integer soldCount;
     private Integer perLimit;
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private Date startTime;
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private Date endTime;
     /** 状态：0未开始 1进行中 2已结束 */
     private String status;
