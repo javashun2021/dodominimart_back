@@ -992,8 +992,32 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     "currentSize": 1,
     "currentPrice": 30.00,
     "status": "0",
-    "expireTime": "2025-06-02T10:00:00.000+08:00",
-    "createTime": "2025-06-01T10:00:00.000+08:00"
+    "expireTime": "2026-06-02T10:00:00.000+08:00",
+    "createTime": "2026-06-01T10:00:00.000+08:00",
+    "members": [
+      {
+        "memberId": 1,
+        "quantity": 3,
+        "joinedTime": "2026-06-01T10:00:00.000+08:00",
+        "nickName": "张三",
+        "avatarUrl": "https://lh3.googleusercontent.com/..."
+      }
+    ],
+    "activity": {
+      "activityId": 2,
+      "title": "家庭拼团享批发价",
+      "productName": "可口可乐 330ml",
+      "productImage": "/profile/upload/2026/05/cola.jpg",
+      "originalPrice": 35.00,
+      "minGroupSize": 5,
+      "durationHours": 24,
+      "endTime": "2026-06-30T23:59:59.000+08:00",
+      "tiers": [
+        { "tierId": 1, "minQuantity": 2, "maxQuantity": 4, "price": 30.00 },
+        { "tierId": 2, "minQuantity": 5, "maxQuantity": 9, "price": 25.00 },
+        { "tierId": 3, "minQuantity": 10, "maxQuantity": null, "price": 20.00 }
+      ]
+    }
   }
 }
 ```
@@ -1006,6 +1030,10 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 | `currentPrice` | decimal | 当前档位单价（PHP） |
 | `status` | string | `"0"` 拼团中，`"1"` 成功，`"2"` 失败 |
 | `expireTime` | datetime | 拼团截止时间（createTime + durationHours） |
+| `members` | array | 当前参与成员列表（含昵称、头像） |
+| `activity.productImage` | string | 商品图片路径 |
+| `activity.originalPrice` | decimal | 商品原价（PHP），用于展示划线价 |
+| `activity.tiers` | array | 完整价格阶梯，App 可展示人数进度条 |
 
 **失败情况：**
 
@@ -1047,8 +1075,12 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     "activity": {
       "activityId": 2,
       "title": "家庭拼团享批发价",
+      "productName": "可口可乐 330ml",
+      "productImage": "/profile/upload/2026/05/cola.jpg",
+      "originalPrice": 35.00,
       "minGroupSize": 5,
-      "endTime": "2025-06-30T23:59:59.000+08:00",
+      "durationHours": 24,
+      "endTime": "2026-06-30T23:59:59.000+08:00",
       "tiers": [
         { "tierId": 1, "minQuantity": 2, "maxQuantity": 4, "price": 30.00 },
         { "tierId": 2, "minQuantity": 5, "maxQuantity": 9, "price": 25.00 },
@@ -1124,15 +1156,36 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       "currentSize": 5,
       "currentPrice": 25.00,
       "status": "1",
-      "expireTime": "2025-06-02T10:00:00.000+08:00",
-      "successTime": "2025-06-01T14:30:00.000+08:00",
-      "members": [ ... ]
+      "expireTime": "2026-06-02T10:00:00.000+08:00",
+      "successTime": "2026-06-01T14:30:00.000+08:00",
+      "members": [
+        {
+          "memberId": 1,
+          "quantity": 2,
+          "joinedTime": "2026-06-01T10:00:00.000+08:00",
+          "nickName": "张三",
+          "avatarUrl": "https://lh3.googleusercontent.com/..."
+        }
+      ],
+      "activity": {
+        "activityId": 2,
+        "title": "家庭拼团享批发价",
+        "productName": "可口可乐 330ml",
+        "productImage": "/profile/upload/2026/05/cola.jpg",
+        "originalPrice": 35.00,
+        "minGroupSize": 5,
+        "tiers": [
+          { "tierId": 1, "minQuantity": 2, "maxQuantity": 4, "price": 30.00 },
+          { "tierId": 2, "minQuantity": 5, "maxQuantity": 9, "price": 25.00 },
+          { "tierId": 3, "minQuantity": 10, "maxQuantity": null, "price": 20.00 }
+        ]
+      }
     }
   ]
 }
 ```
 
-> `status = "1"` 且 `successTime` 不为 null 表示已成团，关联的 `mall_order` 已自动创建，可去订单列表查看。
+> `status = "1"` 且 `successTime` 不为 null 表示已成团，关联的 `mall_order`（`orderSource = "GROUP"`）已自动创建，可去订单列表查看。
 
 ---
 
