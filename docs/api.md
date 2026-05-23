@@ -173,7 +173,34 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
 
 ---
 
-### 2.3 刷新 Token
+### 2.3 登出
+
+`POST /api/v1/auth/logout`
+
+无需请求体，无需 Authorization header。服务端直接返回成功，**客户端负责清除本地存储的 token**。
+
+> JWT 为无状态设计，服务端不持有 token，登出的安全保障由客户端删除 token 来实现。
+
+**成功响应：**
+
+```json
+{
+  "code": 0,
+  "msg": "Logged out successfully"
+}
+```
+
+**Flutter 示例：**
+
+```dart
+await dio.post('/api/v1/auth/logout');
+await storage.delete(key: 'jwt_token');
+// 跳转登录页
+```
+
+---
+
+### 2.4 刷新 Token
 
 `POST /api/v1/auth/refresh`
 
@@ -262,7 +289,7 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
         "description": "经典红罐可乐",
         "price": 35.00,
         "stock": 100,
-        "imageUrl": "http://<server>:8080/profile/upload/2025/cola.jpg",
+        "imageUrl": "/profile/upload/2025/cola.jpg",
         "status": "0",
         "sort": 1
       }
@@ -301,7 +328,7 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
     "description": "经典红罐可乐",
     "price": 35.00,
     "stock": 100,
-    "imageUrl": "http://<server>:8080/profile/upload/2025/cola.jpg",
+    "imageUrl": "/profile/upload/2025/cola.jpg",
     "status": "0",
     "sort": 1
   }
@@ -376,7 +403,7 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
         "itemId": 2001,
         "productId": 1,
         "productName": "可口可乐 330ml",
-        "productImage": "http://<server>:8080/profile/upload/2025/cola.jpg",
+        "productImage": "/profile/upload/2025/cola.jpg",
         "price": 35.00,
         "quantity": 2,
         "subtotal": 70.00
@@ -461,7 +488,7 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
         "itemId": 2001,
         "productId": 1,
         "productName": "可口可乐 330ml",
-        "productImage": "http://<server>:8080/profile/upload/2025/cola.jpg",
+        "productImage": "/profile/upload/2025/cola.jpg",
         "price": 35.00,
         "quantity": 2,
         "subtotal": 70.00
@@ -776,6 +803,7 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 配置 | GET | `/api/v1/config` | 否 |
 | 鉴权 | POST | `/api/v1/auth/google` | 否 |
 | 鉴权 | POST | `/api/v1/auth/apple` | 否 |
+| 鉴权 | POST | `/api/v1/auth/logout` | 否 |
 | 鉴权 | POST | `/api/v1/auth/refresh` | 否 |
 | 商品 | GET | `/api/v1/categories` | 否 |
 | 商品 | GET | `/api/v1/products` | 否 |

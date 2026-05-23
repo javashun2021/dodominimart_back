@@ -97,7 +97,7 @@
             contentType: false,
             success: function(res) {
                 if (res.code === 0) {
-                    $('#imageUrl').val(res.url);
+                    $('#imageUrl').val(res.path);
                     $('#previewImg').attr('src', res.url);
                     $('#imgPreview').show();
                 } else {

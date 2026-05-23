@@ -33,7 +33,12 @@ public class MallOrderServiceImpl implements IMallOrderService
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
     {
-        return orderMapper.selectOrderList(order);
+        List<MallOrder> list = orderMapper.selectOrderList(order);
+        for (MallOrder o : list)
+        {
+            o.setItems(orderItemMapper.selectItemsByOrderId(o.getOrderId()));
+        }
+        return list;
     }
 
     @Override
