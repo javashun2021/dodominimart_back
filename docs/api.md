@@ -452,6 +452,16 @@ await storage.delete(key: 'jwt_token');
 | `"PAID"` | 已支付（GCash 回调确认后） |
 | `"REFUNDED"` | 已退款 |
 
+### 订单来源说明（orderSource）
+
+| orderSource | 含义 |
+|-------------|------|
+| `"NORMAL"` | 普通下单 |
+| `"FLASH_SALE"` | 下单时命中限时优惠活动，价格已按活动价计算 |
+| `"GROUP"` | 拼团成功后由系统自动生成，不可主动下单创建 |
+
+> App 端可据此展示订单来源标签（如"限时特惠"、"拼团订单"），并在拼团订单中隐藏"再次购买"等按钮。
+
 ---
 
 ### 4.1 下单
@@ -553,6 +563,7 @@ await storage.delete(key: 'jwt_token');
         "orderNo": "DD202505231435290012",
         "totalAmount": 105.00,
         "status": "0",
+        "orderSource": "NORMAL",
         "remark": "请放在门口",
         "cancelReason": null,
         "createTime": "2025-05-23T14:35:29.000+08:00"
@@ -581,6 +592,7 @@ await storage.delete(key: 'jwt_token');
     "orderNo": "DD202505231435290012",
     "totalAmount": 105.00,
     "status": "0",
+    "orderSource": "FLASH_SALE",
     "addressSnapshot": "{\"label\":\"Home\",\"fullAddress\":\"Block 3 Lot 5, Sunshine Village\"}",
     "remark": "请放在门口",
     "cancelReason": null,
@@ -1081,7 +1093,7 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 **成功响应：**（同 6.3 团详情，返回加入后的最新状态）
 
-若加入后人数 ≥ `minGroupSize`，`status` 直接变为 `"1"`（成功），系统自动为每位成员创建 `mall_order`，可通过订单接口查看。
+若加入后人数 ≥ `minGroupSize`，`status` 直接变为 `"1"`（成功），系统自动为每位成员创建 `mall_order`，可通过订单接口查看。自动生成的订单 `orderSource` = `"GROUP"`，`status` = `"1"`（已确认），`paymentMethod` = `"COD"`。
 
 **失败情况：**
 
