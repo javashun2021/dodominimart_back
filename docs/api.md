@@ -1550,7 +1550,62 @@ GET /api/v1/runner/stats/{memberId}
 
 ---
 
-## 八、通用错误
+## 八、文件上传接口
+
+### 8.1 图片上传
+
+用于上传跑腿申请身份证照片、头像等图片文件。
+
+```
+POST /api/v1/upload/image
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | File | 是 | 图片文件，支持 jpg / jpeg / png / webp |
+
+限制：
+- 单文件最大 **5 MB**
+- 仅支持 jpg / jpeg / png / webp 格式
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "上传成功",
+  "url":  "http://your-server/profile/upload/2024/01/10/abcd1234.jpg",
+  "path": "/profile/upload/2024/01/10/abcd1234.jpg"
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `url` | 完整可访问 URL（含域名端口），可直接用于 Image 组件 |
+| `path` | 相对路径，建议存入数据库（如 `idPhotoUrl` 字段） |
+
+**Flutter 示例**
+
+```dart
+Future<String> uploadIdPhoto(File imageFile) async {
+  final formData = FormData.fromMap({
+    'file': await MultipartFile.fromFile(
+      imageFile.path,
+      filename: path.basename(imageFile.path),
+    ),
+  });
+  final res = await dio.post('/api/v1/upload/image', data: formData);
+  return res.data['path'] as String; // 存入 idPhotoUrl
+}
+```
+
+上传成功后，将返回的 `path` 字段作为 `POST /api/v1/runner/application` 请求体中的 `idPhotoUrl` 字段提交。
+
+---
+
+## 十、通用错误
 
 ### 401 — 未登录 / Token 无效
 
@@ -1567,7 +1622,7 @@ Flutter 端收到 `code = 401` 时，跳转到登录页并清除本地 token。
 
 ---
 
-## 九、Flutter 对接建议
+## 十一、Flutter 对接建议
 
 ### Token 存储
 
@@ -1610,7 +1665,7 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 
 ---
 
-## 十、接口汇总
+## 十二、接口汇总
 
 | 分组 | 方法 | 路径 | 需要登录 |
 |------|------|------|---------|
@@ -1649,3 +1704,4 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 跑腿 | GET | `/api/v1/runner/my-deliveries` | **是** |
 | 订单 | POST | `/api/v1/orders/{id}/rate-runner` | **是** |
 | 跑腿 | GET | `/api/v1/runner/stats/{memberId}` | 否 |
+| 上传 | POST | `/api/v1/upload/image` | **是** |
