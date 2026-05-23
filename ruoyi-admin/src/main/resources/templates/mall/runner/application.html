@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header">
+<style>
+    .runner-avatar { width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px; }
+    .id-photo { max-width:100%;max-height:300px;border:1px solid #ddd;border-radius:4px;margin-top:8px; }
+    .info-table th { width:100px;background:#f9f9f9;font-weight:600; }
+    .info-table td, .info-table th { padding:8px 12px; }
+</style>
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <!-- 搜索栏 -->
+        <div class="col-sm-12 search-collapse">
+            <form id="runner-form">
+                <div class="select-list">
+                    <ul>
+                        <li>真实姓名：<input type="text" name="realName" placeholder="模糊搜索"/></li>
+                        <li>
+                            审核状态：
+                            <select name="status">
+                                <option value="">全部</option>
+                                <option value="0">待审核</option>
+                                <option value="1">已通过</option>
+                                <option value="2">已拒绝</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()">
+                                <i class="fa fa-search"></i>&nbsp;搜索
+                            </a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()">
+                                <i class="fa fa-refresh"></i>&nbsp;重置
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <!-- 列表 -->
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 审核 Modal ===== -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel">
+    <div class="modal-dialog" role="document" style="width:580px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title" id="reviewModalLabel">
+                    <i class="fa fa-id-card-o"></i> 跑腿申请详情
+                </h4>
+            </div>
+            <div class="modal-body">
+
+                <!-- 申请人头像 + 昵称 -->
+                <div class="text-center" style="margin-bottom:16px;">
+                    <img id="rv-avatar" src="" alt="avatar"
+                         style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #1ab394;"
+                         onerror="this.src=ctx+'img/profile.jpg'"/>
+                    <p style="margin:6px 0 0;font-size:16px;font-weight:bold;" id="rv-nick"></p>
+                    <p style="color:#999;font-size:12px;margin:0;" id="rv-memberId"></p>
+                </div>
+
+                <!-- 基本信息表格 -->
+                <table class="table table-bordered info-table">
+                    <tr>
+                        <th>真实姓名</th><td id="rv-realName"></td>
+                        <th style="width:80px;">联系电话</th><td id="rv-phone"></td>
+                    </tr>
+                    <tr>
+                        <th>证件号码</th><td colspan="3" id="rv-idNumber"></td>
+                    </tr>
+                    <tr>
+                        <th>申请时间</th><td colspan="3" id="rv-applyTime"></td>
+                    </tr>
+                </table>
+
+                <!-- 证件照片 -->
+                <div id="rv-photo-row" style="display:none;margin-top:4px;">
+                    <p style="font-weight:600;margin-bottom:4px;"><i class="fa fa-image"></i> 证件照片</p>
+                    <img id="rv-photo" src="" class="id-photo"/>
+                </div>
+
+                <!-- 状态信息（已通过） -->
+                <div id="rv-approved-info" class="alert alert-success" style="display:none;margin-top:14px;margin-bottom:0;">
+                    <i class="fa fa-check-circle"></i> <strong>已审核通过</strong>
+                    <span style="color:#666;float:right;font-size:12px;">
+                        审核人：<span id="rv-reviewer2"></span>&nbsp;&nbsp;时间：<span id="rv-reviewTime2"></span>
+                    </span>
+                </div>
+
+                <!-- 状态信息（已拒绝） -->
+                <div id="rv-rejected-info" class="alert alert-danger" style="display:none;margin-top:14px;margin-bottom:0;">
+                    <i class="fa fa-times-circle"></i> <strong>已拒绝</strong>
+                    <span style="color:#666;float:right;font-size:12px;">
+                        审核人：<span id="rv-reviewer"></span>&nbsp;&nbsp;时间：<span id="rv-reviewTime"></span>
+                    </span>
+                    <br>拒绝原因：<span id="rv-reject-reason-text"></span>
+                </div>
+
+                <!-- 拒绝原因输入框（点击拒绝后显示） -->
+                <div id="rv-reject-box" style="display:none;margin-top:14px;">
+                    <label style="font-weight:600;"><i class="fa fa-comment"></i> 拒绝原因 <span class="text-danger">*</span></label>
+                    <textarea id="rv-reject-reason" class="form-control" rows="3"
+                              placeholder="请输入拒绝原因，会员可见"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <span id="rv-action-btns">
+                    <button type="button" class="btn btn-danger" id="rv-btn-reject" onclick="showRejectBox()">
+                        <i class="fa fa-times"></i> 拒绝
+                    </button>
+                    <button type="button" class="btn btn-success" id="rv-btn-approve" onclick="doApprove()">
+                        <i class="fa fa-check"></i> 审核通过
+                    </button>
+                </span>
+                <span id="rv-reject-confirm-btns" style="display:none;">
+                    <button type="button" class="btn btn-default" onclick="cancelRejectBox()">
+                        <i class="fa fa-arrow-left"></i> 返回
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="doReject()">
+                        <i class="fa fa-times"></i> 确认拒绝
+                    </button>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/runner";
+    var currentAppId;
+
+    var statusMap = {
+        '0': '<span class="badge" style="background:#f0ad4e;">待审核</span>',
+        '1': '<span class="badge badge-success">已通过</span>',
+        '2': '<span class="badge badge-danger">已拒绝</span>'
+    };
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "跑腿申请",
+            columns: [
+                {checkbox: true},
+                {field: 'appId',     title: '编号', width: 70},
+                {field: 'nickName',  title: '申请人', formatter: function(v, row) {
+                    var img = row.avatarUrl
+                        ? '<img src="' + row.avatarUrl + '" class="runner-avatar" onerror="this.style.display=\'none\'"/>'
+                        : '<i class="fa fa-user-circle-o" style="font-size:24px;vertical-align:middle;margin-right:6px;color:#ccc;"></i>';
+                    return img + '<span>' + (v || '-') + '</span>';
+                }},
+                {field: 'realName',  title: '真实姓名'},
+                {field: 'phone',     title: '电话'},
+                {field: 'applyTime', title: '申请时间', sortable: true},
+                {field: 'status',    title: '状态', align: 'center',
+                    formatter: function(v) { return statusMap[v] || v; }
+                },
+                {field: 'reviewer',  title: '审核人', formatter: function(v) { return v || '-'; }},
+                {title: '操作', align: 'center', formatter: function(v, row) {
+                    return '<a class="btn btn-info btn-xs" onclick=\'openReview(' + JSON.stringify(row) + ')\'>'
+                         + '<i class="fa fa-eye"></i> 查看</a>';
+                }}
+            ]
+        });
+    });
+
+    function openReview(row) {
+        currentAppId = row.appId;
+
+        // 头像与昵称
+        $('#rv-avatar').attr('src', row.avatarUrl || '');
+        $('#rv-nick').text(row.nickName || '（未设置昵称）');
+        $('#rv-memberId').text('会员ID: ' + row.memberId);
+
+        // 基本信息
+        $('#rv-realName').text(row.realName || '-');
+        $('#rv-idNumber').text(row.idNumber || '-');
+        $('#rv-phone').text(row.phone || '-');
+        $('#rv-applyTime').text(row.applyTime || '-');
+
+        // 证件照
+        if (row.idPhotoUrl) {
+            $('#rv-photo').attr('src', row.idPhotoUrl);
+            $('#rv-photo-row').show();
+        } else {
+            $('#rv-photo-row').hide();
+        }
+
+        // 重置状态区域
+        $('#rv-approved-info').hide();
+        $('#rv-rejected-info').hide();
+        $('#rv-reject-box').hide();
+        $('#rv-reject-reason').val('');
+        $('#rv-action-btns').show();
+        $('#rv-reject-confirm-btns').hide();
+
+        if (row.status === '0') {
+            // 待审核：显示操作按钮
+        } else if (row.status === '1') {
+            $('#rv-reviewer2').text(row.reviewer || '-');
+            $('#rv-reviewTime2').text(row.reviewTime || '-');
+            $('#rv-approved-info').show();
+            $('#rv-action-btns').hide();
+        } else if (row.status === '2') {
+            $('#rv-reject-reason-text').text(row.rejectReason || '');
+            $('#rv-reviewer').text(row.reviewer || '-');
+            $('#rv-reviewTime').text(row.reviewTime || '-');
+            $('#rv-rejected-info').show();
+            $('#rv-action-btns').hide();
+        }
+
+        $('#reviewModal').modal('show');
+    }
+
+    function showRejectBox() {
+        $('#rv-reject-box').show();
+        $('#rv-action-btns').hide();
+        $('#rv-reject-confirm-btns').show();
+        $('#rv-reject-reason').focus();
+    }
+
+    function cancelRejectBox() {
+        $('#rv-reject-box').hide();
+        $('#rv-reject-reason').val('');
+        $('#rv-action-btns').show();
+        $('#rv-reject-confirm-btns').hide();
+    }
+
+    function doApprove() {
+        $.modal.confirm('确定【审核通过】该跑腿申请吗？通过后该会员可立即接单。', function() {
+            $.ajax({
+                url: prefix + '/approve/' + currentAppId,
+                type: 'POST',
+                success: function(res) {
+                    if (res.code === 0) {
+                        $('#reviewModal').modal('hide');
+                        $.modal.alertSuccess('已审核通过！');
+                        $.table.refresh();
+                    } else {
+                        $.modal.alertWarning(res.msg);
+                    }
+                }
+            });
+        });
+    }
+
+    function doReject() {
+        var reason = $.trim($('#rv-reject-reason').val());
+        if (!reason) {
+            $.modal.alertWarning('请填写拒绝原因');
+            return;
+        }
+        $.modal.confirm('确定【拒绝】该跑腿申请吗？', function() {
+            $.ajax({
+                url: prefix + '/reject/' + currentAppId,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ rejectReason: reason }),
+                success: function(res) {
+                    if (res.code === 0) {
+                        $('#reviewModal').modal('hide');
+                        $.modal.alertSuccess('已拒绝申请');
+                        $.table.refresh();
+                    } else {
+                        $.modal.alertWarning(res.msg);
+                    }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

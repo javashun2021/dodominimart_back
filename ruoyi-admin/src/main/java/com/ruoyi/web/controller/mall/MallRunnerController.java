@@ -74,6 +74,14 @@ public class MallRunnerController extends BaseController
         return AjaxResult.success();
     }
 
+    /** 结算管理页面 */
+    @RequiresPermissions("mall:runner:settle")
+    @GetMapping("/settle")
+    public String settle()
+    {
+        return prefix + "/settle";
+    }
+
     /** 未结算 GCash 跑腿订单（按 runner 分组） */
     @RequiresPermissions("mall:runner:settle")
     @GetMapping("/unsettled")

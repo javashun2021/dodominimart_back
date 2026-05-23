@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header">
+<style>
+    .settle-card { border: 1px solid #e3e3e3; border-radius: 6px; margin-bottom: 16px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .settle-card-head { padding: 12px 16px; background: #f8f8f8; border-bottom: 1px solid #e3e3e3; border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: space-between; }
+    .settle-card-head .runner-info { display: flex; align-items: center; gap: 10px; }
+    .settle-card-head .runner-info img { width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #1ab394; }
+    .settle-card-head .runner-name { font-weight: 700; font-size: 15px; }
+    .settle-card-head .runner-phone { color: #888; font-size: 13px; }
+    .settle-card-head .total-fee { font-size: 20px; font-weight: 700; color: #1ab394; }
+    .settle-card-body { padding: 0; }
+    .settle-orders-table { width: 100%; margin: 0; }
+    .settle-orders-table th { background: #fafafa; padding: 8px 14px; font-weight: 600; color: #555; border-bottom: 1px solid #eee; }
+    .settle-orders-table td { padding: 9px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .settle-orders-table tr:last-child td { border-bottom: none; }
+    .settle-orders-table .cb-col { width: 40px; text-align: center; }
+    .empty-tip { text-align: center; padding: 60px 20px; color: #aaa; font-size: 16px; }
+    .toolbar-bar { margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .selected-count { font-size: 13px; color: #888; }
+</style>
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12">
+            <!-- 顶部工具栏 -->
+            <div class="toolbar-bar" style="margin-top:12px;">
+                <button class="btn btn-success btn-sm" id="btn-batch-settle" onclick="batchSettle()">
+                    <i class="fa fa-check-square-o"></i>&nbsp;批量结算
+                </button>
+                <button class="btn btn-default btn-sm" onclick="selectAll()">
+                    <i class="fa fa-check-square-o"></i>&nbsp;全选
+                </button>
+                <button class="btn btn-default btn-sm" onclick="clearAll()">
+                    <i class="fa fa-square-o"></i>&nbsp;取消全选
+                </button>
+                <span class="selected-count" id="selected-tip">已选 0 笔订单</span>
+                <span style="margin-left:auto;color:#888;font-size:13px;">
+                    <i class="fa fa-info-circle"></i> 仅显示未结算的配送订单，结算后不再出现
+                </span>
+            </div>
+
+            <!-- 数据区域 -->
+            <div id="settle-list-container">
+                <div class="empty-tip" id="loading-tip">
+                    <i class="fa fa-spinner fa-spin fa-2x"></i><br>加载中...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/runner";
+
+    $(function() {
+        loadData();
+    });
+
+    function loadData() {
+        $('#settle-list-container').html(
+            '<div class="empty-tip" id="loading-tip"><i class="fa fa-spinner fa-spin fa-2x"></i><br>加载中...</div>'
+        );
+        $.get(prefix + '/unsettled', function(res) {
+            if (res.code !== 0) {
+                $.modal.alertWarning('加载失败：' + res.msg);
+                return;
+            }
+            renderList(res.data || []);
+        });
+    }
+
+    function renderList(data) {
+        if (!data || data.length === 0) {
+            $('#settle-list-container').html(
+                '<div class="empty-tip"><i class="fa fa-check-circle-o fa-3x" style="color:#1ab394;"></i><br><br>暂无待结算订单</div>'
+            );
+            return;
+        }
+
+        var html = '';
+        $.each(data, function(i, runner) {
+            html += '<div class="settle-card">';
+
+            // Card header
+            html += '<div class="settle-card-head">';
+            html += '<div class="runner-info">';
+            html += '<div>';
+            html += '<div class="runner-name">' + escHtml(runner.nickName || '未知用户') + '</div>';
+            html += '<div class="runner-phone"><i class="fa fa-phone"></i> ' + escHtml(runner.phone || '-') + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="text-right">';
+            html += '<div style="font-size:12px;color:#888;">共 ' + runner.orders.length + ' 笔订单 · 待结算合计</div>';
+            html += '<div class="total-fee">₱' + parseFloat(runner.totalFee).toFixed(2) + '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Orders table
+            html += '<div class="settle-card-body">';
+            html += '<table class="settle-orders-table">';
+            html += '<thead><tr>';
+            html += '<th class="cb-col"><input type="checkbox" class="runner-all-cb" data-runner="' + runner.runnerMemberId + '" onchange="toggleRunner(this,' + runner.runnerMemberId + ')"/></th>';
+            html += '<th>#</th>';
+            html += '<th>订单编号</th>';
+            html += '<th style="text-align:right;">配送费</th>';
+            html += '</tr></thead>';
+            html += '<tbody>';
+            $.each(runner.orders, function(j, order) {
+                html += '<tr>';
+                html += '<td class="cb-col"><input type="checkbox" class="order-cb" value="' + order.orderId + '" data-runner="' + runner.runnerMemberId + '" onchange="updateCount()"/></td>';
+                html += '<td style="color:#999;">' + (j + 1) + '</td>';
+                html += '<td><span class="text-navy">' + escHtml(order.orderNo) + '</span></td>';
+                html += '<td style="text-align:right;font-weight:600;">₱' + parseFloat(order.deliveryFee).toFixed(2) + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            html += '</div>';
+
+            html += '</div>';
+        });
+
+        $('#settle-list-container').html(html);
+        updateCount();
+    }
+
+    function toggleRunner(cb, runnerId) {
+        var checked = $(cb).prop('checked');
+        $('[data-runner="' + runnerId + '"].order-cb').prop('checked', checked);
+        updateCount();
+    }
+
+    function selectAll() {
+        $('.order-cb').prop('checked', true);
+        $('.runner-all-cb').prop('checked', true);
+        updateCount();
+    }
+
+    function clearAll() {
+        $('.order-cb, .runner-all-cb').prop('checked', false);
+        updateCount();
+    }
+
+    function updateCount() {
+        var n = $('.order-cb:checked').length;
+        $('#selected-tip').text('已选 ' + n + ' 笔订单');
+        // Sync each runner-level header checkbox
+        $('.runner-all-cb').each(function() {
+            var runnerId = $(this).data('runner');
+            var all  = $('[data-runner="' + runnerId + '"].order-cb').length;
+            var done = $('[data-runner="' + runnerId + '"].order-cb:checked').length;
+            $(this).prop('checked', all > 0 && all === done);
+            $(this).prop('indeterminate', done > 0 && done < all);
+        });
+    }
+
+    function batchSettle() {
+        var ids = [];
+        $('.order-cb:checked').each(function() { ids.push(parseInt($(this).val())); });
+        if (ids.length === 0) {
+            $.modal.alertWarning('请先勾选要结算的订单');
+            return;
+        }
+        $.modal.confirm(
+            '确定将选中的 <strong>' + ids.length + '</strong> 笔配送订单标记为【已结算】吗？<br>'
+            + '<small style="color:#888;">标记后表示已向 Runner 支付对应配送费</small>',
+            function() {
+                $.ajax({
+                    url: prefix + '/settle',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ orderIds: ids }),
+                    success: function(res) {
+                        if (res.code === 0) {
+                            $.modal.alertSuccess('结算成功！共处理 ' + ids.length + ' 笔');
+                            loadData();
+                        } else {
+                            $.modal.alertWarning(res.msg);
+                        }
+                    }
+                });
+            }
+        );
+    }
+
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+</script>
+</body>
+</html>
