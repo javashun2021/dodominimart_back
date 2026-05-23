@@ -110,14 +110,14 @@ public class MallGroupActivityController extends BaseController
 
     // ---- 拼团单监控 ----
 
-    @RequiresPermissions("mall:group:view")
+    @RequiresPermissions("mall:group:order:view")
     @GetMapping("/orders")
     public String orders()
     {
         return prefix + "/orders";
     }
 
-    @RequiresPermissions("mall:group:list")
+    @RequiresPermissions("mall:group:order:list")
     @PostMapping("/orders/list")
     @ResponseBody
     public TableDataInfo orderList(MallGroupOrder query)
@@ -126,7 +126,7 @@ public class MallGroupActivityController extends BaseController
         return getDataTable(groupService.selectGroupOrderList(query));
     }
 
-    @RequiresPermissions("mall:group:view")
+    @RequiresPermissions("mall:group:order:members")
     @GetMapping("/orders/{groupOrderId}/members")
     public String members(@PathVariable Long groupOrderId, ModelMap mmap)
     {
