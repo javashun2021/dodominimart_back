@@ -24,8 +24,10 @@ public class MallFlashSale
     private String status;
     private Date createTime;
 
-    /** 非DB，关联商品名称（后台列表展示用） */
+    /** 非DB */
     private String productName;
+    private String productImage;
+    private java.math.BigDecimal originalPrice;
 
     public Long getSaleId() { return saleId; }
     public void setSaleId(Long saleId) { this.saleId = saleId; }
@@ -62,4 +64,10 @@ public class MallFlashSale
 
     public String getProductName() { return productName; }
     public void setProductName(String productName) { this.productName = productName; }
+
+    public String getProductImage() { return productImage; }
+    public void setProductImage(String productImage) { this.productImage = productImage; }
+
+    public java.math.BigDecimal getOriginalPrice() { return originalPrice; }
+    public void setOriginalPrice(java.math.BigDecimal originalPrice) { this.originalPrice = originalPrice; }
 }

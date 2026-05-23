@@ -5,6 +5,8 @@ import com.ruoyi.mall.domain.MallFlashSale;
 
 public interface IMallFlashSaleService
 {
+    List<MallFlashSale> getActiveFlashSales();
+
     List<MallFlashSale> selectFlashSaleList(MallFlashSale flashSale);
 
     MallFlashSale selectFlashSaleById(Long saleId);

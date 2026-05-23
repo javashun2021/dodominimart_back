@@ -15,6 +15,12 @@ public class MallFlashSaleServiceImpl implements IMallFlashSaleService
     private MallFlashSaleMapper flashSaleMapper;
 
     @Override
+    public List<MallFlashSale> getActiveFlashSales()
+    {
+        return flashSaleMapper.selectActiveFlashSales();
+    }
+
+    @Override
     public List<MallFlashSale> selectFlashSaleList(MallFlashSale flashSale)
     {
         return flashSaleMapper.selectFlashSaleList(flashSale);

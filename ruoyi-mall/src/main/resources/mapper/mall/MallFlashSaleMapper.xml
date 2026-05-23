@@ -15,11 +15,22 @@
         <result property="endTime"     column="end_time"     />
         <result property="status"      column="status"       />
         <result property="createTime"  column="create_time"  />
-        <result property="productName" column="product_name" />
+        <result property="productName"   column="product_name"   />
+        <result property="productImage"  column="product_image"  />
+        <result property="originalPrice" column="original_price" />
     </resultMap>
 
+    <select id="selectActiveFlashSales" resultMap="MallFlashSaleResult">
+        select fs.*, p.name as product_name, p.image_url as product_image, p.price as original_price
+        from mall_flash_sale fs
+        inner join mall_product p on p.product_id = fs.product_id
+        where fs.status = '1'
+          and now() between fs.start_time and fs.end_time
+        order by fs.create_time desc
+    </select>
+
     <select id="selectFlashSaleList" parameterType="com.ruoyi.mall.domain.MallFlashSale" resultMap="MallFlashSaleResult">
-        select fs.*, p.name as product_name
+        select fs.*, p.name as product_name, p.image_url as product_image, p.price as original_price
         from mall_flash_sale fs
         left join mall_product p on p.product_id = fs.product_id
         <where>
