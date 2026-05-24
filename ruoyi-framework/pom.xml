@@ -97,6 +97,12 @@
             <version>0.9.1</version>
         </dependency>
 
+        <!-- BCrypt 密码哈希（仅 crypto 模块，不引入 Spring Security Web 过滤链） -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
         <!-- JJWT 0.9.x 在 Java 9+ 需要手动引入 JAXB（JDK 9 起已移除） -->
         <dependency>
             <groupId>javax.xml.bind</groupId>

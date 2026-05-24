@@ -104,7 +104,88 @@ if (config['messengerLink'].isNotEmpty) {
 
 ## 二、鉴权接口（无需登录）
 
-### 2.1 Google 登录 / 注册
+### 2.1 邮箱注册
+
+`POST /api/v1/auth/register`
+
+**请求体**
+
+```json
+{
+  "email":    "user@example.com",
+  "password": "mypassword123",
+  "nickName": "Juan"
+}
+```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `email` | 是 | 合法邮箱格式 |
+| `password` | 是 | 至少 8 位 |
+| `nickName` | 是 | 显示名称 |
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "Registration successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "member": {
+      "memberId": 42,
+      "nickName": "Juan",
+      "email": "user@example.com",
+      "avatarUrl": ""
+    }
+  }
+}
+```
+
+常见错误：
+- `"Invalid email format"` — 邮箱格式不合法
+- `"Password must be at least 8 characters"` — 密码太短
+- `"Email already registered"` — 邮箱已用于邮箱注册
+- `"Email already linked to a social account. Please use Google or Apple Sign-In."` — 邮箱已绑定 Google/Apple
+
+---
+
+### 2.2 邮箱登录
+
+`POST /api/v1/auth/login`
+
+**请求体**
+
+```json
+{
+  "email":    "user@example.com",
+  "password": "mypassword123"
+}
+```
+
+**响应**（与注册相同结构）
+
+```json
+{
+  "code": 0,
+  "msg": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "member": {
+      "memberId": 42,
+      "nickName": "Juan",
+      "email": "user@example.com",
+      "avatarUrl": ""
+    }
+  }
+}
+```
+
+错误时统一返回 `"Invalid email or password"`（不区分邮箱不存在还是密码错误，防止枚举攻击）。
+
+---
+
+### 2.3 Google 登录 / 注册
 
 `POST /api/v1/auth/google`
 
@@ -151,7 +232,7 @@ Flutter 端获取到 Google ID Token 后调用此接口，首次登录自动注�
 
 ---
 
-### 2.2 Apple 登录 / 注册
+### 2.4 Apple 登录 / 注册
 
 `POST /api/v1/auth/apple`
 
@@ -175,7 +256,7 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
 
 ---
 
-### 2.3 登出
+### 2.5 登出
 
 `POST /api/v1/auth/logout`
 
@@ -202,7 +283,7 @@ await storage.delete(key: 'jwt_token');
 
 ---
 
-### 2.4 刷新 Token
+### 2.6 刷新 Token
 
 `POST /api/v1/auth/refresh`
 
@@ -1673,6 +1754,8 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 分组 | 方法 | 路径 | 需要登录 |
 |------|------|------|---------|
 | 配置 | GET | `/api/v1/config` | 否 |
+| 鉴权 | POST | `/api/v1/auth/register` | 否 |
+| 鉴权 | POST | `/api/v1/auth/login` | 否 |
 | 鉴权 | POST | `/api/v1/auth/google` | 否 |
 | 鉴权 | POST | `/api/v1/auth/apple` | 否 |
 | 鉴权 | POST | `/api/v1/auth/logout` | 否 |

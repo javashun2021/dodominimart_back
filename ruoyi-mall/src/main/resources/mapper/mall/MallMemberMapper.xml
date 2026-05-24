@@ -11,13 +11,14 @@
         <result property="nickName"     column="nick_name"    />
         <result property="avatarUrl"    column="avatar_url"   />
         <result property="phone"        column="phone"        />
-        <result property="status"       column="status"       />
-        <result property="createTime"   column="create_time"  />
-        <result property="updateTime"   column="update_time"  />
+        <result property="status"        column="status"         />
+        <result property="passwordHash"  column="password_hash"  />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
     </resultMap>
 
     <sql id="selectMemberVo">
-        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, create_time, update_time
+        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time, update_time
         from mall_member
     </sql>
 
@@ -48,8 +49,8 @@
     </select>
 
     <insert id="insertMember" parameterType="com.ruoyi.mall.domain.MallMember" useGeneratedKeys="true" keyProperty="memberId">
-        insert into mall_member(google_id, apple_id, email, nick_name, avatar_url, phone, status, create_time)
-        values(#{googleId}, #{appleId}, #{email}, #{nickName}, #{avatarUrl}, #{phone}, #{status}, #{createTime})
+        insert into mall_member(google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time)
+        values(#{googleId}, #{appleId}, #{email}, #{nickName}, #{avatarUrl}, #{phone}, #{status}, #{passwordHash}, #{createTime})
     </insert>
 
     <update id="updateMember" parameterType="com.ruoyi.mall.domain.MallMember">

@@ -215,6 +215,47 @@ public class ApiAuthController
         return null;
     }
 
+    /**
+     * 邮箱注册
+     * Body: { "email": "...", "password": "...", "nickName": "..." }
+     */
+    @PostMapping("/register")
+    public AjaxResult register(@RequestBody Map<String, String> body)
+    {
+        String email    = body.get("email");
+        String password = body.get("password");
+        String nickName = body.get("nickName");
+        try
+        {
+            MallMember member = memberService.registerByEmail(email, password, nickName);
+            return AjaxResult.success("Registration successful").put("data", buildLoginResult(member));
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 邮箱登录
+     * Body: { "email": "...", "password": "..." }
+     */
+    @PostMapping("/login")
+    public AjaxResult login(@RequestBody Map<String, String> body)
+    {
+        String email    = body.get("email");
+        String password = body.get("password");
+        try
+        {
+            MallMember member = memberService.loginByEmail(email, password);
+            return AjaxResult.success("Login successful").put("data", buildLoginResult(member));
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
     private Map<String, Object> buildLoginResult(MallMember member)
     {
         String token = jwtUtils.generateToken(member.getMemberId());

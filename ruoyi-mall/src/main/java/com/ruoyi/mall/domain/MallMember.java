@@ -21,6 +21,8 @@ public class MallMember implements Serializable
     private String phone;
     /** 状态（0正常 1禁用） */
     private String status;
+    /** 密码哈希，BCrypt，邮箱注册用户有值，Google/Apple 用户为 null */
+    private String passwordHash;
     private Date createTime;
     private Date updateTime;
 
@@ -47,6 +49,9 @@ public class MallMember implements Serializable
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public Date getCreateTime() { return createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }

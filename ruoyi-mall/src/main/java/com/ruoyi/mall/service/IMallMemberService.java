@@ -19,5 +19,15 @@ public interface IMallMemberService
      */
     MallMember loginOrRegisterByApple(String appleId, String email, String nickName);
 
+    /**
+     * 邮箱注册：校验格式/重复，BCrypt 哈希密码，写入新会员
+     */
+    MallMember registerByEmail(String email, String password, String nickName);
+
+    /**
+     * 邮箱登录：校验密码，返回会员
+     */
+    MallMember loginByEmail(String email, String password);
+
     int updateMember(MallMember member);
 }
