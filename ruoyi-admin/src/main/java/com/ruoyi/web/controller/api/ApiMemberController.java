@@ -68,6 +68,10 @@ public class ApiMemberController extends BaseApiController
         {
             member.setPhone(body.get("phone"));
         }
+        if (body.containsKey("avatarUrl"))
+        {
+            member.setAvatarUrl(body.get("avatarUrl"));
+        }
         memberService.updateMember(member);
         return AjaxResult.success("Profile updated");
     }

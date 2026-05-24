@@ -156,7 +156,7 @@ public class ApiAuthController
     @PostMapping("/logout")
     public AjaxResult logout()
     {
-        return AjaxResult.success("Logged out successfully");
+        return AjaxResult.success("退出成功");
     }
 
     /**
