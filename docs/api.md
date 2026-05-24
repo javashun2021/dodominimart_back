@@ -741,7 +741,7 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 | `memberId` | long | 会员 ID |
 | `email` | string | 邮箱 |
 | `nickName` | string | 昵称 |
-| `avatarUrl` | string | 头像 URL，来自 Google |
+| `avatarUrl` | string | 头像 URL（Google 登录时自动写入，也可通过 PUT 接口更新） |
 | `phone` | string | 手机号，可能为 null |
 | `status` | string | `"0"` = 正常，`"1"` = 禁用 |
 
@@ -751,16 +751,19 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 `PUT /api/v1/member/profile`
 
-> 只允许修改 `nickName` 和 `phone`，其余字段忽略。
+> 支持修改 `nickName`、`phone`、`avatarUrl`，三个字段均为可选，只传需要修改的字段即可。
 
 **请求体：**
 
 ```json
 {
   "nickName": "新昵称",
-  "phone": "09179876543"
+  "phone": "09179876543",
+  "avatarUrl": "/profile/upload/2024/01/10/abcd1234.jpg"
 }
 ```
+
+> `avatarUrl` 请先调用 `POST /api/v1/upload/image` 上传图片，将返回的 `path` 填入此字段。
 
 **成功响应：**
 
