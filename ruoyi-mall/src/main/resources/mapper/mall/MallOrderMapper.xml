@@ -94,6 +94,7 @@
             delivery_fee         = #{deliveryFee},
             status               = #{status}
         where order_id = #{orderId}
+          and runner_member_id is null
     </update>
 
     <select id="selectUnsettledRunnerOrders" parameterType="Long" resultMap="MallOrderResult">

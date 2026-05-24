@@ -78,7 +78,11 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         order.setRunnerAcceptedTime(new Date());
         order.setDeliveryFee(DELIVERY_FEE);
         order.setStatus("2");
-        orderMapper.updateRunnerInfo(order);
+        int affected = orderMapper.updateRunnerInfo(order);
+        if (affected == 0)
+        {
+            throw new RuntimeException("Order already taken by another runner");
+        }
         return orderMapper.selectOrderById(orderId);
     }
 

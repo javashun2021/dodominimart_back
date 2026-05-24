@@ -94,10 +94,6 @@ public class MallOrderServiceImpl implements IMallOrderService
             {
                 throw new RuntimeException("Product not available: " + item.getProductId());
             }
-            if (product.getStock() < item.getQuantity())
-            {
-                throw new RuntimeException("Insufficient stock: " + product.getName());
-            }
             item.setProductName(product.getName());
             item.setProductImage(product.getImageUrl());
 
@@ -120,9 +116,12 @@ public class MallOrderServiceImpl implements IMallOrderService
             item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
             total = total.add(item.getSubtotal());
 
-            // 扣减库存
-            product.setStock(product.getStock() - item.getQuantity());
-            productMapper.updateProduct(product);
+            // 原子扣库存：WHERE stock >= quantity，返回 0 表示库存不足
+            int affected = productMapper.deductStock(product.getProductId(), item.getQuantity());
+            if (affected == 0)
+            {
+                throw new RuntimeException("Insufficient stock: " + product.getName());
+            }
         }
 
         MallOrder order = new MallOrder();
