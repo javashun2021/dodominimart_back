@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import com.ruoyi.common.base.AjaxResult;
+import com.ruoyi.framework.apple.AppleJwksVerifier;
 import com.ruoyi.framework.jwt.JwtUtils;
 import com.ruoyi.mall.domain.MallMember;
 import com.ruoyi.mall.service.IMallMemberService;
+import io.jsonwebtoken.Claims;
 
 /**
  * App 会员鉴权接口（无需登录）
@@ -44,6 +46,9 @@ public class ApiAuthController
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private AppleJwksVerifier appleJwksVerifier;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -104,49 +109,38 @@ public class ApiAuthController
 
     /**
      * Sign in with Apple（iOS App Store 上架强制要求）
-     * Body: { "identityToken": "...", "user": "...", "fullName": "..." }
+     * Body: { "identityToken": "...", "fullName": "..." }
      */
     @PostMapping("/apple")
     public AjaxResult appleLogin(@RequestBody Map<String, String> body)
     {
-        // Apple identityToken 是 JWT，sub 字段是 apple_id
-        // 完整验证需用 Apple 公钥验证签名，此处先做基础解析（production 请接入完整 JWKS 验证）
         String identityToken = body.get("identityToken");
         if (identityToken == null || identityToken.isEmpty())
         {
             return AjaxResult.error("identityToken is required");
         }
 
-        String[] parts = identityToken.split("\\.");
-        if (parts.length < 2)
-        {
-            return AjaxResult.error("Invalid Apple token format");
-        }
-
+        Claims claims;
         try
         {
-            // Base64 解码 payload（无需验证签名即可读取 sub/email）
-            String payload = new String(java.util.Base64.getUrlDecoder().decode(
-                    parts[1].length() % 4 == 0 ? parts[1] : parts[1] + "====".substring(parts[1].length() % 4)));
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            @SuppressWarnings("unchecked")
-            Map<String, Object> claims = mapper.readValue(payload, Map.class);
-
-            String appleId = String.valueOf(claims.get("sub"));
-            String email   = String.valueOf(claims.getOrDefault("email", ""));
-            String fullName = body.getOrDefault("fullName", "Apple User");
-
-            MallMember member = memberService.loginOrRegisterByApple(appleId, email, fullName);
-            if (!"0".equals(member.getStatus()))
-            {
-                return AjaxResult.error("Account is disabled");
-            }
-            return AjaxResult.success("Login successful").put("data", buildLoginResult(member));
+            claims = appleJwksVerifier.verify(identityToken);
         }
         catch (Exception e)
         {
-            return AjaxResult.error("Failed to parse Apple token");
+            return AjaxResult.error("Apple token verification failed: " + e.getMessage());
         }
+
+        String appleId  = claims.getSubject();
+        String email    = claims.get("email", String.class);
+        if (email == null) email = "";
+        String fullName = body.getOrDefault("fullName", "Apple User");
+
+        MallMember member = memberService.loginOrRegisterByApple(appleId, email, fullName);
+        if (!"0".equals(member.getStatus()))
+        {
+            return AjaxResult.error("Account is disabled");
+        }
+        return AjaxResult.success("Login successful").put("data", buildLoginResult(member));
     }
 
     /**
