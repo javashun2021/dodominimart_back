@@ -87,6 +87,10 @@
         order by runner_accepted_time desc
     </select>
 
+    <select id="countByRunnerMemberId" parameterType="Long" resultType="int">
+        select count(1) from mall_order where runner_member_id = #{runnerMemberId}
+    </select>
+
     <update id="updateRunnerInfo" parameterType="com.ruoyi.mall.domain.MallOrder">
         update mall_order
         set runner_member_id     = #{runnerMemberId},
@@ -114,5 +118,29 @@
             #{id}
         </foreach>
     </update>
+
+    <select id="countDeliveriesThisWeek" parameterType="Long" resultType="int">
+        select count(1) from mall_order
+        where runner_member_id = #{runnerMemberId} and status = '3'
+          and YEARWEEK(update_time, 1) = YEARWEEK(NOW(), 1)
+    </select>
+
+    <select id="countDeliveriesThisMonth" parameterType="Long" resultType="int">
+        select count(1) from mall_order
+        where runner_member_id = #{runnerMemberId} and status = '3'
+          and DATE_FORMAT(update_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+    </select>
+
+    <select id="sumEarningsThisWeek" parameterType="Long" resultType="java.math.BigDecimal">
+        select COALESCE(SUM(delivery_fee), 0) from mall_order
+        where runner_member_id = #{runnerMemberId} and status = '3'
+          and YEARWEEK(update_time, 1) = YEARWEEK(NOW(), 1)
+    </select>
+
+    <select id="sumEarningsThisMonth" parameterType="Long" resultType="java.math.BigDecimal">
+        select COALESCE(SUM(delivery_fee), 0) from mall_order
+        where runner_member_id = #{runnerMemberId} and status = '3'
+          and DATE_FORMAT(update_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+    </select>
 
 </mapper>

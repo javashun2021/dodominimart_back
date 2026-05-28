@@ -15,6 +15,7 @@
         <result property="applyTime"    column="apply_time"    />
         <result property="reviewTime"   column="review_time"   />
         <result property="reviewer"     column="reviewer"      />
+        <result property="isOnline"     column="is_online"     />
         <result property="nickName"     column="nick_name"     />
         <result property="avatarUrl"    column="avatar_url"    />
     </resultMap>
@@ -66,6 +67,10 @@
             review_time   = #{reviewTime},
             reviewer      = #{reviewer}
         where app_id = #{appId}
+    </update>
+
+    <update id="updateOnlineStatus">
+        update mall_runner_application set is_online = #{isOnline} where member_id = #{memberId}
     </update>
 
 </mapper>

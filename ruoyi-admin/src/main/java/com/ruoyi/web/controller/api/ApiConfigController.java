@@ -43,6 +43,12 @@ public class ApiConfigController
         // 支付方式开关
         data.put("gcashEnabled", "true".equalsIgnoreCase(val("mall.gcash.enabled", "false")));
 
+        // 搜索热词（逗号分隔）
+        data.put("searchHotwords", val("mall.search.hotwords", ""));
+
+        // 预计配送时长（分钟）
+        data.put("deliveryMinutes", val("app.delivery.minutes", "30"));
+
         return AjaxResult.success("ok").put("data", data);
     }
 

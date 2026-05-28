@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallVerifyCodeMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallVerifyCode" id="VerifyCodeResult">
+        <id     property="id"         column="id"          />
+        <result property="email"      column="email"       />
+        <result property="code"       column="code"        />
+        <result property="expiresAt"  column="expires_at"  />
+        <result property="used"       column="used"        />
+        <result property="attempts"   column="attempts"    />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.ruoyi.mall.domain.MallVerifyCode" useGeneratedKeys="true" keyProperty="id">
+        insert into mall_verify_code(email, code, expires_at, used, attempts, create_time)
+        values(#{email}, #{code}, #{expiresAt}, 0, 0, #{createTime})
+    </insert>
+
+    <!-- 返回该邮箱最新一条记录（用于 60 秒防刷 + code 验证） -->
+    <select id="selectLatestByEmail" parameterType="String" resultMap="VerifyCodeResult">
+        select id, email, code, expires_at, used, create_time
+        from mall_verify_code
+        where email = #{email}
+        order by create_time desc
+        limit 1
+    </select>
+
+    <update id="markUsed">
+        update mall_verify_code set used = 1 where id = #{id}
+    </update>
+
+    <update id="incrementAttempts">
+        update mall_verify_code set attempts = attempts + 1 where id = #{id}
+    </update>
+
+</mapper>

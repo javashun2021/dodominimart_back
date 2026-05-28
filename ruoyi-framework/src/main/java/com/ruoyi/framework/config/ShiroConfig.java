@@ -282,7 +282,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/ajax/**", "anon");
         filterChainDefinitionMap.put("/js/**", "anon");
         filterChainDefinitionMap.put("/ruoyi/**", "anon");
-        filterChainDefinitionMap.put("/druid/**", "anon");
+        filterChainDefinitionMap.put("/druid/**", "user");
         filterChainDefinitionMap.put("/captcha/captchaImage**", "anon");
         filterChainDefinitionMap.put("/profile/**", "anon");
         // 退出 logout地址，shiro去清除session
@@ -304,6 +304,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/group-orders/*", "anon");
         filterChainDefinitionMap.put("/api/v1/payment/callback", "anon");
         filterChainDefinitionMap.put("/api/v1/runner/stats/*", "anon");
+        filterChainDefinitionMap.put("/api/v1/banners", "anon");
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
 
         Map<String, Filter> filters = new LinkedHashMap<>();

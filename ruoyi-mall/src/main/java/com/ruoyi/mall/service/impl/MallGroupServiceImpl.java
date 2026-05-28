@@ -25,6 +25,8 @@ import com.ruoyi.mall.mapper.MallGroupOrderMapper;
 import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallProductMapper;
+import com.ruoyi.mall.mapper.MallMemberMapper;
+import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.service.IGCashService;
 import com.ruoyi.mall.service.IMallGroupService;
 
@@ -42,6 +44,8 @@ public class MallGroupServiceImpl implements IMallGroupService
     @Autowired private MallAddressMapper          addressMapper;
     @Autowired private IGCashService              gcashService;
     @Autowired private com.ruoyi.mall.mapper.MallPaymentRecordMapper paymentRecordMapper;
+    @Autowired private MallMemberMapper            mallMemberMapper;
+    @Autowired private FcmService                  fcmService;
 
     @Override
     public List<MallGroupOrder> selectGroupOrderList(MallGroupOrder query)
@@ -178,11 +182,6 @@ public class MallGroupServiceImpl implements IMallGroupService
         member.setJoinedTime(now);
         memberMapper.insertMember(member);
 
-        if (activity.getMinGroupSize() <= 1)
-        {
-            completeGroup(groupOrder, activity);
-        }
-
         // 填充 activity（含商品图片、价格阶梯）和 members，与 getGroupDetail 返回结构一致
         activity.setTiers(activityMapper.selectTiersByActivityId(activityId));
         groupOrder.setActivity(activity);
@@ -231,12 +230,6 @@ public class MallGroupServiceImpl implements IMallGroupService
         groupOrder.setCurrentPrice(calcTierPrice(groupOrder.getActivityId(), newSize));
         groupOrderMapper.updateGroupOrder(groupOrder);
 
-        MallGroupActivity activity = activityMapper.selectActivityById(groupOrder.getActivityId());
-        if (newSize >= activity.getMinGroupSize())
-        {
-            completeGroup(groupOrder, activity);
-        }
-
         return getGroupDetail(inviteCode);
     }
 
@@ -264,20 +257,42 @@ public class MallGroupServiceImpl implements IMallGroupService
         List<MallGroupOrder> expired = groupOrderMapper.selectExpiredGroups();
         for (MallGroupOrder go : expired)
         {
-            go.setStatus("2");
-            groupOrderMapper.updateGroupOrder(go);
-            List<MallGroupMember> members = memberMapper.selectMembersByGroupOrderId(go.getGroupOrderId());
-            for (MallGroupMember m : members)
+            MallGroupActivity activity = activityMapper.selectActivityById(go.getActivityId());
+            if (activity != null && go.getCurrentSize() >= activity.getMinGroupSize())
             {
-                if (m.getOrderId() != null)
+                // Reached min size at expiry — auto-complete and generate orders
+                completeGroup(go, activity);
+            }
+            else
+            {
+                // Did not reach min size — fail and refund
+                go.setStatus("2");
+                groupOrderMapper.updateGroupOrder(go);
+                List<MallGroupMember> members = memberMapper.selectMembersByGroupOrderId(go.getGroupOrderId());
+                for (MallGroupMember m : members)
                 {
+                    if (m.getOrderId() != null)
+                    {
+                        try
+                        {
+                            com.ruoyi.mall.domain.MallPaymentRecord rec =
+                                    paymentRecordMapper.selectByOrderId(m.getOrderId());
+                            if (rec != null && "SUCCESS".equals(rec.getStatus()) && rec.getPaymentNo() != null)
+                            {
+                                gcashService.refund(rec.getPaymentNo(), rec.getAmount());
+                            }
+                        }
+                        catch (Exception ignored) { }
+                    }
+                    // 推送拼团失败通知（用 inviteCode 跳转拼团详情页查看结果）
                     try
                     {
-                        com.ruoyi.mall.domain.MallPaymentRecord rec =
-                                paymentRecordMapper.selectByOrderId(m.getOrderId());
-                        if (rec != null && "SUCCESS".equals(rec.getStatus()) && rec.getPaymentNo() != null)
+                        com.ruoyi.mall.domain.MallMember customer = mallMemberMapper.selectMemberById(m.getMemberId());
+                        if (customer != null && customer.getFcmToken() != null)
                         {
-                            gcashService.refund(rec.getPaymentNo(), rec.getAmount());
+                            fcmService.sendToToken(customer.getFcmToken(), "Group Buy Failed",
+                                    "Your group did not reach the minimum size. Any payment will be refunded.",
+                                    java.util.Collections.singletonMap("inviteCode", go.getInviteCode()));
                         }
                     }
                     catch (Exception ignored) { }
@@ -351,6 +366,19 @@ public class MallGroupServiceImpl implements IMallGroupService
             orderItemMapper.insertOrderItemBatch(Collections.singletonList(item));
 
             memberMapper.updateMemberOrderId(m.getId(), order.getOrderId());
+
+            // 推送拼团成功通知（用 inviteCode 跳转拼团详情页）
+            try
+            {
+                com.ruoyi.mall.domain.MallMember customer = mallMemberMapper.selectMemberById(m.getMemberId());
+                if (customer != null && customer.getFcmToken() != null)
+                {
+                    fcmService.sendToToken(customer.getFcmToken(), "Group Buy Success!",
+                            "Your group order for " + product.getName() + " has been confirmed",
+                            java.util.Collections.singletonMap("inviteCode", groupOrder.getInviteCode()));
+                }
+            }
+            catch (Exception ignored) { }
         }
     }
 

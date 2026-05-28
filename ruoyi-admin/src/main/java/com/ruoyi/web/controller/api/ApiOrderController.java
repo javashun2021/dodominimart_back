@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.base.AjaxResult;
+import com.ruoyi.mall.domain.MallAddress;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallRunnerRating;
+import com.ruoyi.mall.domain.MallRunnerApplication;
+import com.ruoyi.mall.service.IMallAddressService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallRunnerService;
 import com.ruoyi.system.service.ISysConfigService;
@@ -41,6 +44,9 @@ public class ApiOrderController extends BaseApiController
     @Autowired
     private IMallRunnerService runnerService;
 
+    @Autowired
+    private IMallAddressService addressService;
+
     /**
      * 下单
      * Body: { "addressId": 1, "paymentMethod": "COD|GCASH", "remark": "...", "items": [...] }
@@ -50,12 +56,21 @@ public class ApiOrderController extends BaseApiController
     {
         Long memberId = getCurrentMemberId(request);
 
+        Long addressId;
         Object addressIdObj = body.get("addressId");
-        if (addressIdObj == null)
+        if (addressIdObj != null)
         {
-            return AjaxResult.error("addressId is required");
+            addressId = Long.valueOf(addressIdObj.toString());
         }
-        Long addressId = Long.valueOf(addressIdObj.toString());
+        else
+        {
+            MallAddress defaultAddr = addressService.selectDefaultAddressByMemberId(memberId);
+            if (defaultAddr == null)
+            {
+                return AjaxResult.error("Please set a delivery address");
+            }
+            addressId = defaultAddr.getAddressId();
+        }
         String remark        = (String) body.getOrDefault("remark", "");
         String paymentMethod = body.get("paymentMethod") != null
                 ? body.get("paymentMethod").toString().toUpperCase() : "COD";
@@ -75,9 +90,20 @@ public class ApiOrderController extends BaseApiController
         List<MallOrderItem> items = new ArrayList<>();
         for (Map<String, Object> raw : rawItems)
         {
+            Object productIdObj = raw.get("productId");
+            Object quantityObj  = raw.get("quantity");
+            if (productIdObj == null || quantityObj == null)
+            {
+                return AjaxResult.error("Each item must have productId and quantity");
+            }
+            int qty = Integer.valueOf(quantityObj.toString());
+            if (qty <= 0)
+            {
+                return AjaxResult.error("quantity must be greater than 0");
+            }
             MallOrderItem item = new MallOrderItem();
-            item.setProductId(Long.valueOf(raw.get("productId").toString()));
-            item.setQuantity(Integer.valueOf(raw.get("quantity").toString()));
+            item.setProductId(Long.valueOf(productIdObj.toString()));
+            item.setQuantity(qty);
             items.add(item);
         }
 
@@ -127,6 +153,14 @@ public class ApiOrderController extends BaseApiController
         {
             return AjaxResult.error("Order not found");
         }
+        if (order.getRunnerMemberId() != null)
+        {
+            MallRunnerApplication app = runnerService.getApplication(order.getRunnerMemberId());
+            if (app != null)
+            {
+                order.setRunnerPhone(app.getPhone());
+            }
+        }
         return AjaxResult.success("ok").put("data", order);
     }
 
@@ -140,10 +174,20 @@ public class ApiOrderController extends BaseApiController
             HttpServletRequest request)
     {
         Long memberId = getCurrentMemberId(request);
+        Object scoreObj = body.get("score");
+        if (scoreObj == null)
+        {
+            return AjaxResult.error("score is required");
+        }
+        int score = Integer.valueOf(scoreObj.toString());
+        if (score < 1 || score > 5)
+        {
+            return AjaxResult.error("score must be between 1 and 5");
+        }
         MallRunnerRating rating = new MallRunnerRating();
         rating.setOrderId(id);
         rating.setRaterMemberId(memberId);
-        rating.setScore(Integer.valueOf(body.get("score").toString()));
+        rating.setScore(score);
         rating.setComment(body.get("comment") != null ? body.get("comment").toString() : null);
         try
         {

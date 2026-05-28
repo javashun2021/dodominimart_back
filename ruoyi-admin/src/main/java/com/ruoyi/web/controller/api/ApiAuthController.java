@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.framework.apple.AppleJwksVerifier;
 import com.ruoyi.framework.jwt.JwtUtils;
+import com.ruoyi.framework.mail.MailService;
 import com.ruoyi.mall.domain.MallMember;
 import com.ruoyi.mall.service.IMallMemberService;
 import io.jsonwebtoken.Claims;
@@ -50,7 +52,18 @@ public class ApiAuthController
     @Autowired
     private AppleJwksVerifier appleJwksVerifier;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Autowired
+    private MailService mailService;
+
+    private final RestTemplate restTemplate = buildRestTemplate();
+
+    private static RestTemplate buildRestTemplate()
+    {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(8_000);
+        return new RestTemplate(factory);
+    }
 
     /**
      * Google 登录 / 自动注册
@@ -127,7 +140,7 @@ public class ApiAuthController
         }
         catch (Exception e)
         {
-            return AjaxResult.error("Apple token verification failed: " + e.getMessage());
+            return AjaxResult.error("Apple token verification failed");
         }
 
         String appleId  = claims.getSubject();
@@ -216,18 +229,39 @@ public class ApiAuthController
     }
 
     /**
+     * 发送邮箱验证码
+     * Body: { "email": "..." }
+     */
+    @PostMapping("/send-code")
+    public AjaxResult sendCode(@RequestBody Map<String, String> body)
+    {
+        String email = body.get("email");
+        try
+        {
+            String code = memberService.createVerifyCode(email);
+            mailService.sendVerifyCode(email.trim(), code);
+            return AjaxResult.success("Verification code sent to your email");
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
+    /**
      * 邮箱注册
-     * Body: { "email": "...", "password": "...", "nickName": "..." }
+     * Body: { "email": "...", "code": "...", "password": "...", "nickName": "..." }
      */
     @PostMapping("/register")
     public AjaxResult register(@RequestBody Map<String, String> body)
     {
         String email    = body.get("email");
+        String code     = body.get("code");
         String password = body.get("password");
         String nickName = body.get("nickName");
         try
         {
-            MallMember member = memberService.registerByEmail(email, password, nickName);
+            MallMember member = memberService.registerByEmail(email, code, password, nickName);
             return AjaxResult.success("Registration successful").put("data", buildLoginResult(member));
         }
         catch (RuntimeException e)

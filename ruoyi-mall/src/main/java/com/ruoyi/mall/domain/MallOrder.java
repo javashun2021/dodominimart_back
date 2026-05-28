@@ -49,6 +49,8 @@ public class MallOrder implements Serializable
 
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
+    /** 非DB：接单 runner 的手机号（详情接口填充） */
+    private String runnerPhone;
 
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
@@ -115,4 +117,7 @@ public class MallOrder implements Serializable
 
     public List<MallOrderItem> getItems() { return items; }
     public void setItems(List<MallOrderItem> items) { this.items = items; }
+
+    public String getRunnerPhone()         { return runnerPhone; }
+    public void   setRunnerPhone(String v) { this.runnerPhone = v; }
 }

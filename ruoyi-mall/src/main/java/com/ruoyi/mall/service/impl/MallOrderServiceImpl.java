@@ -2,9 +2,12 @@ package com.ruoyi.mall.service.impl;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +15,6 @@ import com.ruoyi.mall.domain.MallAddress;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallProduct;
-import java.math.BigDecimal;
 import com.ruoyi.mall.domain.MallPaymentRecord;
 import com.ruoyi.mall.mapper.MallAddressMapper;
 import com.ruoyi.mall.mapper.MallFlashSaleMapper;
@@ -20,8 +22,10 @@ import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallPaymentRecordMapper;
 import com.ruoyi.mall.mapper.MallProductMapper;
+import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallOrderService;
+import com.ruoyi.mall.mapper.MallMemberMapper;
 
 @Service
 public class MallOrderServiceImpl implements IMallOrderService
@@ -38,15 +42,22 @@ public class MallOrderServiceImpl implements IMallOrderService
     private IMallFlashSaleService flashSaleService;
     @Autowired
     private MallPaymentRecordMapper paymentRecordMapper;
+    @Autowired
+    private FcmService fcmService;
+    @Autowired
+    private MallMemberMapper memberMapper;
 
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
     {
         List<MallOrder> list = orderMapper.selectOrderList(order);
-        for (MallOrder o : list)
-        {
-            o.setItems(orderItemMapper.selectItemsByOrderId(o.getOrderId()));
-        }
+        if (list.isEmpty()) return list;
+        // 批量拉取 items，1 次查询替代 N 次
+        List<Long> orderIds = list.stream().map(MallOrder::getOrderId).collect(Collectors.toList());
+        List<MallOrderItem> allItems = orderItemMapper.selectItemsByOrderIds(orderIds);
+        Map<Long, List<MallOrderItem>> itemsMap = allItems.stream()
+                .collect(Collectors.groupingBy(MallOrderItem::getOrderId));
+        list.forEach(o -> o.setItems(itemsMap.getOrDefault(o.getOrderId(), new ArrayList<>())));
         return list;
     }
 
@@ -143,6 +154,26 @@ public class MallOrderServiceImpl implements IMallOrderService
         orderItemMapper.insertOrderItemBatch(items);
 
         order.setItems(items);
+
+        // 推送：通知会员下单成功，同时广播给在线 runner
+        try
+        {
+            com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(memberId);
+            if (member != null && member.getFcmToken() != null)
+            {
+                fcmService.sendToToken(member.getFcmToken(), "Order Placed",
+                        "Your order #" + order.getOrderNo() + " is being processed",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+            }
+            fcmService.sendToTopic("runners", "New Order Available",
+                    "Tap to accept a delivery",
+                    java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after createOrder: {}", e.getMessage());
+        }
+
         return order;
     }
 
@@ -173,7 +204,25 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setStatus("4");
         order.setCancelReason(reason != null ? reason : "");
         order.setUpdateTime(new Date());
-        return orderMapper.updateOrder(order);
+        int rows = orderMapper.updateOrder(order);
+
+        // 推送：通知会员订单已取消
+        try
+        {
+            com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(memberId);
+            if (member != null && member.getFcmToken() != null)
+            {
+                fcmService.sendToToken(member.getFcmToken(), "Order Cancelled",
+                        "Your order #" + order.getOrderNo() + " has been cancelled",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after cancelOrder: {}", e.getMessage());
+        }
+
+        return rows;
     }
 
     @Override
@@ -189,6 +238,10 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             return; // 幂等：已支付则忽略重复回调
         }
+        if ("4".equals(order.getStatus()))
+        {
+            throw new RuntimeException("Order is cancelled, cannot mark as paid: " + orderNo);
+        }
         order.setPaymentStatus("PAID");
         order.setPaymentNo(paymentNo);
         order.setPaidAmount(amount);
@@ -203,6 +256,25 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             paymentRecordMapper.updateStatus(record.getRecordId(), "SUCCESS", null);
         }
+
+        // 推送：通知会员支付成功，广播给 runner
+        try
+        {
+            com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(order.getMemberId());
+            if (member != null && member.getFcmToken() != null)
+            {
+                fcmService.sendToToken(member.getFcmToken(), "Payment Confirmed",
+                        "Looking for a runner for your order",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+            }
+            fcmService.sendToTopic("runners", "New Order Available",
+                    "Tap to accept a delivery",
+                    java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after markOrderPaid: {}", e.getMessage());
+        }
     }
 
     private String generateOrderNo()
@@ -215,6 +287,15 @@ public class MallOrderServiceImpl implements IMallOrderService
     private String buildAddressSnapshot(MallAddress address)
     {
         return String.format("{\"addressId\":%d,\"label\":\"%s\",\"fullAddress\":\"%s\"}",
-                address.getAddressId(), address.getLabel(), address.getFullAddress());
+                address.getAddressId(),
+                escapeJson(address.getLabel()),
+                escapeJson(address.getFullAddress()));
+    }
+
+    private String escapeJson(String s)
+    {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r");
     }
 }

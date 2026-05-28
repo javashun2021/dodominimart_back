@@ -16,4 +16,6 @@ public interface MallAddressMapper
     int deleteAddressById(Long addressId);
 
     int clearDefaultByMemberId(Long memberId);
+
+    MallAddress selectDefaultAddressByMemberId(Long memberId);
 }

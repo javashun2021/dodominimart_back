@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.mall.mapper.MallFavoriteMapper">
+
+    <!-- 复用 MallProductMapper 的 resultMap，包含 flash sale + group buy 字段 -->
+    <select id="selectFavoriteProducts" resultMap="com.ruoyi.mall.mapper.MallProductMapper.MallProductResult">
+        select p.product_id, p.category_id, p.name, p.description, p.price, p.stock,
+               p.image_url, p.status, p.sort, p.del_flag, p.create_by, p.create_time,
+               p.update_by, p.update_time,
+               fs.sale_id          as flash_sale_id,
+               fs.flash_price      as flash_price,
+               fs.end_time         as flash_end_time,
+               (fs.stock_limit - fs.sold_count) as flash_stock_left,
+               ga.activity_id      as ga_activity_id,
+               ga.title            as ga_title,
+               ga.min_group_size   as ga_min_group_size,
+               ga.end_time         as ga_end_time,
+               gt.min_price        as ga_best_price
+        from mall_favorite f
+        join mall_product p on p.product_id = f.product_id and p.del_flag = '0'
+        left join mall_flash_sale fs
+            on fs.product_id = p.product_id
+           and fs.status = '1'
+           and now() between fs.start_time and fs.end_time
+        left join mall_group_activity ga
+            on ga.product_id = p.product_id
+           and ga.status = '0'
+           and now() between ga.start_time and ga.end_time
+        left join (
+            select activity_id, min(price) as min_price
+            from mall_group_tier
+            group by activity_id
+        ) gt on gt.activity_id = ga.activity_id
+        where f.member_id = #{memberId}
+        order by f.create_time desc
+    </select>
+
+    <select id="selectFavoriteProductIds" resultType="Long">
+        SELECT product_id FROM mall_favorite WHERE member_id = #{memberId}
+    </select>
+
+    <select id="isFavorited" resultType="int">
+        SELECT COUNT(1) FROM mall_favorite
+        WHERE member_id = #{memberId} AND product_id = #{productId}
+    </select>
+
+    <insert id="insertFavorite">
+        INSERT IGNORE INTO mall_favorite (member_id, product_id, create_time)
+        VALUES (#{memberId}, #{productId}, NOW())
+    </insert>
+
+    <delete id="deleteFavorite">
+        DELETE FROM mall_favorite WHERE member_id = #{memberId} AND product_id = #{productId}
+    </delete>
+
+</mapper>

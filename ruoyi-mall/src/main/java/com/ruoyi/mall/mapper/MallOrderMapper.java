@@ -21,6 +21,9 @@ public interface MallOrderMapper
     /** 查询某 runner 的配送记录 */
     List<MallOrder> selectByRunnerMemberId(Long runnerMemberId);
 
+    /** 统计某 runner 完成的配送数量 */
+    int countByRunnerMemberId(Long runnerMemberId);
+
     /** 接单：写入 runner 信息并更新 status */
     int updateRunnerInfo(MallOrder order);
 
@@ -29,4 +32,9 @@ public interface MallOrderMapper
 
     /** 批量标记跑腿费已结算 */
     int settleRunnerFee(List<Long> orderIds);
+
+    int countDeliveriesThisWeek(Long runnerMemberId);
+    int countDeliveriesThisMonth(Long runnerMemberId);
+    java.math.BigDecimal sumEarningsThisWeek(Long runnerMemberId);
+    java.math.BigDecimal sumEarningsThisMonth(Long runnerMemberId);
 }

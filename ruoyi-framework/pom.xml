@@ -103,6 +103,12 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
+        <!-- 邮件发送 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- JJWT 0.9.x 在 Java 9+ 需要手动引入 JAXB（JDK 9 起已移除） -->
         <dependency>
             <groupId>javax.xml.bind</groupId>

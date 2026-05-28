@@ -38,6 +38,12 @@ public interface IMallRunnerService
     /** 跑腿人统计（公开） */
     Map<String, Object> getRunnerStats(Long runnerMemberId);
 
+    /** 本人详细统计（含本周/本月，需登录） */
+    Map<String, Object> getMyStats(Long memberId);
+
+    /** 设置在线接单状态 */
+    void setOnlineStatus(Long memberId, boolean online);
+
     // ---- Admin：审核 ----
 
     List<MallRunnerApplication> listApplications(MallRunnerApplication query);

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallAddress;
 import com.ruoyi.mall.domain.MallMember;
+import com.ruoyi.mall.mapper.MallMemberMapper;
 import com.ruoyi.mall.service.IMallAddressService;
 import com.ruoyi.mall.service.IMallMemberService;
 
@@ -36,6 +37,9 @@ public class ApiMemberController extends BaseApiController
 
     @Autowired
     private IMallAddressService addressService;
+
+    @Autowired
+    private MallMemberMapper memberMapper;
 
     /** 获取个人信息 */
     @GetMapping("/profile")
@@ -136,5 +140,40 @@ public class ApiMemberController extends BaseApiController
         }
         addressService.deleteAddressById(id);
         return AjaxResult.success("Address deleted");
+    }
+
+    /**
+     * 上报 FCM 设备 token
+     * PUT /api/v1/member/fcm-token
+     * Body: { "fcmToken": "..." }
+     */
+    @PutMapping("/fcm-token")
+    public AjaxResult updateFcmToken(@RequestBody Map<String, String> body, HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        String token = body.get("fcmToken");
+        if (token == null || token.isEmpty())
+        {
+            return AjaxResult.error("fcmToken is required");
+        }
+        memberMapper.updateFcmToken(memberId, token);
+        return AjaxResult.success("FCM token updated");
+    }
+
+    /**
+     * 设置默认地址
+     * PUT /api/v1/member/addresses/{id}/default
+     */
+    @PutMapping("/addresses/{id}/default")
+    public AjaxResult setDefaultAddress(@PathVariable Long id, HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        MallAddress existing = addressService.selectAddressById(id);
+        if (existing == null || !existing.getMemberId().equals(memberId))
+        {
+            return AjaxResult.error("Address not found");
+        }
+        addressService.setDefaultAddress(id, memberId);
+        return AjaxResult.success("Default address updated");
     }
 }

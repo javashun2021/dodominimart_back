@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.mall.mapper.MallProductReviewMapper">
+
+    <resultMap id="ReviewResult" type="com.ruoyi.mall.domain.MallProductReview">
+        <id     property="reviewId"        column="review_id"/>
+        <result property="orderId"         column="order_id"/>
+        <result property="productId"       column="product_id"/>
+        <result property="memberId"        column="member_id"/>
+        <result property="score"           column="score"/>
+        <result property="content"         column="content"/>
+        <result property="images"          column="images"/>
+        <result property="createTime"      column="create_time"/>
+        <result property="memberNickname"  column="member_nickname"/>
+        <result property="memberAvatar"    column="member_avatar"/>
+        <result property="productName"     column="product_name"/>
+    </resultMap>
+
+    <insert id="insertReview" useGeneratedKeys="true" keyProperty="reviewId">
+        INSERT INTO mall_product_review
+            (order_id, product_id, member_id, score, content, images, create_time)
+        VALUES
+            (#{orderId}, #{productId}, #{memberId}, #{score}, #{content}, #{images}, #{createTime})
+    </insert>
+
+    <select id="selectByProductId" resultMap="ReviewResult">
+        SELECT r.review_id, r.order_id, r.product_id, r.member_id,
+               r.score, r.content, r.images, r.create_time,
+               m.nick_name AS member_nickname,
+               m.avatar    AS member_avatar,
+               p.name      AS product_name
+        FROM mall_product_review r
+        LEFT JOIN mall_member  m ON m.member_id = r.member_id
+        LEFT JOIN mall_product p ON p.product_id = r.product_id
+        WHERE r.product_id = #{productId}
+        ORDER BY r.create_time DESC
+    </select>
+
+    <select id="selectReviewedProductIds" resultType="Long">
+        SELECT product_id FROM mall_product_review WHERE order_id = #{orderId}
+    </select>
+
+    <select id="existsByOrderAndProduct" resultType="int">
+        SELECT COUNT(1) FROM mall_product_review
+        WHERE order_id = #{orderId} AND product_id = #{productId}
+    </select>
+
+    <select id="selectAvgScoreAndCount" resultType="map">
+        SELECT AVG(score) AS avgScore, COUNT(1) AS reviewCount
+        FROM mall_product_review
+        WHERE product_id = #{productId}
+    </select>
+
+</mapper>

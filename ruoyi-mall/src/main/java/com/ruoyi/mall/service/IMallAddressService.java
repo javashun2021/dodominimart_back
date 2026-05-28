@@ -14,4 +14,8 @@ public interface IMallAddressService
     int updateAddress(MallAddress address);
 
     int deleteAddressById(Long addressId);
+
+    MallAddress selectDefaultAddressByMemberId(Long memberId);
+
+    void setDefaultAddress(Long addressId, Long memberId);
 }

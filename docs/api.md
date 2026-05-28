@@ -104,7 +104,36 @@ if (config['messengerLink'].isNotEmpty) {
 
 ## 二、鉴权接口（无需登录）
 
-### 2.1 邮箱注册
+### 2.1 发送验证码
+
+`POST /api/v1/auth/send-code`
+
+用户填写邮箱后调用此接口，系统生成 6 位数字验证码并发送到该邮箱（有效期 10 分钟，同邮箱 60 秒内只能发一次）。
+
+**请求体**
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**响应**
+
+```json
+{
+  "code": 0,
+  "msg": "Verification code sent to your email"
+}
+```
+
+常见错误：
+- `"Invalid email format"` — 邮箱格式不合法
+- `"Please wait 60 seconds before requesting another code"` — 请求过于频繁
+
+---
+
+### 2.2 邮箱注册
 
 `POST /api/v1/auth/register`
 
@@ -113,6 +142,7 @@ if (config['messengerLink'].isNotEmpty) {
 ```json
 {
   "email":    "user@example.com",
+  "code":     "123456",
   "password": "mypassword123",
   "nickName": "Juan"
 }
@@ -121,6 +151,7 @@ if (config['messengerLink'].isNotEmpty) {
 | 字段 | 必填 | 说明 |
 |------|------|------|
 | `email` | 是 | 合法邮箱格式 |
+| `code` | 是 | 邮件中收到的 6 位验证码 |
 | `password` | 是 | 至少 8 位 |
 | `nickName` | 是 | 显示名称 |
 
@@ -143,6 +174,7 @@ if (config['messengerLink'].isNotEmpty) {
 ```
 
 常见错误：
+- `"Invalid or expired verification code"` — 验证码错误、已过期或已使用
 - `"Invalid email format"` — 邮箱格式不合法
 - `"Password must be at least 8 characters"` — 密码太短
 - `"Email already registered"` — 邮箱已用于邮箱注册
@@ -150,7 +182,7 @@ if (config['messengerLink'].isNotEmpty) {
 
 ---
 
-### 2.2 邮箱登录
+### 2.3 邮箱登录
 
 `POST /api/v1/auth/login`
 
@@ -185,7 +217,7 @@ if (config['messengerLink'].isNotEmpty) {
 
 ---
 
-### 2.3 Google 登录 / 注册
+### 2.4 Google 登录 / 注册
 
 `POST /api/v1/auth/google`
 
@@ -232,7 +264,7 @@ Flutter 端获取到 Google ID Token 后调用此接口，首次登录自动注�
 
 ---
 
-### 2.4 Apple 登录 / 注册
+### 2.5 Apple 登录 / 注册
 
 `POST /api/v1/auth/apple`
 
@@ -256,7 +288,7 @@ iOS 设备 Sign in with Apple 后调用（App Store 上架强制要求）。
 
 ---
 
-### 2.5 登出
+### 2.6 登出
 
 `POST /api/v1/auth/logout`
 
@@ -283,7 +315,7 @@ await storage.delete(key: 'jwt_token');
 
 ---
 
-### 2.6 刷新 Token
+### 2.7 刷新 Token
 
 `POST /api/v1/auth/refresh`
 
@@ -569,7 +601,7 @@ await storage.delete(key: 'jwt_token');
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `addressId` | long | 是 | 收货地址 ID（必须属于当前会员） |
+| `addressId` | long | 否 | 收货地址 ID；未传时自动使用默认地址 |
 | `paymentMethod` | string | 否 | `"COD"`（默认）或 `"GCASH"` |
 | `remark` | string | 否 | 备注 |
 | `items` | array | 是 | 商品列表，不能为空 |
@@ -609,7 +641,7 @@ await storage.delete(key: 'jwt_token');
 
 | code | msg | 原因 |
 |------|-----|------|
-| 500 | `addressId is required` | 未传地址 |
+| 500 | `Please set a delivery address` | 未传 addressId 且无默认地址 |
 | 500 | `items cannot be empty` | 商品列表为空 |
 | 500 | `Address not found` | 地址不属于当前会员 |
 | 500 | `商品 xxx 库存不足` | 库存不够 |
@@ -972,6 +1004,27 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 {
   "code": 0,
   "msg": "Address deleted"
+}
+```
+
+**失败情况：**
+
+| code | msg | 原因 |
+|------|-----|------|
+| 500 | `Address not found` | 地址不存在或不属于当前会员 |
+
+---
+
+### 5.7 设置默认地址
+
+`PUT /api/v1/member/addresses/{id}/default`
+
+**成功响应：**
+
+```json
+{
+  "code": 0,
+  "msg": "Default address updated"
 }
 ```
 
@@ -1782,6 +1835,7 @@ final address = '${snapshot['label']}: ${snapshot['fullAddress']}';
 | 会员 | POST | `/api/v1/member/addresses` | **是** |
 | 会员 | PUT | `/api/v1/member/addresses/{id}` | **是** |
 | 会员 | DELETE | `/api/v1/member/addresses/{id}` | **是** |
+| 会员 | PUT | `/api/v1/member/addresses/{id}/default` | **是** |
 | 跑腿 | GET | `/api/v1/runner/application` | **是** |
 | 跑腿 | POST | `/api/v1/runner/application` | **是** |
 | 跑腿 | GET | `/api/v1/runner/available-orders` | **是** |

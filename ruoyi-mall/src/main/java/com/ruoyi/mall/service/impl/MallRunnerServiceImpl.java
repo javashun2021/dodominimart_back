@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +20,7 @@ import com.ruoyi.mall.mapper.MallMemberMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallRunnerApplicationMapper;
 import com.ruoyi.mall.mapper.MallRunnerRatingMapper;
+import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.service.IMallRunnerService;
 
 @Service
@@ -28,6 +32,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     @Autowired private MallRunnerRatingMapper       ratingMapper;
     @Autowired private MallOrderMapper              orderMapper;
     @Autowired private MallMemberMapper             memberMapper;
+    @Autowired private FcmService                   fcmService;
 
     // ---- 申请相关 ----
 
@@ -55,6 +60,11 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     public List<MallOrder> getAvailableOrders(Long memberId)
     {
         requireApprovedRunner(memberId);
+        MallRunnerApplication app = appMapper.selectByMemberId(memberId);
+        if (!"1".equals(app.getIsOnline()))
+        {
+            return java.util.Collections.emptyList();
+        }
         return orderMapper.selectAvailableForRunner();
     }
 
@@ -83,7 +93,25 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         {
             throw new RuntimeException("Order already taken by another runner");
         }
-        return orderMapper.selectOrderById(orderId);
+        MallOrder accepted = orderMapper.selectOrderById(orderId);
+
+        // 推送：通知会员跑腿已接单
+        try
+        {
+            MallMember customer = memberMapper.selectMemberById(accepted.getMemberId());
+            if (customer != null && customer.getFcmToken() != null)
+            {
+                fcmService.sendToToken(customer.getFcmToken(), "Runner On the Way",
+                        "Your order is being delivered",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after acceptOrder: {}", e.getMessage());
+        }
+
+        return accepted;
     }
 
     @Override
@@ -101,7 +129,25 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         order.setStatus("3");
         order.setUpdateTime(new Date());
         orderMapper.updateOrder(order);
-        return orderMapper.selectOrderById(orderId);
+        MallOrder completed = orderMapper.selectOrderById(orderId);
+
+        // 推送：通知会员订单已送达
+        try
+        {
+            MallMember customer = memberMapper.selectMemberById(completed.getMemberId());
+            if (customer != null && customer.getFcmToken() != null)
+            {
+                fcmService.sendToToken(customer.getFcmToken(), "Order Delivered!",
+                        "Tap to rate your runner",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after completeOrder: {}", e.getMessage());
+        }
+
+        return completed;
     }
 
     @Override
@@ -137,7 +183,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     public Map<String, Object> getRunnerStats(Long runnerMemberId)
     {
         MallMember member = memberMapper.selectMemberById(runnerMemberId);
-        int total          = orderMapper.selectByRunnerMemberId(runnerMemberId).size();
+        int total          = orderMapper.countByRunnerMemberId(runnerMemberId);
         int ratingCount    = ratingMapper.countByRunnerMemberId(runnerMemberId);
         BigDecimal avgScore = ratingMapper.avgScoreByRunnerMemberId(runnerMemberId);
 
@@ -149,6 +195,28 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         stats.put("ratingCount",     ratingCount);
         stats.put("averageScore",    avgScore != null ? avgScore.setScale(1, java.math.RoundingMode.HALF_UP) : null);
         return stats;
+    }
+
+    @Override
+    public Map<String, Object> getMyStats(Long memberId)
+    {
+        Map<String, Object> stats = getRunnerStats(memberId);
+        stats.put("weekDeliveries",  orderMapper.countDeliveriesThisWeek(memberId));
+        stats.put("monthDeliveries", orderMapper.countDeliveriesThisMonth(memberId));
+        BigDecimal weekEarnings  = orderMapper.sumEarningsThisWeek(memberId);
+        BigDecimal monthEarnings = orderMapper.sumEarningsThisMonth(memberId);
+        stats.put("weekEarnings",  weekEarnings  != null ? weekEarnings  : BigDecimal.ZERO);
+        stats.put("monthEarnings", monthEarnings != null ? monthEarnings : BigDecimal.ZERO);
+        MallRunnerApplication app = appMapper.selectByMemberId(memberId);
+        stats.put("isOnline", app != null && "1".equals(app.getIsOnline()));
+        return stats;
+    }
+
+    @Override
+    public void setOnlineStatus(Long memberId, boolean online)
+    {
+        requireApprovedRunner(memberId);
+        appMapper.updateOnlineStatus(memberId, online ? "1" : "0");
     }
 
     // ---- Admin：审核 ----
@@ -189,11 +257,22 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     public List<Map<String, Object>> getUnsettledOrders(Long runnerMemberId)
     {
         List<MallOrder> orders = orderMapper.selectUnsettledRunnerOrders(runnerMemberId);
+        // 批量加载所有 runner 信息，避免 N+1
+        Map<Long, MallMember> memberMap = new HashMap<>();
+        if (!orders.isEmpty())
+        {
+            List<Long> runnerIds = orders.stream()
+                    .map(MallOrder::getRunnerMemberId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            memberMapper.selectMembersByIds(runnerIds)
+                    .forEach(m -> memberMap.put(m.getMemberId(), m));
+        }
         Map<Long, Map<String, Object>> grouped = new java.util.LinkedHashMap<>();
         for (MallOrder o : orders)
         {
             grouped.computeIfAbsent(o.getRunnerMemberId(), id -> {
-                MallMember m = memberMapper.selectMemberById(id);
+                MallMember m = memberMap.get(id);
                 Map<String, Object> row = new HashMap<>();
                 row.put("runnerMemberId", id);
                 row.put("nickName",  m != null ? m.getNickName() : "");

@@ -67,9 +67,14 @@ public class ApiGroupController extends BaseApiController
     public AjaxResult createGroup(@RequestBody Map<String, Object> body, HttpServletRequest request)
     {
         Long memberId = getCurrentMemberId(request);
+        Object activityIdObj = body.get("activityId");
+        if (activityIdObj == null)
+        {
+            return AjaxResult.error("activityId is required");
+        }
         try
         {
-            Long activityId = Long.valueOf(body.get("activityId").toString());
+            Long activityId = Long.valueOf(activityIdObj.toString());
             int  quantity   = Integer.parseInt(body.getOrDefault("quantity", 1).toString());
             Long addressId  = body.get("addressId") != null
                     ? Long.valueOf(body.get("addressId").toString()) : null;

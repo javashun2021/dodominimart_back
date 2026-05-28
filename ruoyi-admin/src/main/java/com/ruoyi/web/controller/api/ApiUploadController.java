@@ -73,7 +73,7 @@ public class ApiUploadController extends BaseApiController
         }
         catch (Exception e)
         {
-            return AjaxResult.error("上传失败：" + e.getMessage());
+            return AjaxResult.error("上传失败，请重试");
         }
     }
 }

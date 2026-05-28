@@ -14,4 +14,7 @@ public interface MallRunnerApplicationMapper
     int insertOrUpdate(MallRunnerApplication app);
 
     int updateStatus(MallRunnerApplication app);
+
+    int updateOnlineStatus(@org.apache.ibatis.annotations.Param("memberId") Long memberId,
+                           @org.apache.ibatis.annotations.Param("isOnline") String isOnline);
 }

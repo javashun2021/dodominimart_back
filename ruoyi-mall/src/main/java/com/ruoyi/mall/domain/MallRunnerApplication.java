@@ -20,6 +20,9 @@ public class MallRunnerApplication
     private Date   reviewTime;
     private String reviewer;
 
+    /** 是否在线接单（0否 1是） */
+    private String isOnline;
+
     /** 非DB：申请人昵称（列表展示用） */
     private String nickName;
     /** 非DB：申请人头像 */
@@ -57,6 +60,9 @@ public class MallRunnerApplication
 
     public String getReviewer()        { return reviewer; }
     public void   setReviewer(String v){ this.reviewer = v; }
+
+    public String getIsOnline()         { return isOnline; }
+    public void   setIsOnline(String v) { this.isOnline = v; }
 
     public String getNickName()        { return nickName; }
     public void   setNickName(String v){ this.nickName = v; }

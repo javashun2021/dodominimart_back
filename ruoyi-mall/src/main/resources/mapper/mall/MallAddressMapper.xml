@@ -52,4 +52,11 @@
         update mall_address set is_default = '0' where member_id = #{memberId}
     </update>
 
+    <select id="selectDefaultAddressByMemberId" parameterType="Long" resultMap="MallAddressResult">
+        select address_id, member_id, label, full_address, phone, is_default, create_time, update_time
+        from mall_address
+        where member_id = #{memberId} and is_default = '1'
+        limit 1
+    </select>
+
 </mapper>

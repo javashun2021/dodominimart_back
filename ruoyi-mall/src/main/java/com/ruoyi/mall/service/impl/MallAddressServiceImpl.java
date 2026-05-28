@@ -57,4 +57,22 @@ public class MallAddressServiceImpl implements IMallAddressService
     {
         return addressMapper.deleteAddressById(addressId);
     }
+
+    @Override
+    public MallAddress selectDefaultAddressByMemberId(Long memberId)
+    {
+        return addressMapper.selectDefaultAddressByMemberId(memberId);
+    }
+
+    @Override
+    @Transactional
+    public void setDefaultAddress(Long addressId, Long memberId)
+    {
+        addressMapper.clearDefaultByMemberId(memberId);
+        MallAddress addr = new MallAddress();
+        addr.setAddressId(addressId);
+        addr.setIsDefault("1");
+        addr.setUpdateTime(new Date());
+        addressMapper.updateAddress(addr);
+    }
 }

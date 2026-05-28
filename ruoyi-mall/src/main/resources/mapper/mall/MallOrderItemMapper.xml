@@ -20,6 +20,15 @@
         where order_id = #{orderId}
     </select>
 
+    <select id="selectItemsByOrderIds" resultMap="MallOrderItemResult">
+        select item_id, order_id, product_id, product_name, product_image, price, quantity, subtotal
+        from mall_order_item
+        where order_id in
+        <foreach collection="orderIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
     <insert id="insertOrderItem" parameterType="com.ruoyi.mall.domain.MallOrderItem" useGeneratedKeys="true" keyProperty="itemId">
         insert into mall_order_item(order_id, product_id, product_name, product_image, price, quantity, subtotal)
         values(#{orderId}, #{productId}, #{productName}, #{productImage}, #{price}, #{quantity}, #{subtotal})

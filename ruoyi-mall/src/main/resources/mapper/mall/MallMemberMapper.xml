@@ -15,6 +15,7 @@
         <result property="passwordHash"  column="password_hash"  />
         <result property="createTime"    column="create_time"    />
         <result property="updateTime"    column="update_time"    />
+        <result property="fcmToken"      column="fcm_token"      />
     </resultMap>
 
     <sql id="selectMemberVo">
@@ -48,6 +49,14 @@
         <include refid="selectMemberVo"/> where email = #{email}
     </select>
 
+    <select id="selectMembersByIds" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/>
+        where member_id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
     <insert id="insertMember" parameterType="com.ruoyi.mall.domain.MallMember" useGeneratedKeys="true" keyProperty="memberId">
         insert into mall_member(google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time)
         values(#{googleId}, #{appleId}, #{email}, #{nickName}, #{avatarUrl}, #{phone}, #{status}, #{passwordHash}, #{createTime})
@@ -62,6 +71,11 @@
             <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
         </set>
+        where member_id = #{memberId}
+    </update>
+
+    <update id="updateFcmToken">
+        update mall_member set fcm_token = #{fcmToken}, update_time = now()
         where member_id = #{memberId}
     </update>
 

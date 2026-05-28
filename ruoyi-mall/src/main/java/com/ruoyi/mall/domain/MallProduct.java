@@ -50,6 +50,10 @@ public class MallProduct extends BaseEntity
     private Long flashSaleId;
     /** 非DB：当前进行中的拼团活动 */
     private MallGroupActivity groupActivity;
+    /** 非DB：评价平均分（仅商品详情接口填充） */
+    private java.math.BigDecimal avgScore;
+    /** 非DB：评价总数 */
+    private Integer reviewCount;
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -95,4 +99,10 @@ public class MallProduct extends BaseEntity
 
     public MallGroupActivity getGroupActivity() { return groupActivity; }
     public void setGroupActivity(MallGroupActivity groupActivity) { this.groupActivity = groupActivity; }
+
+    public java.math.BigDecimal getAvgScore() { return avgScore; }
+    public void setAvgScore(java.math.BigDecimal avgScore) { this.avgScore = avgScore; }
+
+    public Integer getReviewCount() { return reviewCount; }
+    public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
 }
