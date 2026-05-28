@@ -19,4 +19,8 @@ public interface MallProductReviewMapper
 
     /** 返回 Map: avgScore (Double), reviewCount (Long) */
     Map<String, Object> selectAvgScoreAndCount(@Param("productId") Long productId);
+
+    List<MallProductReview> selectAllForAdmin(MallProductReview query);
+
+    int deleteReview(@Param("reviewId") Long reviewId);
 }

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="payment-form">
+                <div class="select-list">
+                    <ul>
+                        <li>订单ID：<input type="text" name="orderId"  placeholder="精确搜索"/></li>
+                        <li>会员ID：<input type="text" name="memberId" placeholder="精确搜索"/></li>
+                        <li>
+                            状态：
+                            <select name="status">
+                                <option value="">全部</option>
+                                <option value="PENDING">待支付</option>
+                                <option value="SUCCESS">成功</option>
+                                <option value="FAILED">失败</option>
+                                <option value="REFUNDED">已退款</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/payment";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "支付记录",
+            showSearch: true,
+            formId: "payment-form",
+            columns: [
+                {field: 'recordId',   title: 'ID',     width: 80},
+                {field: 'orderId',    title: '订单ID', width: 100},
+                {field: 'memberId',   title: '会员ID', width: 100},
+                {field: 'amount',     title: '金额(₱)', width: 110, formatter: function(v) {
+                    return '₱' + parseFloat(v).toFixed(2);
+                }},
+                {field: 'paymentNo',  title: 'GCash 流水号'},
+                {field: 'status',     title: '状态', width: 90, formatter: function(v) {
+                    var cls = {PENDING:'badge-warning', SUCCESS:'badge-primary', FAILED:'badge-danger', REFUNDED:'badge-default'};
+                    var lbl = {PENDING:'待支付', SUCCESS:'成功', FAILED:'失败', REFUNDED:'已退款'};
+                    return '<span class="badge ' + (cls[v]||'') + '">' + (lbl[v]||v) + '</span>';
+                }},
+                {field: 'createTime', title: '创建时间'},
+                {field: 'updateTime', title: '更新时间'}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

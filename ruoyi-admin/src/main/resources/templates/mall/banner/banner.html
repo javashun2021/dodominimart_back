@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="mall:banner:add">
+                <i class="fa fa-plus"></i> 新增
+            </a>
+            <a class="btn btn-primary btn-edit disabled" onclick="$.operate.edit()" shiro:hasPermission="mall:banner:edit">
+                <i class="fa fa-edit"></i> 修改
+            </a>
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:banner:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var editFlag   = [[${@permission.hasPermi('mall:banner:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('mall:banner:remove')}]];
+    var prefix = ctx + "mall/banner";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            modalName: "Banner",
+            columns: [
+                {checkbox: true},
+                {field: 'bannerId',   title: 'ID', width: 60},
+                {field: 'imageUrl',   title: '图片', formatter: function(v) {
+                    return v ? '<img src="' + v + '" height="48" style="border-radius:4px;object-fit:cover;">' : '-';
+                }},
+                {field: 'linkType',   title: '跳转类型', width: 100, formatter: function(v) {
+                    var map = {NONE:'无', PRODUCT:'商品', GROUP:'拼团', URL:'外链'};
+                    return map[v] || v;
+                }},
+                {field: 'linkValue',  title: '跳转值'},
+                {field: 'sort',       title: '排序', width: 70},
+                {field: 'status',     title: '状态', width: 80, formatter: function(v) {
+                    return v === '0'
+                        ? '<span class="badge badge-primary">启用</span>'
+                        : '<span class="badge badge-default">停用</span>';
+                }},
+                {field: 'createTime', title: '创建时间'},
+                {title: '操作', align: 'center', formatter: function(v, row) {
+                    var a = [];
+                    if (editFlag) a.push('<a class="btn btn-success btn-xs" onclick="$.operate.edit(\'' + row.bannerId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+                    if (removeFlag) a.push('<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.bannerId + '\')"><i class="fa fa-remove"></i>删除</a>');
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

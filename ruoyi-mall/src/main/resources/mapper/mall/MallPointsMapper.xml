@@ -39,4 +39,13 @@
         LIMIT 50
     </select>
 
+    <select id="selectAllLogs" resultMap="PointsLogResult">
+        SELECT log_id, member_id, delta, balance_after, source, source_id, remark, create_time
+        FROM mall_points_log
+        <where>
+            <if test="memberId != null">AND member_id = #{memberId}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

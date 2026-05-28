@@ -78,4 +78,16 @@ public class MallReviewServiceImpl implements IMallReviewService
     {
         return reviewMapper.selectReviewedProductIds(orderId);
     }
+
+    @Override
+    public List<MallProductReview> listAllReviews(MallProductReview query)
+    {
+        return reviewMapper.selectAllForAdmin(query);
+    }
+
+    @Override
+    public int deleteReview(Long reviewId)
+    {
+        return reviewMapper.deleteReview(reviewId);
+    }
 }

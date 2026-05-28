@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="review-form">
+                <div class="select-list">
+                    <ul>
+                        <li>商品ID：<input type="text" name="productId" placeholder="精确搜索"/></li>
+                        <li>会员ID：<input type="text" name="memberId"  placeholder="精确搜索"/></li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:review:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var removeFlag = [[${@permission.hasPermi('mall:review:remove')}]];
+    var prefix = ctx + "mall/review";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            removeUrl: prefix + "/remove",
+            modalName: "评价",
+            search: true,
+            showSearch: true,
+            formId: "review-form",
+            columns: [
+                {checkbox: true},
+                {field: 'reviewId',       title: 'ID',     width: 70},
+                {field: 'productName',    title: '商品'},
+                {field: 'memberNickname', title: '会员'},
+                {field: 'score',          title: '评分', width: 80, formatter: function(v) {
+                    var s = '';
+                    for (var i = 0; i < 5; i++) s += (i < v ? '★' : '☆');
+                    return '<span style="color:#f5a623;letter-spacing:1px;">' + s + '</span>';
+                }},
+                {field: 'content',        title: '评价内容', formatter: function(v) {
+                    return v ? (v.length > 50 ? v.substring(0, 50) + '…' : v) : '-';
+                }},
+                {field: 'createTime',     title: '时间'},
+                {title: '操作', align: 'center', width: 90, formatter: function(v, row) {
+                    return removeFlag
+                        ? '<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.reviewId + '\')"><i class="fa fa-remove"></i>删除</a>'
+                        : '';
+                }}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

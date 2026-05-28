@@ -37,4 +37,14 @@
         where record_id = #{recordId}
     </update>
 
+    <select id="selectList" resultMap="PaymentRecordResult">
+        SELECT * FROM mall_payment_record
+        <where>
+            <if test="orderId  != null">AND order_id  = #{orderId}</if>
+            <if test="memberId != null">AND member_id = #{memberId}</if>
+            <if test="status   != null and status != ''">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

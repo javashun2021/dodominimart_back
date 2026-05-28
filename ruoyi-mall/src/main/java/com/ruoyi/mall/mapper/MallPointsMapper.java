@@ -17,4 +17,6 @@ public interface MallPointsMapper
 
     /** 最近50条流水 */
     List<MallPointsLog> selectLogsByMemberId(@Param("memberId") Long memberId);
+
+    List<MallPointsLog> selectAllLogs(@Param("memberId") Long memberId);
 }

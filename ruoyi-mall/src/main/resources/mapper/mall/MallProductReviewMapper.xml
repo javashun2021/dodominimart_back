@@ -53,4 +53,23 @@
         WHERE product_id = #{productId}
     </select>
 
+    <select id="selectAllForAdmin" resultMap="ReviewResult">
+        SELECT r.review_id, r.order_id, r.product_id, r.member_id,
+               r.score, r.content, r.images, r.create_time,
+               m.nick_name AS member_nickname,
+               p.name      AS product_name
+        FROM mall_product_review r
+        LEFT JOIN mall_member  m ON m.member_id  = r.member_id
+        LEFT JOIN mall_product p ON p.product_id = r.product_id
+        <where>
+            <if test="productId != null">AND r.product_id = #{productId}</if>
+            <if test="memberId  != null">AND r.member_id  = #{memberId}</if>
+        </where>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <delete id="deleteReview">
+        DELETE FROM mall_product_review WHERE review_id = #{reviewId}
+    </delete>
+
 </mapper>

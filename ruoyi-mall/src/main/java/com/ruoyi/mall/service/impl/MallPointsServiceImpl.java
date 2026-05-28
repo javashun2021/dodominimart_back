@@ -64,4 +64,10 @@ public class MallPointsServiceImpl implements IMallPointsService
     {
         return pointsMapper.selectLogsByMemberId(memberId);
     }
+
+    @Override
+    public List<MallPointsLog> listAllLogs(Long memberId)
+    {
+        return pointsMapper.selectAllLogs(memberId);
+    }
 }

@@ -17,4 +17,6 @@ public interface IMallPointsService
     int getBalance(Long memberId);
 
     List<MallPointsLog> getHistory(Long memberId);
+
+    List<MallPointsLog> listAllLogs(Long memberId);
 }

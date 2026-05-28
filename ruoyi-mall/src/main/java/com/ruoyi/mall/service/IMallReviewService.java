@@ -18,4 +18,8 @@ public interface IMallReviewService
 
     /** 返回该订单已评价的 productId 列表 */
     List<Long> getReviewedProductIds(Long orderId);
+
+    List<MallProductReview> listAllReviews(MallProductReview query);
+
+    int deleteReview(Long reviewId);
 }
