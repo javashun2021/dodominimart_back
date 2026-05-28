@@ -107,9 +107,16 @@ public class ApiOrderController extends BaseApiController
             items.add(item);
         }
 
+        int pointsToUse = 0;
+        Object ptsObj = body.get("pointsToUse");
+        if (ptsObj != null)
+        {
+            try { pointsToUse = Integer.parseInt(ptsObj.toString()); } catch (NumberFormatException ignored) {}
+        }
+
         try
         {
-            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod);
+            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod, pointsToUse);
             return AjaxResult.success("Order placed successfully").put("data", order);
         }
         catch (RuntimeException e)

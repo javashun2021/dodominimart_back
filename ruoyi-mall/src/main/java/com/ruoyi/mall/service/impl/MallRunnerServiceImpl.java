@@ -21,6 +21,7 @@ import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallRunnerApplicationMapper;
 import com.ruoyi.mall.mapper.MallRunnerRatingMapper;
 import com.ruoyi.mall.service.FcmService;
+import com.ruoyi.mall.service.IMallPointsService;
 import com.ruoyi.mall.service.IMallRunnerService;
 
 @Service
@@ -33,6 +34,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     @Autowired private MallOrderMapper              orderMapper;
     @Autowired private MallMemberMapper             memberMapper;
     @Autowired private FcmService                   fcmService;
+    @Autowired private IMallPointsService           pointsService;
 
     // ---- 申请相关 ----
 
@@ -130,6 +132,21 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         order.setUpdateTime(new Date());
         orderMapper.updateOrder(order);
         MallOrder completed = orderMapper.selectOrderById(orderId);
+
+        // 积分奖励：1分/₱1（按实付金额取整）
+        try
+        {
+            int pts = completed.getTotalAmount().intValue();
+            if (pts > 0)
+            {
+                pointsService.earn(completed.getMemberId(), pts, 1,
+                        completed.getOrderNo(), "Order #" + completed.getOrderNo() + " completed");
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Points earn failed after completeOrder: {}", e.getMessage());
+        }
 
         // 推送：通知会员订单已送达
         try

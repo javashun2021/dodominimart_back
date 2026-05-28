@@ -10,6 +10,7 @@ import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallProductReview;
 import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallProductReviewMapper;
+import com.ruoyi.mall.service.IMallPointsService;
 import com.ruoyi.mall.service.IMallReviewService;
 
 @Service
@@ -17,6 +18,7 @@ public class MallReviewServiceImpl implements IMallReviewService
 {
     @Autowired private MallProductReviewMapper reviewMapper;
     @Autowired private MallOrderMapper         orderMapper;
+    @Autowired private IMallPointsService      pointsService;
 
     @Override
     @Transactional
@@ -31,11 +33,12 @@ public class MallReviewServiceImpl implements IMallReviewService
             throw new RuntimeException("Order has not been delivered yet");
 
         Date now = new Date();
+        int newReviewCount = 0;
         for (Map<String, Object> r : reviews)
         {
             Long productId = Long.valueOf(r.get("productId").toString());
             if (reviewMapper.existsByOrderAndProduct(orderId, productId) > 0)
-                continue; // 已评价则跳过（幂等）
+                continue;
 
             MallProductReview review = new MallProductReview();
             review.setOrderId(orderId);
@@ -46,6 +49,21 @@ public class MallReviewServiceImpl implements IMallReviewService
             review.setImages((String) r.getOrDefault("images", null));
             review.setCreateTime(now);
             reviewMapper.insertReview(review);
+            newReviewCount++;
+        }
+
+        // 每条新评价奖励 10 积分
+        if (newReviewCount > 0)
+        {
+            try
+            {
+                pointsService.earn(memberId, newReviewCount * 10, 2,
+                        String.valueOf(orderId), "Review bonus ×" + newReviewCount);
+            }
+            catch (Exception e)
+            {
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("Points earn failed after review: {}", e.getMessage());
+            }
         }
     }
 

@@ -25,13 +25,14 @@
         <result property="runnerAcceptedTime" column="runner_accepted_time" />
         <result property="deliveryFee"        column="delivery_fee"         />
         <result property="runnerFeeSettled"   column="runner_fee_settled"   />
+        <result property="pointsUsed"         column="points_used"          />
     </resultMap>
 
     <sql id="selectOrderVo">
         select order_id, order_no, member_id, address_snapshot, total_amount, status,
                remark, payment_method, payment_status, payment_no, paid_amount, payment_time,
                cancel_reason, order_source, create_time, update_by, update_time,
-               runner_member_id, runner_accepted_time, delivery_fee, runner_fee_settled
+               runner_member_id, runner_accepted_time, delivery_fee, runner_fee_settled, points_used
         from mall_order
     </sql>
 
@@ -55,9 +56,9 @@
 
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
-                               payment_method, payment_status, order_source, create_time)
+                               payment_method, payment_status, order_source, points_used, create_time)
         values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
-               #{paymentMethod}, 'UNPAID', #{orderSource}, #{createTime})
+               #{paymentMethod}, 'UNPAID', #{orderSource}, #{pointsUsed}, #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">

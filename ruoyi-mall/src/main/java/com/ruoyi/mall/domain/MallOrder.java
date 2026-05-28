@@ -47,6 +47,9 @@ public class MallOrder implements Serializable
     /** 跑腿费是否已结算 0否 1是（仅GCash订单需关注） */
     private String runnerFeeSettled;
 
+    /** 本单使用积分数 */
+    private int pointsUsed;
+
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
     /** 非DB：接单 runner 的手机号（详情接口填充） */
@@ -114,6 +117,9 @@ public class MallOrder implements Serializable
 
     public String getRunnerFeeSettled()        { return runnerFeeSettled; }
     public void   setRunnerFeeSettled(String v){ this.runnerFeeSettled = v; }
+
+    public int  getPointsUsed()      { return pointsUsed; }
+    public void setPointsUsed(int v) { this.pointsUsed = v; }
 
     public List<MallOrderItem> getItems() { return items; }
     public void setItems(List<MallOrderItem> items) { this.items = items; }

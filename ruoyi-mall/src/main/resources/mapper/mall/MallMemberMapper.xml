@@ -16,10 +16,11 @@
         <result property="createTime"    column="create_time"    />
         <result property="updateTime"    column="update_time"    />
         <result property="fcmToken"      column="fcm_token"      />
+        <result property="points"        column="points"         />
     </resultMap>
 
     <sql id="selectMemberVo">
-        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time, update_time
+        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time, update_time, fcm_token, points
         from mall_member
     </sql>
 

@@ -22,6 +22,7 @@ import com.ruoyi.framework.jwt.JwtUtils;
 import com.ruoyi.framework.mail.MailService;
 import com.ruoyi.mall.domain.MallMember;
 import com.ruoyi.mall.service.IMallMemberService;
+import com.ruoyi.mall.service.IMallPointsService;
 import io.jsonwebtoken.Claims;
 
 /**
@@ -45,6 +46,9 @@ public class ApiAuthController
 
     @Autowired
     private IMallMemberService memberService;
+
+    @Autowired
+    private IMallPointsService pointsService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -262,6 +266,7 @@ public class ApiAuthController
         try
         {
             MallMember member = memberService.registerByEmail(email, code, password, nickName);
+            try { pointsService.earn(member.getMemberId(), 50, 3, null, "Welcome bonus"); } catch (Exception ignored) {}
             return AjaxResult.success("Registration successful").put("data", buildLoginResult(member));
         }
         catch (RuntimeException e)

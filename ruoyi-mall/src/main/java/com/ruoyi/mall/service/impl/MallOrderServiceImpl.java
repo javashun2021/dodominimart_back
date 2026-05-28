@@ -25,6 +25,7 @@ import com.ruoyi.mall.mapper.MallProductMapper;
 import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallOrderService;
+import com.ruoyi.mall.service.IMallPointsService;
 import com.ruoyi.mall.mapper.MallMemberMapper;
 
 @Service
@@ -46,6 +47,8 @@ public class MallOrderServiceImpl implements IMallOrderService
     private FcmService fcmService;
     @Autowired
     private MallMemberMapper memberMapper;
+    @Autowired
+    private IMallPointsService pointsService;
 
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
@@ -88,7 +91,7 @@ public class MallOrderServiceImpl implements IMallOrderService
 
     @Override
     @Transactional
-    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod)
+    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse)
     {
         MallAddress address = addressMapper.selectAddressById(addressId);
         if (address == null || !address.getMemberId().equals(memberId))
@@ -135,6 +138,22 @@ public class MallOrderServiceImpl implements IMallOrderService
             }
         }
 
+        // 积分抵扣：100分=₱10，先验后扣，防止超扣
+        int actualPointsUsed = 0;
+        if (pointsToUse > 0)
+        {
+            int balance = pointsService.getBalance(memberId);
+            int canUse  = Math.min(pointsToUse, balance);
+            // 每100分抵₱10，取整百
+            canUse = (canUse / 100) * 100;
+            if (canUse > 0)
+            {
+                BigDecimal discount = BigDecimal.valueOf(canUse / 10L);
+                total = total.subtract(discount).max(BigDecimal.ZERO);
+                actualPointsUsed = canUse;
+            }
+        }
+
         MallOrder order = new MallOrder();
         order.setOrderNo(generateOrderNo());
         order.setMemberId(memberId);
@@ -144,8 +163,15 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setPaymentMethod(paymentMethod != null ? paymentMethod.toUpperCase() : "COD");
         order.setRemark(remark != null ? remark : "");
         order.setOrderSource(hasFlashSale ? "FLASH_SALE" : "NORMAL");
+        order.setPointsUsed(actualPointsUsed);
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
+
+        // 扣积分（下单后再扣，orderNo 已生成）
+        if (actualPointsUsed > 0)
+        {
+            pointsService.deduct(memberId, actualPointsUsed, order.getOrderNo());
+        }
 
         for (MallOrderItem item : items)
         {

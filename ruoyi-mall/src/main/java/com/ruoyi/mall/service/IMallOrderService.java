@@ -19,8 +19,9 @@ public interface IMallOrderService
     /**
      * 创建订单（事务）：校验库存 → 生成订单 → 插入明细 → 扣减库存
      * @param paymentMethod "COD" 或 "GCASH"，null 时默认 COD
+     * @param pointsToUse   本单使用积分数（0 = 不使用），100分=₱10
      */
-    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod);
+    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse);
 
     /** 变更订单状态（Admin 使用） */
     int updateOrderStatus(Long orderId, String status, String updateBy);

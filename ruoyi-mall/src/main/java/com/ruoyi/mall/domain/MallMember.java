@@ -27,6 +27,8 @@ public class MallMember implements Serializable
     private Date updateTime;
     /** FCM 设备推送令牌 */
     private String fcmToken;
+    /** 积分余额 */
+    private int points;
 
     public Long getMemberId() { return memberId; }
     public void setMemberId(Long memberId) { this.memberId = memberId; }
@@ -63,4 +65,7 @@ public class MallMember implements Serializable
 
     public String getFcmToken() { return fcmToken; }
     public void setFcmToken(String fcmToken) { this.fcmToken = fcmToken; }
+
+    public int getPoints() { return points; }
+    public void setPoints(int points) { this.points = points; }
 }
