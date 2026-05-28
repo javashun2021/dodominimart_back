@@ -26,6 +26,7 @@ import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallPointsService;
+import com.ruoyi.mall.service.ISsePushService;
 import com.ruoyi.mall.mapper.MallMemberMapper;
 
 @Service
@@ -45,6 +46,8 @@ public class MallOrderServiceImpl implements IMallOrderService
     private MallPaymentRecordMapper paymentRecordMapper;
     @Autowired
     private FcmService fcmService;
+    @Autowired
+    private ISsePushService sseService;
     @Autowired
     private MallMemberMapper memberMapper;
     @Autowired
@@ -181,9 +184,17 @@ public class MallOrderServiceImpl implements IMallOrderService
 
         order.setItems(items);
 
-        // 推送：通知会员下单成功，同时广播给在线 runner
+        // 推送：SSE（Web）+ FCM（Mobile）
         try
         {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", order.getOrderId());
+            payload.put("orderNo", order.getOrderNo());
+            payload.put("status", "0");
+            payload.put("title", "Order Placed");
+            payload.put("body",  "Your order #" + order.getOrderNo() + " is being processed");
+            sseService.push(memberId, "order_status", payload);
+
             com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(memberId);
             if (member != null && member.getFcmToken() != null)
             {
@@ -197,7 +208,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after createOrder: {}", e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after createOrder: {}", e.getMessage());
         }
 
         return order;
@@ -232,9 +243,17 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setUpdateTime(new Date());
         int rows = orderMapper.updateOrder(order);
 
-        // 推送：通知会员订单已取消
+        // 推送：SSE（Web）+ FCM（Mobile）
         try
         {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("orderNo", order.getOrderNo());
+            payload.put("status", "4");
+            payload.put("title", "Order Cancelled");
+            payload.put("body",  "Your order #" + order.getOrderNo() + " has been cancelled");
+            sseService.push(memberId, "order_status", payload);
+
             com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(memberId);
             if (member != null && member.getFcmToken() != null)
             {
@@ -245,7 +264,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after cancelOrder: {}", e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after cancelOrder: {}", e.getMessage());
         }
 
         return rows;
@@ -283,9 +302,17 @@ public class MallOrderServiceImpl implements IMallOrderService
             paymentRecordMapper.updateStatus(record.getRecordId(), "SUCCESS", null);
         }
 
-        // 推送：通知会员支付成功，广播给 runner
+        // 推送：SSE（Web）+ FCM（Mobile）
         try
         {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", order.getOrderId());
+            payload.put("orderNo", order.getOrderNo());
+            payload.put("status", "1");
+            payload.put("title", "Payment Confirmed");
+            payload.put("body",  "Looking for a runner for your order");
+            sseService.push(order.getMemberId(), "order_status", payload);
+
             com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(order.getMemberId());
             if (member != null && member.getFcmToken() != null)
             {
@@ -299,7 +326,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after markOrderPaid: {}", e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after markOrderPaid: {}", e.getMessage());
         }
     }
 

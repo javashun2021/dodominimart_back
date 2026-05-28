@@ -52,6 +52,13 @@
             <artifactId>ruoyi-mall</artifactId>
             <version>${ruoyi.version}</version>
         </dependency>
+
+        <!-- 强制 Guava 版本，覆盖传递依赖中的旧版本（Firebase Admin 9.x 需要 32.x） -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>32.1.3-jre</version>
+        </dependency>
         
     </dependencies>
 

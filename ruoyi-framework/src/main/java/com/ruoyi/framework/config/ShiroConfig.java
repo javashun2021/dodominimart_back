@@ -305,6 +305,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/payment/callback", "anon");
         filterChainDefinitionMap.put("/api/v1/runner/stats/*", "anon");
         filterChainDefinitionMap.put("/api/v1/banners", "anon");
+        filterChainDefinitionMap.put("/api/v1/sse/**", "anon"); // JWT validated in controller via query param
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
 
         Map<String, Filter> filters = new LinkedHashMap<>();

@@ -23,6 +23,7 @@ import com.ruoyi.mall.mapper.MallRunnerRatingMapper;
 import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.service.IMallPointsService;
 import com.ruoyi.mall.service.IMallRunnerService;
+import com.ruoyi.mall.service.ISsePushService;
 
 @Service
 public class MallRunnerServiceImpl implements IMallRunnerService
@@ -34,6 +35,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     @Autowired private MallOrderMapper              orderMapper;
     @Autowired private MallMemberMapper             memberMapper;
     @Autowired private FcmService                   fcmService;
+    @Autowired private ISsePushService              sseService;
     @Autowired private IMallPointsService           pointsService;
 
     // ---- 申请相关 ----
@@ -97,9 +99,16 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         }
         MallOrder accepted = orderMapper.selectOrderById(orderId);
 
-        // 推送：通知会员跑腿已接单
+        // 推送：SSE（Web）+ FCM（Mobile）
         try
         {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("status", "2");
+            payload.put("title", "Runner On the Way");
+            payload.put("body",  "Your order is being delivered");
+            sseService.push(accepted.getMemberId(), "order_status", payload);
+
             MallMember customer = memberMapper.selectMemberById(accepted.getMemberId());
             if (customer != null && customer.getFcmToken() != null)
             {
@@ -110,7 +119,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after acceptOrder: {}", e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after acceptOrder: {}", e.getMessage());
         }
 
         return accepted;
@@ -148,9 +157,16 @@ public class MallRunnerServiceImpl implements IMallRunnerService
             org.slf4j.LoggerFactory.getLogger(getClass()).warn("Points earn failed after completeOrder: {}", e.getMessage());
         }
 
-        // 推送：通知会员订单已送达
+        // 推送：SSE（Web）+ FCM（Mobile）
         try
         {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("status", "3");
+            payload.put("title", "Order Delivered!");
+            payload.put("body",  "Tap to rate your runner");
+            sseService.push(completed.getMemberId(), "order_status", payload);
+
             MallMember customer = memberMapper.selectMemberById(completed.getMemberId());
             if (customer != null && customer.getFcmToken() != null)
             {
@@ -161,7 +177,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("FCM push failed after completeOrder: {}", e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after completeOrder: {}", e.getMessage());
         }
 
         return completed;
