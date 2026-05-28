@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="gray-bg">
@@ -9,19 +9,19 @@
             <form id="member-form">
                 <div class="select-list">
                     <ul>
-                        <li>邮箱：<input type="text" name="email"/></li>
-                        <li>昵称：<input type="text" name="nickName"/></li>
+                        <li>Email：<input type="text" name="email"/></li>
+                        <li>Nickname：<input type="text" name="nickName"/></li>
                         <li>
-                            状态：
+                            Status：
                             <select name="status">
-                                <option value="">全部</option>
-                                <option value="0">正常</option>
-                                <option value="1">禁用</option>
+                                <option value="">All</option>
+                                <option value="0">Active</option>
+                                <option value="1">Disabled</option>
                             </select>
                         </li>
                         <li>
-                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
-                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
                         </li>
                     </ul>
                 </div>
@@ -38,24 +38,24 @@
     $(function() {
         $.table.init({
             url: prefix + "/list",
-            modalName: "会员",
+            modalName: "Member",
             columns: [
                 {checkbox: true},
-                {field: 'memberId',   title: '会员ID'},
-                {field: 'avatarUrl',  title: '头像', formatter: function(v) {
+                {field: 'memberId',   title: 'Member ID'},
+                {field: 'avatarUrl',  title: 'Avatar', formatter: function(v) {
                     return v ? '<img src="' + v + '" height="36" style="border-radius:50%">' : '<i class="fa fa-user-circle fa-2x text-muted"></i>';
                 }},
-                {field: 'nickName',   title: '昵称'},
-                {field: 'email',      title: '邮箱'},
-                {field: 'phone',      title: '手机号'},
-                {field: 'status',     title: '状态', align: 'center',
+                {field: 'nickName',   title: 'Nickname'},
+                {field: 'email',      title: 'Email'},
+                {field: 'phone',      title: 'Phone'},
+                {field: 'status',     title: 'Status', align: 'center',
                     formatter: function(v) {
                         return v === '0'
-                            ? '<span class="badge badge-primary">正常</span>'
-                            : '<span class="badge badge-danger">禁用</span>';
+                            ? '<span class="badge badge-primary">Active</span>'
+                            : '<span class="badge badge-danger">Disabled</span>';
                     }
                 },
-                {field: 'createTime', title: '注册时间', sortable: true}
+                {field: 'createTime', title: 'Registered At', sortable: true}
             ]
         });
     });

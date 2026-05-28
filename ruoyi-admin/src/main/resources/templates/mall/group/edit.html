@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="white-bg">
@@ -8,68 +8,67 @@
         <input type="hidden" name="activityId" th:value="${activity.activityId}"/>
         <input type="hidden" name="tiersJson"  id="tiersJson"/>
         <div class="form-group">
-            <label class="col-sm-3 control-label">活动名称：</label>
+            <label class="col-sm-3 control-label">Activity Name：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="text" name="title" th:value="${activity.title}" required>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">商品ID：</label>
+            <label class="col-sm-3 control-label">Product ID：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="number" name="productId" th:value="${activity.productId}" required>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">最小开团人数：</label>
+            <label class="col-sm-3 control-label">Min Group Size：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="number" min="2" name="minGroupSize" th:value="${activity.minGroupSize}" required>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">成团时限(小时)：</label>
+            <label class="col-sm-3 control-label">Duration (hours)：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="number" min="1" name="durationHours" th:value="${activity.durationHours}" required>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">开始时间：</label>
+            <label class="col-sm-3 control-label">Start Time：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="datetime-local" name="startTime"
                        th:value="${#dates.format(activity.startTime, 'yyyy-MM-dd''T''HH:mm')}" required>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">结束时间：</label>
+            <label class="col-sm-3 control-label">End Time：</label>
             <div class="col-sm-8">
                 <input class="form-control" type="datetime-local" name="endTime"
                        th:value="${#dates.format(activity.endTime, 'yyyy-MM-dd''T''HH:mm')}" required>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">状态：</label>
+            <label class="col-sm-3 control-label">Status：</label>
             <div class="col-sm-8">
                 <div class="radio-box">
                     <input type="radio" id="s0" name="status" value="0" th:checked="${activity.status == '0'}">
-                    <label for="s0">进行中</label>
+                    <label for="s0">Active</label>
                 </div>
                 <div class="radio-box">
                     <input type="radio" id="s1" name="status" value="1" th:checked="${activity.status == '1'}">
-                    <label for="s1">已结束</label>
+                    <label for="s1">Ended</label>
                 </div>
             </div>
         </div>
 
-        <!-- 价格阶梯 -->
         <div class="form-group">
-            <label class="col-sm-3 control-label">价格阶梯：</label>
+            <label class="col-sm-3 control-label">Price Tiers：</label>
             <div class="col-sm-8">
                 <table class="table table-bordered" id="tierTable">
                     <thead>
                         <tr>
-                            <th>最少人数</th>
-                            <th>最多人数（空=无上限）</th>
-                            <th>单价(PHP)</th>
-                            <th>操作</th>
+                            <th>Min Qty</th>
+                            <th>Max Qty (blank = unlimited)</th>
+                            <th>Unit Price (PHP)</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="tierBody">
@@ -77,12 +76,12 @@
                             <td><input type="number" class="form-control tier-min" min="1" th:value="${t.minQuantity}" required></td>
                             <td><input type="number" class="form-control tier-max" min="1" th:value="${t.maxQuantity}"></td>
                             <td><input type="number" class="form-control tier-price" step="0.01" min="0" th:value="${t.price}" required></td>
-                            <td><button type="button" class="btn btn-danger btn-xs" onclick="removeTier(this)">删除</button></td>
+                            <td><button type="button" class="btn btn-danger btn-xs" onclick="removeTier(this)">Delete</button></td>
                         </tr>
                     </tbody>
                 </table>
                 <button type="button" class="btn btn-info btn-sm" onclick="addTierRow()">
-                    <i class="fa fa-plus"></i> 添加档位
+                    <i class="fa fa-plus"></i> Add Tier
                 </button>
             </div>
         </div>
@@ -97,7 +96,7 @@
             '<td><input type="number" class="form-control tier-min" min="1" required></td>' +
             '<td><input type="number" class="form-control tier-max" min="1"></td>' +
             '<td><input type="number" class="form-control tier-price" step="0.01" min="0" required></td>' +
-            '<td><button type="button" class="btn btn-danger btn-xs" onclick="removeTier(this)">删除</button></td>' +
+            '<td><button type="button" class="btn btn-danger btn-xs" onclick="removeTier(this)">Delete</button></td>' +
         '</tr>');
     }
 

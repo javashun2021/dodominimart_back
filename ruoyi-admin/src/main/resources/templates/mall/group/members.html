@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="white-bg">
 <div class="wrapper wrapper-content animated fadeInRight ibox-content">
-    <h4>拼团成员列表 &nbsp;<small th:text="'团号：' + ${groupOrderId}"></small></h4>
+    <h4>Group Members &nbsp;<small th:text="'Group Order: #' + ${groupOrderId}"></small></h4>
     <table class="table table-bordered table-hover">
         <thead>
             <tr>
                 <th>#</th>
-                <th>昵称</th>
-                <th>购买数量</th>
-                <th>加入时间</th>
-                <th>订单ID</th>
+                <th>Nickname</th>
+                <th>Quantity</th>
+                <th>Joined At</th>
+                <th>Order ID</th>
             </tr>
         </thead>
         <tbody>
@@ -25,15 +25,15 @@
                     <span th:if="${m.orderId != null}">
                         <a th:href="@{/mall/order/detail/{id}(id=${m.orderId})}" th:text="${m.orderId}"></a>
                     </span>
-                    <span th:unless="${m.orderId != null}" class="text-muted">待成团</span>
+                    <span th:unless="${m.orderId != null}" class="text-muted">Pending</span>
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(members)}">
-                <td colspan="5" class="text-center text-muted">暂无成员</td>
+                <td colspan="5" class="text-center text-muted">No members yet</td>
             </tr>
         </tbody>
     </table>
-    <a class="btn btn-default btn-sm" onclick="history.back()"><i class="fa fa-arrow-left"></i> 返回</a>
+    <a class="btn btn-default btn-sm" onclick="history.back()"><i class="fa fa-arrow-left"></i> Back</a>
 </div>
 <div th:include="include :: footer"></div>
 </body>

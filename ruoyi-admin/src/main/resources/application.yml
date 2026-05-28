@@ -9,7 +9,7 @@ ruoyi:
   # 文件上传路径
   # /home/dodominimart/uploadPath/
   # D:/ruoyi/uploadPath/
-  profile: D:/ruoyi/uploadPath/
+  profile: /home/dodominimart/uploadPath/
   # 获取ip地址开关
   addressEnabled: true
 

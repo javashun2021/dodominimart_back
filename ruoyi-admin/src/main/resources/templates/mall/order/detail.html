@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <meta charset="utf-8">
 <head th:include="include :: header">
 <style>
@@ -13,51 +13,48 @@
     <div class="row">
         <div class="col-sm-12">
 
-            <!-- 订单基本信息 -->
             <div class="ibox-content detail-section">
-                <h4>订单信息</h4>
+                <h4>Order Information</h4>
                 <div class="row">
                     <div class="col-sm-6">
-                        <p><strong>订单编号：</strong><span th:text="${order.orderNo}"></span></p>
-                        <p><strong>下单时间：</strong><span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
-                        <p><strong>订单金额：</strong>₱<span th:text="${order.totalAmount}"></span></p>
-                        <p><strong>会员备注：</strong><span th:text="${order.remark ?: '-'}"></span></p>
+                        <p><strong>Order No：</strong><span th:text="${order.orderNo}"></span></p>
+                        <p><strong>Order Time：</strong><span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
+                        <p><strong>Total Amount：</strong>₱<span th:text="${order.totalAmount}"></span></p>
+                        <p><strong>Member Note：</strong><span th:text="${order.remark ?: '-'}"></span></p>
                     </div>
                     <div class="col-sm-6">
                         <p>
-                            <strong>订单状态：</strong>
+                            <strong>Status：</strong>
                             <span th:switch="${order.status}">
-                                <span th:case="'0'" class="badge" style="background:#f0ad4e">待确认</span>
-                                <span th:case="'1'" class="badge badge-primary">已确认</span>
-                                <span th:case="'2'" class="badge" style="background:#5bc0de">配送中</span>
-                                <span th:case="'3'" class="badge badge-success">已完成</span>
-                                <span th:case="'4'" class="badge badge-default">已取消</span>
+                                <span th:case="'0'" class="badge" style="background:#f0ad4e">Pending</span>
+                                <span th:case="'1'" class="badge badge-primary">Confirmed</span>
+                                <span th:case="'2'" class="badge" style="background:#5bc0de">Delivering</span>
+                                <span th:case="'3'" class="badge badge-success">Completed</span>
+                                <span th:case="'4'" class="badge badge-default">Cancelled</span>
                             </span>
                         </p>
                         <p th:if="${order.cancelReason != null and order.cancelReason != ''}">
-                            <strong>取消原因：</strong><span th:text="${order.cancelReason}"></span>
+                            <strong>Cancel Reason：</strong><span th:text="${order.cancelReason}"></span>
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- 收货地址（快照） -->
             <div class="ibox-content detail-section">
-                <h4>收货地址</h4>
+                <h4>Delivery Address</h4>
                 <p th:text="${order.addressSnapshot}"></p>
             </div>
 
-            <!-- 商品明细 -->
             <div class="ibox-content detail-section">
-                <h4>商品明细</h4>
+                <h4>Order Items</h4>
                 <table class="table table-bordered items-table">
                     <thead>
                         <tr>
-                            <th>图片</th>
-                            <th>商品名称</th>
-                            <th>单价 (PHP)</th>
-                            <th>数量</th>
-                            <th>小计 (PHP)</th>
+                            <th>Image</th>
+                            <th>Product Name</th>
+                            <th>Unit Price (PHP)</th>
+                            <th>Qty</th>
+                            <th>Subtotal (PHP)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -75,25 +72,24 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="text-right"><strong>合计</strong></td>
+                            <td colspan="4" class="text-right"><strong>Total</strong></td>
                             <td><strong>₱<span th:text="${order.totalAmount}"></span></strong></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
-            <!-- 操作按钮 -->
             <div class="ibox-content">
-                <a class="btn btn-default" onclick="history.back()"><i class="fa fa-arrow-left"></i> 返回列表</a>
+                <a class="btn btn-default" onclick="history.back()"><i class="fa fa-arrow-left"></i> Back to List</a>
                 <span th:if="${order.status == '0'}">
-                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'1\')'"><i class="fa fa-check"></i> 确认订单</a>
-                    <a class="btn btn-danger"  th:onclick="'changeStatus(' + ${order.orderId} + ',\'4\')'"><i class="fa fa-ban"></i> 取消订单</a>
+                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'1\')'"><i class="fa fa-check"></i> Confirm Order</a>
+                    <a class="btn btn-danger"  th:onclick="'changeStatus(' + ${order.orderId} + ',\'4\')'"><i class="fa fa-ban"></i> Cancel Order</a>
                 </span>
                 <span th:if="${order.status == '1'}">
-                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'2\')'"><i class="fa fa-truck"></i> 开始配送</a>
+                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'2\')'"><i class="fa fa-truck"></i> Start Delivery</a>
                 </span>
                 <span th:if="${order.status == '2'}">
-                    <a class="btn btn-success" th:onclick="'changeStatus(' + ${order.orderId} + ',\'3\')'"><i class="fa fa-flag"></i> 标记完成</a>
+                    <a class="btn btn-success" th:onclick="'changeStatus(' + ${order.orderId} + ',\'3\')'"><i class="fa fa-flag"></i> Mark Completed</a>
                 </span>
             </div>
 
@@ -106,15 +102,15 @@
     var orderId = [[${order.orderId}]];
 
     function changeStatus(id, status) {
-        var msg = {1:'确认订单', 2:'标记配送中', 3:'标记已完成', 4:'取消订单'}[status];
-        $.modal.confirm('确认要【' + msg + '】吗？', function() {
+        var msg = {1:'Confirm Order', 2:'Mark as Delivering', 3:'Mark as Completed', 4:'Cancel Order'}[status];
+        $.modal.confirm('Are you sure to [' + msg + ']?', function() {
             $.ajax({
                 url: prefix + '/changeStatus',
                 type: 'POST',
                 data: {orderId: id, status: status},
                 success: function(res) {
                     if (res.code === 0) {
-                        $.modal.alertSuccess('操作成功');
+                        $.modal.alertSuccess('Operation successful');
                         setTimeout(function() { location.reload(); }, 1200);
                     } else {
                         $.modal.alertWarning(res.msg);

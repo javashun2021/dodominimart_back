@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="white-bg">
@@ -7,40 +7,40 @@
     <form class="form-horizontal m" id="form-banner-edit">
         <input type="hidden" name="bannerId" th:value="${banner.bannerId}"/>
         <div class="form-group">
-            <label class="col-sm-3 control-label">图片URL<span class="red">*</span></label>
+            <label class="col-sm-3 control-label">Image URL<span class="red">*</span></label>
             <div class="col-sm-8">
                 <input name="imageUrl" class="form-control" type="text" required th:value="${banner.imageUrl}"/>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">跳转类型</label>
+            <label class="col-sm-3 control-label">Link Type</label>
             <div class="col-sm-8">
                 <select name="linkType" class="form-control">
-                    <option value="NONE"    th:selected="${banner.linkType=='NONE'}">无跳转</option>
-                    <option value="PRODUCT" th:selected="${banner.linkType=='PRODUCT'}">商品</option>
-                    <option value="GROUP"   th:selected="${banner.linkType=='GROUP'}">拼团</option>
-                    <option value="URL"     th:selected="${banner.linkType=='URL'}">外链</option>
+                    <option value="NONE"    th:selected="${banner.linkType=='NONE'}">No Link</option>
+                    <option value="PRODUCT" th:selected="${banner.linkType=='PRODUCT'}">Product</option>
+                    <option value="GROUP"   th:selected="${banner.linkType=='GROUP'}">Group Buy</option>
+                    <option value="URL"     th:selected="${banner.linkType=='URL'}">External URL</option>
                 </select>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">跳转值</label>
+            <label class="col-sm-3 control-label">Link Value</label>
             <div class="col-sm-8">
                 <input name="linkValue" class="form-control" type="text" th:value="${banner.linkValue}"/>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">排序</label>
+            <label class="col-sm-3 control-label">Sort</label>
             <div class="col-sm-8">
                 <input name="sort" class="form-control" type="number" th:value="${banner.sort}"/>
             </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">状态</label>
+            <label class="col-sm-3 control-label">Status</label>
             <div class="col-sm-8">
                 <select name="status" class="form-control">
-                    <option value="0" th:selected="${banner.status=='0'}">启用</option>
-                    <option value="1" th:selected="${banner.status=='1'}">停用</option>
+                    <option value="0" th:selected="${banner.status=='0'}">Enabled</option>
+                    <option value="1" th:selected="${banner.status=='1'}">Disabled</option>
                 </select>
             </div>
         </div>

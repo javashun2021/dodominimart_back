@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="gray-bg">
@@ -9,18 +9,18 @@
             <form id="flashsale-form">
                 <div class="select-list">
                     <ul>
-                        <li>活动名称：<input type="text" name="title"/></li>
-                        <li>状态：
+                        <li>Activity Name：<input type="text" name="title"/></li>
+                        <li>Status：
                             <select name="status">
-                                <option value="">全部</option>
-                                <option value="0">未开始</option>
-                                <option value="1">进行中</option>
-                                <option value="2">已结束</option>
+                                <option value="">All</option>
+                                <option value="0">Not Started</option>
+                                <option value="1">Active</option>
+                                <option value="2">Ended</option>
                             </select>
                         </li>
                         <li>
-                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
-                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
                         </li>
                     </ul>
                 </div>
@@ -28,7 +28,7 @@
         </div>
         <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
             <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="mall:flashsale:add">
-                <i class="fa fa-plus"></i> 新增
+                <i class="fa fa-plus"></i> Add
             </a>
         </div>
         <div class="col-sm-12 select-table table-striped">
@@ -48,31 +48,31 @@
             createUrl: prefix + "/add",
             updateUrl: prefix + "/edit/{id}",
             removeUrl: prefix + "/remove",
-            modalName: "限时优惠",
+            modalName: "Flash Sale",
             columns: [
                 {checkbox: true},
                 {field: 'saleId',      title: 'ID'},
-                {field: 'productName', title: '商品名称'},
-                {field: 'title',       title: '活动名称'},
-                {field: 'flashPrice',  title: '活动价(PHP)'},
-                {field: 'stockLimit',  title: '限量'},
-                {field: 'soldCount',   title: '已售'},
-                {field: 'perLimit',    title: '每人限购'},
-                {field: 'startTime',   title: '开始时间'},
-                {field: 'endTime',     title: '结束时间'},
-                {field: 'status', title: '状态', align: 'center',
+                {field: 'productName', title: 'Product Name'},
+                {field: 'title',       title: 'Activity Name'},
+                {field: 'flashPrice',  title: 'Flash Price (PHP)'},
+                {field: 'stockLimit',  title: 'Stock Limit'},
+                {field: 'soldCount',   title: 'Sold'},
+                {field: 'perLimit',    title: 'Per Person Limit'},
+                {field: 'startTime',   title: 'Start Time'},
+                {field: 'endTime',     title: 'End Time'},
+                {field: 'status', title: 'Status', align: 'center',
                     formatter: function(v) {
-                        var map = {'0': '<span class="badge badge-default">未开始</span>',
-                                   '1': '<span class="badge badge-primary">进行中</span>',
-                                   '2': '<span class="badge badge-danger">已结束</span>'};
+                        var map = {'0': '<span class="badge badge-default">Not Started</span>',
+                                   '1': '<span class="badge badge-primary">Active</span>',
+                                   '2': '<span class="badge badge-danger">Ended</span>'};
                         return map[v] || v;
                     }
                 },
-                {title: '操作', align: 'center', formatter: function(v, row) {
+                {title: 'Action', align: 'center', formatter: function(v, row) {
                     var a = [];
                     if (row.status !== '2') {
-                        a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.saleId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
-                        a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.saleId + '\')"><i class="fa fa-remove"></i>结束</a>');
+                        a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.saleId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
+                        a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.saleId + '\')"><i class="fa fa-remove"></i>End</a>');
                     }
                     return a.join('');
                 }}

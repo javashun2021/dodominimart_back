@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="gray-bg">
@@ -9,21 +9,21 @@
             <form id="order-form">
                 <div class="select-list">
                     <ul>
-                        <li>订单编号：<input type="text" name="orderNo"/></li>
+                        <li>Order No：<input type="text" name="orderNo"/></li>
                         <li>
-                            订单状态：
+                            Status：
                             <select name="status">
-                                <option value="">全部</option>
-                                <option value="0">待确认</option>
-                                <option value="1">已确认</option>
-                                <option value="2">配送中</option>
-                                <option value="3">已完成</option>
-                                <option value="4">已取消</option>
+                                <option value="">All</option>
+                                <option value="0">Pending</option>
+                                <option value="1">Confirmed</option>
+                                <option value="2">Delivering</option>
+                                <option value="3">Completed</option>
+                                <option value="4">Cancelled</option>
                             </select>
                         </li>
                         <li>
-                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
-                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
                         </li>
                     </ul>
                 </div>
@@ -39,43 +39,43 @@
     var editFlag = [[${@permission.hasPermi('mall:order:edit')}]];
     var prefix   = ctx + "mall/order";
 
-    var statusMap = {'0':'<span class="badge" style="background:#f0ad4e">待确认</span>',
-                     '1':'<span class="badge badge-primary">已确认</span>',
-                     '2':'<span class="badge" style="background:#5bc0de">配送中</span>',
-                     '3':'<span class="badge badge-success">已完成</span>',
-                     '4':'<span class="badge badge-default">已取消</span>'};
-    var sourceMap  = {'NORMAL':     '<span class="badge badge-default">普通</span>',
-                      'FLASH_SALE': '<span class="badge" style="background:#e74c3c">限时优惠</span>',
-                      'GROUP':      '<span class="badge" style="background:#8e44ad">拼团</span>'};
+    var statusMap = {'0':'<span class="badge" style="background:#f0ad4e">Pending</span>',
+                     '1':'<span class="badge badge-primary">Confirmed</span>',
+                     '2':'<span class="badge" style="background:#5bc0de">Delivering</span>',
+                     '3':'<span class="badge badge-success">Completed</span>',
+                     '4':'<span class="badge badge-default">Cancelled</span>'};
+    var sourceMap  = {'NORMAL':     '<span class="badge badge-default">Normal</span>',
+                      'FLASH_SALE': '<span class="badge" style="background:#e74c3c">Flash Sale</span>',
+                      'GROUP':      '<span class="badge" style="background:#8e44ad">Group Buy</span>'};
 
     $(function() {
         $.table.init({
             url: prefix + "/list",
-            modalName: "订单",
+            modalName: "Order",
             columns: [
                 {checkbox: true},
-                {field: 'orderNo',      title: '订单编号'},
-                {field: 'totalAmount',  title: '金额(PHP)', formatter: function(v) { return '₱' + v; }},
-                {field: 'orderSource',  title: '来源', align: 'center',
+                {field: 'orderNo',      title: 'Order No'},
+                {field: 'totalAmount',  title: 'Amount (PHP)', formatter: function(v) { return '₱' + v; }},
+                {field: 'orderSource',  title: 'Source', align: 'center',
                     formatter: function(v) { return sourceMap[v] || v; }
                 },
-                {field: 'status',       title: '状态', align: 'center',
+                {field: 'status',       title: 'Status', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }
                 },
-                {field: 'remark',       title: '备注'},
-                {field: 'createTime',   title: '下单时间', sortable: true},
-                {title: '操作', align: 'center', formatter: function(v, row) {
+                {field: 'remark',       title: 'Remark'},
+                {field: 'createTime',   title: 'Order Time', sortable: true},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
                     var a = [];
-                    a.push('<a class="btn btn-info btn-xs" href="' + prefix + '/detail/' + row.orderId + '"><i class="fa fa-eye"></i>详情</a> ');
+                    a.push('<a class="btn btn-info btn-xs" href="' + prefix + '/detail/' + row.orderId + '"><i class="fa fa-eye"></i>Detail</a> ');
                     if (row.status === '0') {
-                        a.push('<a class="btn btn-primary btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'1\')"><i class="fa fa-check"></i>确认</a> ');
-                        a.push('<a class="btn btn-danger btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'4\')"><i class="fa fa-ban"></i>取消</a> ');
+                        a.push('<a class="btn btn-primary btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'1\')"><i class="fa fa-check"></i>Confirm</a> ');
+                        a.push('<a class="btn btn-danger btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'4\')"><i class="fa fa-ban"></i>Cancel</a> ');
                     }
                     if (row.status === '1') {
-                        a.push('<a class="btn btn-primary btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'2\')"><i class="fa fa-truck"></i>配送</a> ');
+                        a.push('<a class="btn btn-primary btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'2\')"><i class="fa fa-truck"></i>Deliver</a> ');
                     }
                     if (row.status === '2') {
-                        a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'3\')"><i class="fa fa-flag"></i>完成</a>');
+                        a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'3\')"><i class="fa fa-flag"></i>Complete</a>');
                     }
                     return a.join('');
                 }}
@@ -84,8 +84,8 @@
     });
 
     function changeStatus(orderId, status) {
-        var msg = {1:'确认订单', 2:'标记配送中', 3:'标记已完成', 4:'取消订单'}[status];
-        $.modal.confirm('确认要【' + msg + '】吗？', function() {
+        var msg = {1:'Confirm Order', 2:'Mark as Delivering', 3:'Mark as Completed', 4:'Cancel Order'}[status];
+        $.modal.confirm('Are you sure to [' + msg + ']?', function() {
             $.operate.post(prefix + '/changeStatus', {orderId: orderId, status: status});
         });
     }

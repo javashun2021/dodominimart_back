@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
 <meta charset="utf-8">
 <head th:include="include :: header"></head>
 <body class="gray-bg">
@@ -9,18 +9,18 @@
             <form id="product-form">
                 <div class="select-list">
                     <ul>
-                        <li>商品名称：<input type="text" name="name"/></li>
+                        <li>Product Name：<input type="text" name="name"/></li>
                         <li>
-                            状态：
+                            Status：
                             <select name="status">
-                                <option value="">全部</option>
-                                <option value="0">上架</option>
-                                <option value="1">下架</option>
+                                <option value="">All</option>
+                                <option value="0">Active</option>
+                                <option value="1">Inactive</option>
                             </select>
                         </li>
                         <li>
-                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
-                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
                         </li>
                     </ul>
                 </div>
@@ -28,13 +28,13 @@
         </div>
         <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
             <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="mall:product:add">
-                <i class="fa fa-plus"></i> 新增
+                <i class="fa fa-plus"></i> Add
             </a>
             <a class="btn btn-primary btn-edit disabled" onclick="$.operate.edit()" shiro:hasPermission="mall:product:edit">
-                <i class="fa fa-edit"></i> 修改
+                <i class="fa fa-edit"></i> Edit
             </a>
             <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:product:remove">
-                <i class="fa fa-remove"></i> 删除
+                <i class="fa fa-remove"></i> Delete
             </a>
         </div>
         <div class="col-sm-12 select-table table-striped">
@@ -54,28 +54,28 @@
             createUrl: prefix + "/add",
             updateUrl: prefix + "/edit/{id}",
             removeUrl: prefix + "/remove",
-            modalName: "商品",
+            modalName: "Product",
             columns: [
                 {checkbox: true},
-                {field: 'productId', title: '商品ID'},
-                {field: 'imageUrl',  title: '图片', formatter: function(v) {
+                {field: 'productId', title: 'ID'},
+                {field: 'imageUrl',  title: 'Image', formatter: function(v) {
                     return v ? '<img src="' + v + '" height="40" style="border-radius:4px">' : '-';
                 }},
-                {field: 'name',      title: '商品名称'},
-                {field: 'price',     title: '售价(PHP)', formatter: function(v) { return '₱' + v; }},
-                {field: 'stock',     title: '库存'},
-                {field: 'status',    title: '状态', align: 'center',
+                {field: 'name',      title: 'Product Name'},
+                {field: 'price',     title: 'Price (PHP)', formatter: function(v) { return '₱' + v; }},
+                {field: 'stock',     title: 'Stock'},
+                {field: 'status',    title: 'Status', align: 'center',
                     formatter: function(v) {
                         return v === '0'
-                            ? '<span class="badge badge-primary">上架</span>'
-                            : '<span class="badge badge-default">下架</span>';
+                            ? '<span class="badge badge-primary">Active</span>'
+                            : '<span class="badge badge-default">Inactive</span>';
                     }
                 },
-                {field: 'createTime', title: '创建时间'},
-                {title: '操作', align: 'center', formatter: function(v, row) {
+                {field: 'createTime', title: 'Created At'},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
                     var a = [];
-                    a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.productId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
-                    a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.productId + '\')"><i class="fa fa-remove"></i>删除</a>');
+                    a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.productId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
+                    a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.productId + '\')"><i class="fa fa-remove"></i>Delete</a>');
                     return a.join('');
                 }}
             ]
