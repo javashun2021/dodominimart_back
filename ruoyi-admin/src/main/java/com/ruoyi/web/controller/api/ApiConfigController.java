@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.api;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +22,7 @@ public class ApiConfigController
     private ISysConfigService configService;
 
     @GetMapping
+    @Cacheable(value = "mall_app_config", key = "'v1'")
     public AjaxResult getAppConfig()
     {
         Map<String, Object> data = new LinkedHashMap<>();

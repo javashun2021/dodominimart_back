@@ -17,10 +17,12 @@
         <result property="updateTime"    column="update_time"    />
         <result property="fcmToken"      column="fcm_token"      />
         <result property="points"        column="points"         />
+        <result property="inviteCode"    column="invite_code"    />
+        <result property="referrerId"    column="referrer_id"    />
     </resultMap>
 
     <sql id="selectMemberVo">
-        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time, update_time, fcm_token, points
+        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time, update_time, fcm_token, points, invite_code, referrer_id
         from mall_member
     </sql>
 
@@ -79,5 +81,34 @@
         update mall_member set fcm_token = #{fcmToken}, update_time = now()
         where member_id = #{memberId}
     </update>
+
+    <select id="selectByInviteCode" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where invite_code = #{inviteCode}
+    </select>
+
+    <update id="updateInviteCode">
+        update mall_member set invite_code = #{inviteCode}, update_time = now()
+        where member_id = #{memberId}
+    </update>
+
+    <update id="updateReferrerId">
+        update mall_member set referrer_id = #{referrerId}, update_time = now()
+        where member_id = #{memberId}
+    </update>
+
+    <resultMap type="com.ruoyi.mall.domain.MallMember" id="ReferralMemberResult" extends="MallMemberResult">
+        <result property="completedOrderCount" column="completed_order_count"/>
+    </resultMap>
+
+    <select id="selectReferredMembers" parameterType="Long" resultMap="ReferralMemberResult">
+        select m.member_id, m.nick_name, m.avatar_url, m.create_time,
+               count(o.order_id) as completed_order_count
+        from mall_member m
+        left join mall_order o
+            on o.member_id = m.member_id and o.status = '3'
+        where m.referrer_id = #{referrerId}
+        group by m.member_id, m.nick_name, m.avatar_url, m.create_time
+        order by m.create_time desc
+    </select>
 
 </mapper>

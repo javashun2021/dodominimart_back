@@ -3,6 +3,8 @@ package com.ruoyi.mall.service.impl;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import com.ruoyi.mall.domain.MallBanner;
 import com.ruoyi.mall.mapper.MallBannerMapper;
@@ -15,6 +17,7 @@ public class MallBannerServiceImpl implements IMallBannerService
     private MallBannerMapper bannerMapper;
 
     @Override
+    @Cacheable(value = "mall_banners", key = "'active'")
     public List<MallBanner> selectActiveBanners()         { return bannerMapper.selectActiveBanners(); }
 
     @Override
@@ -24,6 +27,7 @@ public class MallBannerServiceImpl implements IMallBannerService
     public MallBanner selectBannerById(Long bannerId)     { return bannerMapper.selectBannerById(bannerId); }
 
     @Override
+    @CacheEvict(value = "mall_banners", allEntries = true)
     public int insertBanner(MallBanner banner)
     {
         banner.setCreateTime(new Date());
@@ -34,6 +38,7 @@ public class MallBannerServiceImpl implements IMallBannerService
     }
 
     @Override
+    @CacheEvict(value = "mall_banners", allEntries = true)
     public int updateBanner(MallBanner banner)
     {
         banner.setUpdateTime(new Date());
@@ -41,5 +46,6 @@ public class MallBannerServiceImpl implements IMallBannerService
     }
 
     @Override
+    @CacheEvict(value = "mall_banners", allEntries = true)
     public int deleteBannerById(Long bannerId)            { return bannerMapper.deleteBannerById(bannerId); }
 }

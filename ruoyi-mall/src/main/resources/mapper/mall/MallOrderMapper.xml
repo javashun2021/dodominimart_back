@@ -54,6 +54,10 @@
         <include refid="selectOrderVo"/> where order_no = #{orderNo}
     </select>
 
+    <select id="selectOrderByOrderNoForUpdate" parameterType="String" resultMap="MallOrderResult">
+        <include refid="selectOrderVo"/> where order_no = #{orderNo} for update
+    </select>
+
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
                                payment_method, payment_status, order_source, points_used, create_time)
@@ -142,6 +146,10 @@
         select COALESCE(SUM(delivery_fee), 0) from mall_order
         where runner_member_id = #{runnerMemberId} and status = '3'
           and DATE_FORMAT(update_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+    </select>
+
+    <select id="countCompletedByMemberId" parameterType="Long" resultType="int">
+        select COUNT(*) from mall_order where member_id = #{memberId} and status = '3'
     </select>
 
 </mapper>

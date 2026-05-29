@@ -7,10 +7,9 @@ $(document).ready(function(){
 	});  
 	//手机号码验证身份证正则合并：(^\d{15}$)|(^\d{17}([0-9]|X)$)
 	jQuery.validator.addMethod("isPhone",function(value,element){
-		var length = value.length;
-		var phone=/^1[3|4|5|6|7|8][0-9]\d{8}$/;
-		return this.optional(element)||(length == 11 && phone.test(value));
-	},"请填写正确的11位手机号");
+		var phone=/^09[0-9]{9}$/;
+		return this.optional(element)||phone.test(value);
+	},"Please enter a valid PH mobile number (09XXXXXXXXX)");
 	//电话号码验证
 	jQuery.validator.addMethod("isTel",function(value,element){
 		var tel = /^(0\d{2,3}-)?\d{7,8}$/g;//区号3,4位,号码7,8位

@@ -2,6 +2,8 @@ package com.ruoyi.mall.service.impl;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.mall.domain.MallCategory;
@@ -15,6 +17,7 @@ public class MallCategoryServiceImpl implements IMallCategoryService
     private MallCategoryMapper categoryMapper;
 
     @Override
+    @Cacheable(value = "mall_categories", key = "#category.status ?: 'all'")
     public List<MallCategory> selectCategoryList(MallCategory category)
     {
         return categoryMapper.selectCategoryList(category);
@@ -27,6 +30,7 @@ public class MallCategoryServiceImpl implements IMallCategoryService
     }
 
     @Override
+    @CacheEvict(value = "mall_categories", allEntries = true)
     public int insertCategory(MallCategory category)
     {
         category.setCreateTime(DateUtils.getNowDate());
@@ -34,6 +38,7 @@ public class MallCategoryServiceImpl implements IMallCategoryService
     }
 
     @Override
+    @CacheEvict(value = "mall_categories", allEntries = true)
     public int updateCategory(MallCategory category)
     {
         category.setUpdateTime(DateUtils.getNowDate());
@@ -41,6 +46,7 @@ public class MallCategoryServiceImpl implements IMallCategoryService
     }
 
     @Override
+    @CacheEvict(value = "mall_categories", allEntries = true)
     public int deleteCategoryById(Integer categoryId)
     {
         return categoryMapper.deleteCategoryById(categoryId);

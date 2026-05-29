@@ -1,6 +1,7 @@
 package com.ruoyi.mall.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.mall.domain.MallGroupActivity;
 import com.ruoyi.mall.domain.MallGroupTier;
 
@@ -21,6 +22,9 @@ public interface MallGroupActivityMapper
 
     // 阶梯管理
     List<MallGroupTier> selectTiersByActivityId(Long activityId);
+
+    /** Batch fetch tiers for multiple activities to avoid N+1 */
+    List<MallGroupTier> selectTiersByActivityIds(@Param("list") List<Long> activityIds);
 
     int insertTiers(List<MallGroupTier> tiers);
 

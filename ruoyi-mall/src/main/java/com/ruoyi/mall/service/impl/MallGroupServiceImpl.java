@@ -6,7 +6,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,10 +65,7 @@ public class MallGroupServiceImpl implements IMallGroupService
     public List<MallGroupActivity> selectActivityList(MallGroupActivity query)
     {
         List<MallGroupActivity> list = activityMapper.selectActivityList(query);
-        for (MallGroupActivity a : list)
-        {
-            a.setTiers(activityMapper.selectTiersByActivityId(a.getActivityId()));
-        }
+        fillTiers(list);
         return list;
     }
 
@@ -132,10 +131,7 @@ public class MallGroupServiceImpl implements IMallGroupService
         MallGroupActivity query = new MallGroupActivity();
         query.setStatus("0");
         List<MallGroupActivity> list = activityMapper.selectActivityList(query);
-        for (MallGroupActivity a : list)
-        {
-            a.setTiers(activityMapper.selectTiersByActivityId(a.getActivityId()));
-        }
+        fillTiers(list);
         return list;
     }
 
@@ -237,15 +233,21 @@ public class MallGroupServiceImpl implements IMallGroupService
     public List<MallGroupOrder> getMyGroups(Long memberId)
     {
         List<MallGroupOrder> list = groupOrderMapper.selectMyGroups(memberId);
+        if (list.isEmpty()) return list;
+        // Batch-fetch unique activities to avoid N+1
+        List<Long> activityIds = list.stream()
+                .map(MallGroupOrder::getActivityId).distinct().collect(Collectors.toList());
+        List<MallGroupActivity> activities = activityIds.stream()
+                .map(activityMapper::selectActivityById)
+                .filter(a -> a != null)
+                .collect(Collectors.toList());
+        fillTiers(activities);
+        Map<Long, MallGroupActivity> actMap = activities.stream()
+                .collect(Collectors.toMap(MallGroupActivity::getActivityId, a -> a));
         for (MallGroupOrder go : list)
         {
             go.setMembers(memberMapper.selectMembersByGroupOrderId(go.getGroupOrderId()));
-            MallGroupActivity act = activityMapper.selectActivityById(go.getActivityId());
-            if (act != null)
-            {
-                act.setTiers(activityMapper.selectTiersByActivityId(act.getActivityId()));
-                go.setActivity(act);
-            }
+            go.setActivity(actMap.get(go.getActivityId()));
         }
         return list;
     }
@@ -379,6 +381,19 @@ public class MallGroupServiceImpl implements IMallGroupService
                 }
             }
             catch (Exception ignored) { }
+        }
+    }
+
+    private void fillTiers(List<MallGroupActivity> activities)
+    {
+        if (activities == null || activities.isEmpty()) return;
+        List<Long> ids = activities.stream()
+                .map(MallGroupActivity::getActivityId).collect(Collectors.toList());
+        Map<Long, List<MallGroupTier>> tiersMap = activityMapper.selectTiersByActivityIds(ids)
+                .stream().collect(Collectors.groupingBy(MallGroupTier::getActivityId));
+        for (MallGroupActivity a : activities)
+        {
+            a.setTiers(tiersMap.getOrDefault(a.getActivityId(), Collections.emptyList()));
         }
     }
 

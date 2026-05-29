@@ -7,9 +7,19 @@
     <form class="form-horizontal m" id="form-banner-edit">
         <input type="hidden" name="bannerId" th:value="${banner.bannerId}"/>
         <div class="form-group">
-            <label class="col-sm-3 control-label">Image URL<span class="red">*</span></label>
+            <label class="col-sm-3 control-label">Banner Image<span class="red">*</span></label>
             <div class="col-sm-8">
-                <input name="imageUrl" class="form-control" type="text" required th:value="${banner.imageUrl}"/>
+                <div class="input-group">
+                    <input name="imageUrl" id="imageUrl" class="form-control" type="text" required th:value="${banner.imageUrl}"/>
+                    <span class="input-group-btn">
+                        <label class="btn btn-default" for="uploadBannerImg"><i class="fa fa-upload"></i> Upload</label>
+                        <input type="file" id="uploadBannerImg" accept="image/*" style="display:none" onchange="uploadBannerImage(this)">
+                    </span>
+                </div>
+                <div id="imgPreview" th:style="${banner.imageUrl != null and banner.imageUrl != ''} ? 'margin-top:8px' : 'margin-top:8px;display:none'">
+                    <img id="previewImg" th:src="${banner.imageUrl}" height="100" style="border-radius:8px;border:1px solid #ddd;padding:2px;max-width:100%">
+                </div>
+                <p class="help-block">Recommended size: 1200 × 560 px (ratio 2.14:1)</p>
             </div>
         </div>
         <div class="form-group">
@@ -20,13 +30,14 @@
                     <option value="PRODUCT" th:selected="${banner.linkType=='PRODUCT'}">Product</option>
                     <option value="GROUP"   th:selected="${banner.linkType=='GROUP'}">Group Buy</option>
                     <option value="URL"     th:selected="${banner.linkType=='URL'}">External URL</option>
+                    <option value="PAGE"    th:selected="${banner.linkType=='PAGE'}">In-App Page</option>
                 </select>
             </div>
         </div>
         <div class="form-group">
             <label class="col-sm-3 control-label">Link Value</label>
             <div class="col-sm-8">
-                <input name="linkValue" class="form-control" type="text" th:value="${banner.linkValue}"/>
+                <input name="linkValue" class="form-control" type="text" th:value="${banner.linkValue}" placeholder="Product ID / Group Buy ID / Full URL"/>
             </div>
         </div>
         <div class="form-group">
@@ -50,11 +61,42 @@
 <script th:inline="javascript">
     var prefix = ctx + "mall/banner";
     $("#form-banner-edit").validate({focusCleanup: true});
+
     function submitHandler() {
         if ($.validate.form()) {
             $.operate.save(prefix + "/edit", $('#form-banner-edit').serialize());
         }
     }
+
+    function uploadBannerImage(input) {
+        if (!input.files || !input.files[0]) return;
+        var formData = new FormData();
+        formData.append('file', input.files[0]);
+        $.ajax({
+            url: ctx + 'common/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                if (res.code === 0) {
+                    $('#imageUrl').val(res.path);
+                    $('#previewImg').attr('src', res.url);
+                    $('#imgPreview').show();
+                } else {
+                    $.modal.alertWarning(res.msg);
+                }
+            }
+        });
+    }
+
+    $('#imageUrl').on('blur', function() {
+        var url = $.trim($(this).val());
+        if (url) {
+            $('#previewImg').attr('src', url);
+            $('#imgPreview').show();
+        }
+    });
 </script>
 </body>
 </html>

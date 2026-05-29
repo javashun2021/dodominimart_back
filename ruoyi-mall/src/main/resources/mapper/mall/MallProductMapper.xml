@@ -67,8 +67,17 @@
             <if test="categoryId != null">AND p.category_id = #{categoryId}</if>
             <if test="name != null and name != ''">AND p.name like concat('%', #{name}, '%')</if>
             <if test="status != null and status != ''">AND p.status = #{status}</if>
+            <if test="onlyFlashSale">AND fs.sale_id IS NOT NULL</if>
+            <if test="onlyGroupBuy">AND ga.activity_id IS NOT NULL</if>
+            <if test="inStockOnly">AND p.stock > 0</if>
         </where>
-        order by p.sort asc, p.create_time desc
+        order by
+        <choose>
+            <when test="sortBy == 'price_asc'">COALESCE(fs.flash_price, p.price) ASC</when>
+            <when test="sortBy == 'price_desc'">COALESCE(fs.flash_price, p.price) DESC</when>
+            <when test="sortBy == 'newest'">p.create_time DESC</when>
+            <otherwise>p.sort ASC, p.create_time DESC</otherwise>
+        </choose>
     </select>
 
     <select id="selectProductById" parameterType="Long" resultMap="MallProductResult">

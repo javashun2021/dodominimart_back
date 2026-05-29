@@ -102,8 +102,8 @@ public class MallOrderServiceImpl implements IMallOrderService
             throw new RuntimeException("Invalid address");
         }
 
-        BigDecimal total = BigDecimal.ZERO;
-        boolean hasFlashSale = false;
+        // Pass 1: validate all items and compute prices — no stock changes yet
+        Map<Long, com.ruoyi.mall.domain.MallFlashSale> flashSaleMap = new java.util.HashMap<>();
         for (MallOrderItem item : items)
         {
             MallProduct product = productMapper.selectProductById(item.getProductId());
@@ -111,33 +111,51 @@ public class MallOrderServiceImpl implements IMallOrderService
             {
                 throw new RuntimeException("Product not available: " + item.getProductId());
             }
+            if (product.getStock() < item.getQuantity())
+            {
+                throw new RuntimeException("Insufficient stock: " + product.getName());
+            }
             item.setProductName(product.getName());
             item.setProductImage(product.getImageUrl());
 
-            // 检查限时优惠，有则使用活动价并占库存
-            BigDecimal unitPrice = product.getPrice();
             com.ruoyi.mall.domain.MallFlashSale flashSale =
                     flashSaleService.selectActiveByProductId(product.getProductId());
+            BigDecimal unitPrice = product.getPrice();
+            if (flashSale != null)
+            {
+                int remaining = flashSale.getStockLimit() - flashSale.getSoldCount();
+                if (remaining < item.getQuantity())
+                {
+                    throw new RuntimeException("Flash sale stock sold out: " + product.getName());
+                }
+                unitPrice = flashSale.getFlashPrice();
+                flashSaleMap.put(item.getProductId(), flashSale);
+            }
+            item.setPrice(unitPrice);
+            item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+
+        BigDecimal total = items.stream()
+                .map(MallOrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        boolean hasFlashSale = !flashSaleMap.isEmpty();
+
+        // Pass 2: deduct all stocks atomically within the transaction
+        for (MallOrderItem item : items)
+        {
+            com.ruoyi.mall.domain.MallFlashSale flashSale = flashSaleMap.get(item.getProductId());
             if (flashSale != null)
             {
                 boolean occupied = flashSaleService.occupyStock(flashSale.getSaleId(), item.getQuantity());
                 if (!occupied)
                 {
-                    throw new RuntimeException("Flash sale stock sold out: " + product.getName());
+                    throw new RuntimeException("Flash sale stock sold out: " + item.getProductName());
                 }
-                unitPrice = flashSale.getFlashPrice();
-                hasFlashSale = true;
             }
-
-            item.setPrice(unitPrice);
-            item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
-            total = total.add(item.getSubtotal());
-
-            // 原子扣库存：WHERE stock >= quantity，返回 0 表示库存不足
-            int affected = productMapper.deductStock(product.getProductId(), item.getQuantity());
+            int affected = productMapper.deductStock(item.getProductId(), item.getQuantity());
             if (affected == 0)
             {
-                throw new RuntimeException("Insufficient stock: " + product.getName());
+                throw new RuntimeException("Insufficient stock: " + item.getProductName());
             }
         }
 
@@ -217,12 +235,54 @@ public class MallOrderServiceImpl implements IMallOrderService
     @Override
     public int updateOrderStatus(Long orderId, String status, String updateBy)
     {
-        MallOrder order = new MallOrder();
-        order.setOrderId(orderId);
-        order.setStatus(status);
-        order.setUpdateBy(updateBy);
-        order.setUpdateTime(new Date());
-        return orderMapper.updateOrder(order);
+        MallOrder existing = orderMapper.selectOrderById(orderId);
+        if (existing == null) return 0;
+
+        MallOrder update = new MallOrder();
+        update.setOrderId(orderId);
+        update.setStatus(status);
+        update.setUpdateBy(updateBy);
+        update.setUpdateTime(new Date());
+        int rows = orderMapper.updateOrder(update);
+
+        if (rows > 0)
+        {
+            try
+            {
+                String[] tb = statusTitleBody(status, existing.getOrderNo());
+                java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                payload.put("orderId", orderId);
+                payload.put("orderNo", existing.getOrderNo());
+                payload.put("status",  status);
+                payload.put("title",   tb[0]);
+                payload.put("body",    tb[1]);
+                sseService.push(existing.getMemberId(), "order_status", payload);
+
+                com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(existing.getMemberId());
+                if (member != null && member.getFcmToken() != null)
+                {
+                    fcmService.sendToToken(member.getFcmToken(), tb[0], tb[1],
+                            java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
+                }
+            }
+            catch (Exception e)
+            {
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after updateOrderStatus: {}", e.getMessage());
+            }
+        }
+        return rows;
+    }
+
+    private String[] statusTitleBody(String status, String orderNo)
+    {
+        switch (status)
+        {
+            case "1": return new String[]{"Order Confirmed",   "Your order #" + orderNo + " has been confirmed"};
+            case "2": return new String[]{"Runner On the Way", "Your order is being delivered"};
+            case "3": return new String[]{"Order Delivered",   "Your order #" + orderNo + " has been delivered. Enjoy!"};
+            case "4": return new String[]{"Order Cancelled",   "Your order #" + orderNo + " has been cancelled"};
+            default:  return new String[]{"Order Updated",     "Your order #" + orderNo + " status has been updated"};
+        }
     }
 
     @Override
@@ -274,14 +334,14 @@ public class MallOrderServiceImpl implements IMallOrderService
     @Transactional
     public void markOrderPaid(String orderNo, String paymentNo, BigDecimal amount)
     {
-        MallOrder order = orderMapper.selectOrderByOrderNo(orderNo);
+        MallOrder order = orderMapper.selectOrderByOrderNoForUpdate(orderNo);
         if (order == null)
         {
             throw new RuntimeException("Order not found: " + orderNo);
         }
         if ("PAID".equals(order.getPaymentStatus()))
         {
-            return; // 幂等：已支付则忽略重复回调
+            return; // idempotent: ignore duplicate callback
         }
         if ("4".equals(order.getStatus()))
         {

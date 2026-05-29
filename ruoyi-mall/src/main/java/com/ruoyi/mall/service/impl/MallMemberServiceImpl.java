@@ -1,5 +1,6 @@
 package com.ruoyi.mall.service.impl;
 
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
@@ -12,6 +13,7 @@ import com.ruoyi.mall.domain.MallVerifyCode;
 import com.ruoyi.mall.mapper.MallMemberMapper;
 import com.ruoyi.mall.mapper.MallVerifyCodeMapper;
 import com.ruoyi.mall.service.IMallMemberService;
+import com.ruoyi.mall.service.IMallPointsService;
 
 @Service
 public class MallMemberServiceImpl implements IMallMemberService
@@ -27,6 +29,9 @@ public class MallMemberServiceImpl implements IMallMemberService
     @Autowired
     private MallVerifyCodeMapper verifyCodeMapper;
 
+    @Autowired
+    private IMallPointsService pointsService;
+
     @Override
     public List<MallMember> selectMemberList(MallMember member)
     {
@@ -40,12 +45,11 @@ public class MallMemberServiceImpl implements IMallMemberService
     }
 
     @Override
-    public MallMember loginOrRegisterByGoogle(String googleId, String email, String nickName, String avatarUrl)
+    public MallMember loginOrRegisterByGoogle(String googleId, String email, String nickName, String avatarUrl, String referralCode)
     {
         MallMember member = memberMapper.selectMemberByGoogleId(googleId);
         if (member != null)
         {
-            // 同步最新头像和昵称
             member.setNickName(nickName);
             member.setAvatarUrl(avatarUrl);
             member.setUpdateTime(new Date());
@@ -60,11 +64,12 @@ public class MallMemberServiceImpl implements IMallMemberService
         member.setStatus("0");
         member.setCreateTime(new Date());
         memberMapper.insertMember(member);
-        return member;
+        onNewMemberCreated(member, referralCode);
+        return memberMapper.selectMemberById(member.getMemberId());
     }
 
     @Override
-    public MallMember loginOrRegisterByApple(String appleId, String email, String nickName)
+    public MallMember loginOrRegisterByApple(String appleId, String email, String nickName, String referralCode)
     {
         MallMember member = memberMapper.selectMemberByAppleId(appleId);
         if (member != null)
@@ -78,7 +83,8 @@ public class MallMemberServiceImpl implements IMallMemberService
         member.setStatus("0");
         member.setCreateTime(new Date());
         memberMapper.insertMember(member);
-        return member;
+        onNewMemberCreated(member, referralCode);
+        return memberMapper.selectMemberById(member.getMemberId());
     }
 
     @Override
@@ -90,7 +96,6 @@ public class MallMemberServiceImpl implements IMallMemberService
         }
         String normalizedEmail = email.trim();
 
-        // 60 秒防刷：查最新一条，若 create_time > now-60s 则拒绝
         MallVerifyCode latest = verifyCodeMapper.selectLatestByEmail(normalizedEmail);
         if (latest != null)
         {
@@ -117,7 +122,7 @@ public class MallMemberServiceImpl implements IMallMemberService
     }
 
     @Override
-    public MallMember registerByEmail(String email, String code, String password, String nickName)
+    public MallMember registerByEmail(String email, String code, String password, String nickName, String referralCode)
     {
         if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches())
         {
@@ -134,7 +139,6 @@ public class MallMemberServiceImpl implements IMallMemberService
 
         String normalizedEmail = email.trim();
 
-        // 验证码校验：查最新一条，匹配 email、code、未使用、未过期、未超出尝试次数
         MallVerifyCode record = verifyCodeMapper.selectLatestByEmail(normalizedEmail);
         if (record == null || record.getUsed() != 0 || record.getExpiresAt().before(new Date()))
         {
@@ -142,7 +146,7 @@ public class MallMemberServiceImpl implements IMallMemberService
         }
         if (record.getAttempts() != null && record.getAttempts() >= 5)
         {
-            verifyCodeMapper.markUsed(record.getId()); // 超限自动作废
+            verifyCodeMapper.markUsed(record.getId());
             throw new RuntimeException("Too many attempts. Please request a new verification code");
         }
         if (!record.getCode().equals(code))
@@ -170,7 +174,8 @@ public class MallMemberServiceImpl implements IMallMemberService
         member.setPasswordHash(BCRYPT.encode(password));
         member.setCreateTime(new Date());
         memberMapper.insertMember(member);
-        return member;
+        onNewMemberCreated(member, referralCode);
+        return memberMapper.selectMemberById(member.getMemberId());
     }
 
     @Override
@@ -202,5 +207,63 @@ public class MallMemberServiceImpl implements IMallMemberService
     {
         member.setUpdateTime(new Date());
         return memberMapper.updateMember(member);
+    }
+
+    // ── private helpers ──────────────────────────────────────────────────────
+
+    private void onNewMemberCreated(MallMember member, String referralCode)
+    {
+        // 1. Generate and persist unique invite code
+        String inviteCode = generateInviteCode(member.getMemberId());
+        memberMapper.updateInviteCode(member.getMemberId(), inviteCode);
+
+        // 2. Bind referrer if a valid referral code was provided
+        if (referralCode != null && !referralCode.trim().isEmpty())
+        {
+            MallMember referrer = memberMapper.selectByInviteCode(referralCode.trim().toUpperCase());
+            if (referrer != null && !referrer.getMemberId().equals(member.getMemberId()))
+            {
+                memberMapper.updateReferrerId(member.getMemberId(), referrer.getMemberId());
+            }
+        }
+
+        // 3. Welcome gift: 200 points = ₱20, covers first delivery fee
+        try
+        {
+            pointsService.earn(member.getMemberId(), 200, 3, null,
+                    "Welcome gift – covers your first delivery fee");
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass())
+                    .warn("Welcome points failed for member {}: {}", member.getMemberId(), e.getMessage());
+        }
+    }
+
+    private String generateInviteCode(Long memberId)
+    {
+        try
+        {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest((memberId + "dodo").getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            String candidate = sb.toString().substring(0, 6).toUpperCase();
+            // Ensure uniqueness; retry with random suffix if collision
+            for (int i = 0; i < 5; i++)
+            {
+                if (memberMapper.selectByInviteCode(candidate) == null) return candidate;
+                candidate = sb.toString().substring(i + 1, i + 7).toUpperCase();
+            }
+            // Fallback: random 8 chars
+            String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            StringBuilder fallback = new StringBuilder(8);
+            for (int i = 0; i < 8; i++) fallback.append(chars.charAt(RANDOM.nextInt(chars.length())));
+            return fallback.toString();
+        }
+        catch (Exception e)
+        {
+            return String.valueOf(memberId + System.currentTimeMillis()).substring(0, 6).toUpperCase();
+        }
     }
 }

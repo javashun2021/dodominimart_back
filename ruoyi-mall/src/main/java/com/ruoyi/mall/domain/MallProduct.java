@@ -54,6 +54,14 @@ public class MallProduct extends BaseEntity
     private java.math.BigDecimal avgScore;
     /** 非DB：评价总数 */
     private Integer reviewCount;
+    /** 非DB：排序方式（price_asc/price_desc/newest） */
+    private String sortBy;
+    /** 非DB：只看限时特惠 */
+    private boolean onlyFlashSale;
+    /** 非DB：只看拼团 */
+    private boolean onlyGroupBuy;
+    /** 非DB：只看有货 */
+    private boolean inStockOnly;
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -105,4 +113,16 @@ public class MallProduct extends BaseEntity
 
     public Integer getReviewCount() { return reviewCount; }
     public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
+
+    public String getSortBy() { return sortBy; }
+    public void setSortBy(String sortBy) { this.sortBy = sortBy; }
+
+    public boolean isOnlyFlashSale() { return onlyFlashSale; }
+    public void setOnlyFlashSale(boolean onlyFlashSale) { this.onlyFlashSale = onlyFlashSale; }
+
+    public boolean isOnlyGroupBuy() { return onlyGroupBuy; }
+    public void setOnlyGroupBuy(boolean onlyGroupBuy) { this.onlyGroupBuy = onlyGroupBuy; }
+
+    public boolean isInStockOnly() { return inStockOnly; }
+    public void setInStockOnly(boolean inStockOnly) { this.inStockOnly = inStockOnly; }
 }

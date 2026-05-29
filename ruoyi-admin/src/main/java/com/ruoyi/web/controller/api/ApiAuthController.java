@@ -22,7 +22,6 @@ import com.ruoyi.framework.jwt.JwtUtils;
 import com.ruoyi.framework.mail.MailService;
 import com.ruoyi.mall.domain.MallMember;
 import com.ruoyi.mall.service.IMallMemberService;
-import com.ruoyi.mall.service.IMallPointsService;
 import io.jsonwebtoken.Claims;
 
 /**
@@ -46,9 +45,6 @@ public class ApiAuthController
 
     @Autowired
     private IMallMemberService memberService;
-
-    @Autowired
-    private IMallPointsService pointsService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -110,12 +106,13 @@ public class ApiAuthController
             return AjaxResult.error("idToken or accessToken is required");
         }
 
-        String googleId = String.valueOf(claims.get("sub"));
-        String email    = String.valueOf(claims.getOrDefault("email", ""));
-        String name     = String.valueOf(claims.getOrDefault("name", ""));
-        String picture  = String.valueOf(claims.getOrDefault("picture", ""));
+        String googleId     = String.valueOf(claims.get("sub"));
+        String email        = String.valueOf(claims.getOrDefault("email", ""));
+        String name         = String.valueOf(claims.getOrDefault("name", ""));
+        String picture      = String.valueOf(claims.getOrDefault("picture", ""));
+        String referralCode = body.get("referralCode");
 
-        MallMember member = memberService.loginOrRegisterByGoogle(googleId, email, name, picture);
+        MallMember member = memberService.loginOrRegisterByGoogle(googleId, email, name, picture, referralCode);
         if (!"0".equals(member.getStatus()))
         {
             return AjaxResult.error("Account is disabled");
@@ -147,12 +144,13 @@ public class ApiAuthController
             return AjaxResult.error("Apple token verification failed");
         }
 
-        String appleId  = claims.getSubject();
-        String email    = claims.get("email", String.class);
+        String appleId      = claims.getSubject();
+        String email        = claims.get("email", String.class);
         if (email == null) email = "";
-        String fullName = body.getOrDefault("fullName", "Apple User");
+        String fullName     = body.getOrDefault("fullName", "Apple User");
+        String referralCode = body.get("referralCode");
 
-        MallMember member = memberService.loginOrRegisterByApple(appleId, email, fullName);
+        MallMember member = memberService.loginOrRegisterByApple(appleId, email, fullName, referralCode);
         if (!"0".equals(member.getStatus()))
         {
             return AjaxResult.error("Account is disabled");
@@ -259,14 +257,14 @@ public class ApiAuthController
     @PostMapping("/register")
     public AjaxResult register(@RequestBody Map<String, String> body)
     {
-        String email    = body.get("email");
-        String code     = body.get("code");
-        String password = body.get("password");
-        String nickName = body.get("nickName");
+        String email        = body.get("email");
+        String code         = body.get("code");
+        String password     = body.get("password");
+        String nickName     = body.get("nickName");
+        String referralCode = body.get("referralCode");
         try
         {
-            MallMember member = memberService.registerByEmail(email, code, password, nickName);
-            try { pointsService.earn(member.getMemberId(), 50, 3, null, "Welcome bonus"); } catch (Exception ignored) {}
+            MallMember member = memberService.registerByEmail(email, code, password, nickName, referralCode);
             return AjaxResult.success("Registration successful").put("data", buildLoginResult(member));
         }
         catch (RuntimeException e)

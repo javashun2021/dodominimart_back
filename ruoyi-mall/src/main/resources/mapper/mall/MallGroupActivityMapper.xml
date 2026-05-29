@@ -87,6 +87,16 @@
         order by min_quantity asc
     </select>
 
+    <select id="selectTiersByActivityIds" resultMap="TierResult">
+        select tier_id, activity_id, min_quantity, max_quantity, price
+        from mall_group_tier
+        where activity_id in
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        order by activity_id, min_quantity asc
+    </select>
+
     <insert id="insertTiers" parameterType="java.util.List">
         insert into mall_group_tier(activity_id, min_quantity, max_quantity, price)
         values

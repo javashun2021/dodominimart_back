@@ -29,6 +29,12 @@ public class MallMember implements Serializable
     private String fcmToken;
     /** 积分余额 */
     private int points;
+    /** 个人邀请码（注册时自动生成） */
+    private String inviteCode;
+    /** 邀请人会员ID */
+    private Long referrerId;
+    /** 非DB：已完成订单数（邀请记录接口填充） */
+    private int completedOrderCount;
 
     public Long getMemberId() { return memberId; }
     public void setMemberId(Long memberId) { this.memberId = memberId; }
@@ -68,4 +74,13 @@ public class MallMember implements Serializable
 
     public int getPoints() { return points; }
     public void setPoints(int points) { this.points = points; }
+
+    public String getInviteCode() { return inviteCode; }
+    public void setInviteCode(String inviteCode) { this.inviteCode = inviteCode; }
+
+    public Long getReferrerId() { return referrerId; }
+    public void setReferrerId(Long referrerId) { this.referrerId = referrerId; }
+
+    public int getCompletedOrderCount() { return completedOrderCount; }
+    public void setCompletedOrderCount(int completedOrderCount) { this.completedOrderCount = completedOrderCount; }
 }

@@ -41,7 +41,7 @@
                     return v ? '<img src="' + v + '" height="48" style="border-radius:4px;object-fit:cover;">' : '-';
                 }},
                 {field: 'linkType',   title: 'Link Type', width: 100, formatter: function(v) {
-                    var map = {NONE:'None', PRODUCT:'Product', GROUP:'Group Buy', URL:'URL'};
+                    var map = {NONE:'None', PRODUCT:'Product', GROUP:'Group Buy', URL:'External URL', PAGE:'In-App Page'};
                     return map[v] || v;
                 }},
                 {field: 'linkValue',  title: 'Link Value'},

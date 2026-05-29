@@ -157,6 +157,26 @@ public class MallRunnerServiceImpl implements IMallRunnerService
             org.slf4j.LoggerFactory.getLogger(getClass()).warn("Points earn failed after completeOrder: {}", e.getMessage());
         }
 
+        // 邀请返积分：被邀请人完成第一笔订单时，给邀请人 200 积分
+        try
+        {
+            MallMember customer = memberMapper.selectMemberById(completed.getMemberId());
+            if (customer != null && customer.getReferrerId() != null)
+            {
+                int completedCount = orderMapper.countCompletedByMemberId(completed.getMemberId());
+                if (completedCount == 1)
+                {
+                    pointsService.earn(customer.getReferrerId(), 200, 5,
+                            String.valueOf(completed.getMemberId()),
+                            "Referral reward: new member completed first order");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Referral reward failed after completeOrder: {}", e.getMessage());
+        }
+
         // 推送：SSE（Web）+ FCM（Mobile）
         try
         {

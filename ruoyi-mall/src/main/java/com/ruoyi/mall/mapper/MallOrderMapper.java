@@ -11,6 +11,9 @@ public interface MallOrderMapper
 
     MallOrder selectOrderByOrderNo(String orderNo);
 
+    /** 带行锁查询，用于支付回调幂等防重 */
+    MallOrder selectOrderByOrderNoForUpdate(String orderNo);
+
     int insertOrder(MallOrder order);
 
     int updateOrder(MallOrder order);
@@ -37,4 +40,7 @@ public interface MallOrderMapper
     int countDeliveriesThisMonth(Long runnerMemberId);
     java.math.BigDecimal sumEarningsThisWeek(Long runnerMemberId);
     java.math.BigDecimal sumEarningsThisMonth(Long runnerMemberId);
+
+    /** 统计某会员已完成（status=3）的订单数 */
+    int countCompletedByMemberId(Long memberId);
 }

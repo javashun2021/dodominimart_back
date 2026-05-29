@@ -37,8 +37,13 @@ public abstract class BaseApiController
         throw new RuntimeException("Not authenticated");
     }
 
+    private static final int MAX_PAGE_SIZE = 200;
+
     protected void startPage(int pageNum, int pageSize)
     {
+        if (pageNum < 1)  pageNum  = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > MAX_PAGE_SIZE) pageSize = MAX_PAGE_SIZE;
         PageHelper.startPage(pageNum, pageSize);
     }
 

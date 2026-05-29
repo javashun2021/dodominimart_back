@@ -66,15 +66,30 @@ public class ApiMemberController extends BaseApiController
         member.setMemberId(memberId);
         if (body.containsKey("nickName"))
         {
-            member.setNickName(body.get("nickName"));
+            String nick = body.get("nickName");
+            if (nick == null || nick.trim().isEmpty() || nick.length() > 50)
+            {
+                return AjaxResult.error("Nickname must be 1-50 characters");
+            }
+            member.setNickName(nick.trim());
         }
         if (body.containsKey("phone"))
         {
-            member.setPhone(body.get("phone"));
+            String phone = body.get("phone");
+            if (phone != null && phone.length() > 20)
+            {
+                return AjaxResult.error("Phone number is too long");
+            }
+            member.setPhone(phone);
         }
         if (body.containsKey("avatarUrl"))
         {
-            member.setAvatarUrl(body.get("avatarUrl"));
+            String avatar = body.get("avatarUrl");
+            if (avatar != null && avatar.length() > 500)
+            {
+                return AjaxResult.error("Avatar URL is too long");
+            }
+            member.setAvatarUrl(avatar);
         }
         memberService.updateMember(member);
         return AjaxResult.success("Profile updated");

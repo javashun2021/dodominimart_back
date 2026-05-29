@@ -59,6 +59,16 @@
             <artifactId>guava</artifactId>
             <version>32.1.3-jre</version>
         </dependency>
+
+        <!-- In-memory cache (Caffeine) for hot read-only endpoints -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         
     </dependencies>
 

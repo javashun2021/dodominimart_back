@@ -23,4 +23,13 @@ public interface MallMemberMapper
     int updateMember(MallMember member);
 
     int updateFcmToken(@Param("memberId") Long memberId, @Param("fcmToken") String fcmToken);
+
+    MallMember selectByInviteCode(String inviteCode);
+
+    int updateInviteCode(@Param("memberId") Long memberId, @Param("inviteCode") String inviteCode);
+
+    int updateReferrerId(@Param("memberId") Long memberId, @Param("referrerId") Long referrerId);
+
+    /** 查询被某会员邀请注册的所有人，含已完成订单数 */
+    List<MallMember> selectReferredMembers(Long referrerId);
 }

@@ -9,10 +9,10 @@
             <form id="points-form">
                 <div class="select-list">
                     <ul>
-                        <li>会员ID：<input type="text" name="memberId" placeholder="精确搜索"/></li>
+                        <li>Member ID：<input type="text" name="memberId" placeholder="Exact search"/></li>
                         <li>
-                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
-                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
                         </li>
                     </ul>
                 </div>
@@ -30,25 +30,25 @@
     $(function() {
         $.table.init({
             url: prefix + "/list",
-            modalName: "积分记录",
+            modalName: "Points Record",
             showSearch: true,
             formId: "points-form",
             columns: [
                 {field: 'logId',        title: 'ID',     width: 80},
-                {field: 'memberId',     title: '会员ID', width: 100},
-                {field: 'delta',        title: '变动积分', width: 100, formatter: function(v) {
+                {field: 'memberId',     title: 'Member ID', width: 100},
+                {field: 'delta',        title: 'Points Change', width: 100, formatter: function(v) {
                     var color = v > 0 ? '#27ae60' : '#e74c3c';
                     var sign  = v > 0 ? '+' : '';
                     return '<b style="color:' + color + '">' + sign + v + '</b>';
                 }},
-                {field: 'balanceAfter', title: '变动后余额', width: 110},
-                {field: 'source',       title: '来源', width: 100, formatter: function(v) {
-                    var map = {1:'订单完成', 2:'评价奖励', 3:'注册赠送', 4:'积分抵扣'};
+                {field: 'balanceAfter', title: 'Balance After', width: 110},
+                {field: 'source',       title: 'Source', width: 120, formatter: function(v) {
+                    var map = {1:'Order Complete', 2:'Review Reward', 3:'Welcome Gift', 4:'Points Redeemed', 5:'Referral Reward'};
                     return map[v] || v;
                 }},
-                {field: 'sourceId',     title: '关联单号'},
-                {field: 'remark',       title: '备注'},
-                {field: 'createTime',   title: '时间'}
+                {field: 'sourceId',     title: 'Reference ID'},
+                {field: 'remark',       title: 'Remark'},
+                {field: 'createTime',   title: 'Time'}
             ]
         });
     });

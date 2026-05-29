@@ -48,14 +48,24 @@ public class ApiProductController extends BaseApiController
     public AjaxResult listProducts(
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "false") boolean onlyFlashSale,
+            @RequestParam(defaultValue = "false") boolean onlyGroupBuy,
+            @RequestParam(defaultValue = "false") boolean inStockOnly,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize)
     {
         startPage(pageNum, pageSize);
+        java.util.Set<String> allowed = new java.util.HashSet<>(java.util.Arrays.asList("price_asc", "price_desc", "newest"));
+        String safeSortBy = (sortBy != null && allowed.contains(sortBy)) ? sortBy : null;
         MallProduct query = new MallProduct();
         query.setCategoryId(categoryId);
         query.setName(keyword);
         query.setStatus("0");
+        query.setSortBy(safeSortBy);
+        query.setOnlyFlashSale(onlyFlashSale);
+        query.setOnlyGroupBuy(onlyGroupBuy);
+        query.setInStockOnly(inStockOnly);
         List<MallProduct> list = productService.selectProductList(query);
         return pageResult(new PageInfo<>(list));
     }
