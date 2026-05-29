@@ -50,6 +50,12 @@ public class MallOrder implements Serializable
     /** 本单使用积分数 */
     private int pointsUsed;
 
+    /** 本单使用的会员券实例 ID */
+    private Long memberCouponId;
+
+    /** 优惠券减免金额 */
+    private java.math.BigDecimal couponDiscount;
+
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
     /** 非DB：接单 runner 的手机号（详情接口填充） */
@@ -126,4 +132,10 @@ public class MallOrder implements Serializable
 
     public String getRunnerPhone()         { return runnerPhone; }
     public void   setRunnerPhone(String v) { this.runnerPhone = v; }
+
+    public Long   getMemberCouponId()              { return memberCouponId; }
+    public void   setMemberCouponId(Long v)       { this.memberCouponId = v; }
+
+    public java.math.BigDecimal getCouponDiscount()                              { return couponDiscount; }
+    public void                 setCouponDiscount(java.math.BigDecimal v)       { this.couponDiscount = v; }
 }

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallCouponMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallCoupon" id="MallCouponResult">
+        <id     property="couponId"          column="coupon_id"           />
+        <result property="name"              column="name"                />
+        <result property="type"              column="type"                />
+        <result property="discountAmount"    column="discount_amount"     />
+        <result property="discountPercent"   column="discount_percent"    />
+        <result property="maxDiscountAmount" column="max_discount_amount" />
+        <result property="minOrderAmount"    column="min_order_amount"    />
+        <result property="validDays"         column="valid_days"          />
+        <result property="isFirstOrderOnly"  column="is_first_order_only" />
+        <result property="status"            column="status"              />
+        <result property="createTime"        column="create_time"         />
+    </resultMap>
+
+    <sql id="selectCouponVo">
+        select coupon_id, name, type, discount_amount, discount_percent,
+               max_discount_amount, min_order_amount, valid_days, is_first_order_only,
+               status, create_time
+        from mall_coupon
+    </sql>
+
+    <select id="selectCouponById" parameterType="Long" resultMap="MallCouponResult">
+        <include refid="selectCouponVo"/> where coupon_id = #{couponId}
+    </select>
+
+    <select id="selectCouponList" parameterType="com.ruoyi.mall.domain.MallCoupon" resultMap="MallCouponResult">
+        <include refid="selectCouponVo"/>
+        <where>
+            <if test="name != null and name != ''">AND name like concat('%', #{name}, '%')</if>
+            <if test="type != null and type != ''">AND type = #{type}</if>
+            <if test="status != 0">AND status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectNewUserTemplates" resultMap="MallCouponResult">
+        <include refid="selectCouponVo"/> where status = 0 order by coupon_id asc
+    </select>
+
+    <insert id="insertCoupon" parameterType="com.ruoyi.mall.domain.MallCoupon" useGeneratedKeys="true" keyProperty="couponId">
+        insert into mall_coupon(name, type, discount_amount, discount_percent,
+                                max_discount_amount, min_order_amount, valid_days,
+                                is_first_order_only, status, create_time)
+        values(#{name}, #{type}, #{discountAmount}, #{discountPercent},
+               #{maxDiscountAmount}, #{minOrderAmount}, #{validDays},
+               #{isFirstOrderOnly}, #{status}, now())
+    </insert>
+
+    <update id="updateCoupon" parameterType="com.ruoyi.mall.domain.MallCoupon">
+        update mall_coupon
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="type != null">type = #{type},</if>
+            discount_amount     = #{discountAmount},
+            discount_percent    = #{discountPercent},
+            <if test="maxDiscountAmount != null">max_discount_amount = #{maxDiscountAmount},</if>
+            min_order_amount    = #{minOrderAmount},
+            valid_days          = #{validDays},
+            is_first_order_only = #{isFirstOrderOnly},
+            status              = #{status}
+        </set>
+        where coupon_id = #{couponId}
+    </update>
+
+    <delete id="deleteCouponById" parameterType="Long">
+        delete from mall_coupon where coupon_id = #{couponId}
+    </delete>
+
+</mapper>

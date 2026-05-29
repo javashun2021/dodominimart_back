@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="mall:coupon:add">
+                <i class="fa fa-plus"></i> Add
+            </a>
+            <a class="btn btn-primary btn-edit disabled" onclick="$.operate.edit()" shiro:hasPermission="mall:coupon:edit">
+                <i class="fa fa-edit"></i> Edit
+            </a>
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:coupon:remove">
+                <i class="fa fa-remove"></i> Delete
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var editFlag   = [[${@permission.hasPermi('mall:coupon:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('mall:coupon:remove')}]];
+    var prefix = ctx + "mall/coupon";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            modalName: "Coupon",
+            columns: [
+                {checkbox: true},
+                {field: 'couponId',       title: 'ID',      width: 60},
+                {field: 'name',           title: 'Name'},
+                {field: 'type',           title: 'Type',    width: 120, formatter: function(v) {
+                    var map = {free_delivery: 'Free Delivery', amount_off: 'Amount Off', percent_off: 'Percent Off'};
+                    return map[v] || v;
+                }},
+                {field: 'discountAmount', title: 'Amount Off', width: 100, formatter: function(v, row) {
+                    if (row.type === 'amount_off') return '₱' + v;
+                    if (row.type === 'percent_off') return row.discountPercent + '%' + (row.maxDiscountAmount ? ' (max ₱' + row.maxDiscountAmount + ')' : '');
+                    return '—';
+                }},
+                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '₱' + v : 'None'; }},
+                {field: 'validDays',      title: 'Valid Days', width: 80},
+                {field: 'isFirstOrderOnly', title: 'First Order?', width: 100, formatter: function(v) {
+                    return v === 1 ? '<span class="badge badge-warning">Yes</span>' : 'No';
+                }},
+                {field: 'status',         title: 'Status', width: 80, formatter: function(v) {
+                    return v === 0
+                        ? '<span class="badge badge-primary">Enabled</span>'
+                        : '<span class="badge badge-default">Disabled</span>';
+                }},
+                {field: 'createTime',     title: 'Created At'},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    var a = [];
+                    if (editFlag)   a.push('<a class="btn btn-success btn-xs" onclick="$.operate.edit(\'' + row.couponId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
+                    if (removeFlag) a.push('<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.couponId + '\')"><i class="fa fa-remove"></i>Delete</a>');
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

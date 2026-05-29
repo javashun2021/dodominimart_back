@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <!-- 手动发券表单 -->
+        <div class="col-sm-12" shiro:hasPermission="mall:coupon:add" style="margin-bottom:12px;">
+            <div class="ibox">
+                <div class="ibox-title"><h5>Issue Coupon to Member</h5></div>
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <input type="number" id="issueCouponId"  class="form-control" placeholder="Coupon ID">
+                        </div>
+                        <div class="col-sm-3">
+                            <input type="number" id="issueMemberId"  class="form-control" placeholder="Member ID">
+                        </div>
+                        <div class="col-sm-2">
+                            <button class="btn btn-primary" onclick="issueCoupon()">Issue</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/coupon";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "Member Coupon",
+            showSearch: false,
+            showRefresh: true,
+            showColumns: false,
+            showToggle: false,
+            columns: [
+                {field: 'id',         title: 'ID',      width: 70},
+                {field: 'memberId',   title: 'Member ID',  width: 90},
+                {field: 'couponName', title: 'Coupon Name'},
+                {field: 'type',       title: 'Type',    width: 120},
+                {field: 'status',     title: 'Status',  width: 90, formatter: function(v) {
+                    var map = {0: '<span class="badge badge-primary">Unused</span>',
+                               1: '<span class="badge badge-success">Used</span>',
+                               2: '<span class="badge badge-default">Expired</span>'};
+                    return map[v] || v;
+                }},
+                {field: 'orderNo',    title: 'Order No'},
+                {field: 'expiresAt',  title: 'Expires At'},
+                {field: 'createTime', title: 'Issued At'}
+            ]
+        });
+    });
+
+    function issueCoupon() {
+        var couponId = $('#issueCouponId').val();
+        var memberId = $('#issueMemberId').val();
+        if (!couponId || !memberId) { $.modal.alertWarning("Please fill in both Coupon ID and Member ID"); return; }
+        $.ajax({
+            url: prefix + "/issue",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({couponId: parseInt(couponId), memberId: parseInt(memberId)}),
+            success: function(r) {
+                if (r.code === 0) { $.modal.alertSuccess("Issued successfully"); $('#bootstrap-table').bootstrapTable('refresh'); }
+                else              { $.modal.alertError(r.msg); }
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import com.ruoyi.mall.domain.MallVerifyCode;
 import com.ruoyi.mall.mapper.MallMemberMapper;
 import com.ruoyi.mall.mapper.MallVerifyCodeMapper;
 import com.ruoyi.mall.service.IMallMemberService;
+import com.ruoyi.mall.service.IMallCouponService;
 import com.ruoyi.mall.service.IMallPointsService;
 
 @Service
@@ -31,6 +32,9 @@ public class MallMemberServiceImpl implements IMallMemberService
 
     @Autowired
     private IMallPointsService pointsService;
+
+    @Autowired
+    private IMallCouponService couponService;
 
     @Override
     public List<MallMember> selectMemberList(MallMember member)
@@ -237,6 +241,17 @@ public class MallMemberServiceImpl implements IMallMemberService
         {
             org.slf4j.LoggerFactory.getLogger(getClass())
                     .warn("Welcome points failed for member {}: {}", member.getMemberId(), e.getMessage());
+        }
+
+        // 4. Issue new-user coupons (Free Delivery + ₱30 Off + First Order 15% Off)
+        try
+        {
+            couponService.issueNewUserCoupons(member.getMemberId());
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass())
+                    .warn("Welcome coupons failed for member {}: {}", member.getMemberId(), e.getMessage());
         }
     }
 

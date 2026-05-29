@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallMemberCouponMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallMemberCoupon" id="MallMemberCouponResult">
+        <id     property="id"               column="id"                 />
+        <result property="couponId"         column="coupon_id"          />
+        <result property="memberId"         column="member_id"          />
+        <result property="status"           column="status"             />
+        <result property="expiresAt"        column="expires_at"         />
+        <result property="orderNo"          column="order_no"           />
+        <result property="usedTime"         column="used_time"          />
+        <result property="createTime"       column="create_time"        />
+        <!-- 来自 JOIN mall_coupon -->
+        <result property="couponName"        column="coupon_name"        />
+        <result property="type"              column="type"               />
+        <result property="discountAmount"    column="discount_amount"    />
+        <result property="discountPercent"   column="discount_percent"   />
+        <result property="maxDiscountAmount" column="max_discount_amount"/>
+        <result property="minOrderAmount"    column="min_order_amount"   />
+        <result property="isFirstOrderOnly"  column="is_first_order_only"/>
+    </resultMap>
+
+    <select id="selectByMemberId" parameterType="Long" resultMap="MallMemberCouponResult">
+        select mc.id, mc.coupon_id, mc.member_id, mc.status, mc.expires_at,
+               mc.order_no, mc.used_time, mc.create_time,
+               c.name as coupon_name, c.type, c.discount_amount, c.discount_percent,
+               c.max_discount_amount, c.min_order_amount, c.is_first_order_only
+        from mall_member_coupon mc
+        inner join mall_coupon c on c.coupon_id = mc.coupon_id
+        where mc.member_id = #{memberId}
+        order by mc.status asc, mc.expires_at asc
+    </select>
+
+    <select id="selectByIdForUpdate" parameterType="Long" resultMap="MallMemberCouponResult">
+        select mc.id, mc.coupon_id, mc.member_id, mc.status, mc.expires_at,
+               mc.order_no, mc.used_time, mc.create_time,
+               c.name as coupon_name, c.type, c.discount_amount, c.discount_percent,
+               c.max_discount_amount, c.min_order_amount, c.is_first_order_only
+        from mall_member_coupon mc
+        inner join mall_coupon c on c.coupon_id = mc.coupon_id
+        where mc.id = #{id} for update
+    </select>
+
+    <insert id="insertMemberCoupon" parameterType="com.ruoyi.mall.domain.MallMemberCoupon" useGeneratedKeys="true" keyProperty="id">
+        insert into mall_member_coupon(coupon_id, member_id, status, expires_at, create_time)
+        values(#{couponId}, #{memberId}, 0, #{expiresAt}, now())
+    </insert>
+
+    <update id="markUsed">
+        update mall_member_coupon
+        set status = 1, order_no = #{orderNo}, used_time = #{usedTime}
+        where id = #{id} and status = 0
+    </update>
+
+    <update id="expireOverdue">
+        update mall_member_coupon set status = 2
+        where status = 0 and expires_at &lt; now()
+    </update>
+
+</mapper>

@@ -23,6 +23,8 @@ import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallPaymentRecordMapper;
 import com.ruoyi.mall.mapper.MallProductMapper;
 import com.ruoyi.mall.service.FcmService;
+import com.ruoyi.mall.domain.CouponDiscountResult;
+import com.ruoyi.mall.service.IMallCouponService;
 import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallPointsService;
@@ -52,6 +54,8 @@ public class MallOrderServiceImpl implements IMallOrderService
     private MallMemberMapper memberMapper;
     @Autowired
     private IMallPointsService pointsService;
+    @Autowired
+    private IMallCouponService couponService;
 
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
@@ -94,7 +98,7 @@ public class MallOrderServiceImpl implements IMallOrderService
 
     @Override
     @Transactional
-    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse)
+    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId)
     {
         MallAddress address = addressMapper.selectAddressById(addressId);
         if (address == null || !address.getMemberId().equals(memberId))
@@ -175,6 +179,24 @@ public class MallOrderServiceImpl implements IMallOrderService
             }
         }
 
+        // 优惠券抵扣（在积分之后、建单之前校验）
+        BigDecimal couponDiscountAmt = BigDecimal.ZERO;
+        boolean    couponFreeDelivery = false;
+        if (memberCouponId != null)
+        {
+            boolean isFirstOrder = (orderMapper.countCompletedByMemberId(memberId) == 0);
+            BigDecimal subtotalForCoupon = total; // total 此时已减积分，用原始 subtotal 更合适
+            CouponDiscountResult cr = couponService.validate(
+                    memberCouponId, memberId, subtotalForCoupon, BigDecimal.ZERO, isFirstOrder);
+            if (!cr.isValid())
+            {
+                throw new RuntimeException(cr.getErrorMessage());
+            }
+            couponDiscountAmt  = cr.getDiscountAmount();
+            couponFreeDelivery = cr.isFreeDelivery();
+            total = total.subtract(couponDiscountAmt).max(BigDecimal.ZERO);
+        }
+
         MallOrder order = new MallOrder();
         order.setOrderNo(generateOrderNo());
         order.setMemberId(memberId);
@@ -185,6 +207,8 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setRemark(remark != null ? remark : "");
         order.setOrderSource(hasFlashSale ? "FLASH_SALE" : "NORMAL");
         order.setPointsUsed(actualPointsUsed);
+        order.setMemberCouponId(memberCouponId);
+        order.setCouponDiscount(couponDiscountAmt);
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
 
@@ -192,6 +216,12 @@ public class MallOrderServiceImpl implements IMallOrderService
         if (actualPointsUsed > 0)
         {
             pointsService.deduct(memberId, actualPointsUsed, order.getOrderNo());
+        }
+
+        // 标记优惠券已使用
+        if (memberCouponId != null)
+        {
+            couponService.markUsed(memberCouponId, memberId, order.getOrderNo());
         }
 
         for (MallOrderItem item : items)
