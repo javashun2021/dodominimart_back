@@ -157,4 +157,8 @@
         select COUNT(*) from mall_order where member_id = #{memberId} and status = '3'
     </select>
 
+    <select id="countAllByMemberId" parameterType="Long" resultType="int">
+        select COUNT(*) from mall_order where member_id = #{memberId}
+    </select>
+
 </mapper>

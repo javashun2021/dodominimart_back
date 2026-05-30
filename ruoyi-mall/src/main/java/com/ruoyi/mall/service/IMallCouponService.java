@@ -34,6 +34,9 @@ public interface IMallCouponService
 
     // ── 管理后台 ──────────────────────────────────────────────────────────────
 
+    /** 分页查询会员持券记录（含关联信息） */
+    List<MallMemberCoupon> listForAdmin(MallMemberCoupon query);
+
     List<MallCoupon> selectCouponList(MallCoupon query);
 
     MallCoupon selectCouponById(Long couponId);

@@ -43,4 +43,7 @@ public interface MallOrderMapper
 
     /** 统计某会员已完成（status=3）的订单数 */
     int countCompletedByMemberId(Long memberId);
+
+    /** 统计某会员历史订单总数（含已取消，防止取消后重新触发首单奖励） */
+    int countAllByMemberId(Long memberId);
 }

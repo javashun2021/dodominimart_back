@@ -127,6 +127,12 @@ public class MallCouponServiceImpl implements IMallCouponService
     // ── 管理后台 ──────────────────────────────────────────────────────────────
 
     @Override
+    public List<MallMemberCoupon> listForAdmin(MallMemberCoupon query)
+    {
+        return memberCouponMapper.selectMemberCouponList(query);
+    }
+
+    @Override
     public List<MallCoupon> selectCouponList(MallCoupon query)
     {
         return couponMapper.selectCouponList(query);

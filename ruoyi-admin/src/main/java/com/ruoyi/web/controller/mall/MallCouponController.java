@@ -92,12 +92,22 @@ public class MallCouponController extends BaseController
         return success();
     }
 
-    /** 会员持券列表 */
+    /** 会员持券列表页 */
     @RequiresPermissions("mall:coupon:view")
     @GetMapping("/member-coupons")
     public String memberCoupons()
     {
         return prefix + "/member_coupon";
+    }
+
+    /** 会员持券列表数据 */
+    @RequiresPermissions("mall:coupon:view")
+    @PostMapping("/member-coupons/list")
+    @ResponseBody
+    public TableDataInfo memberCouponList(MallMemberCoupon query)
+    {
+        startPage();
+        return getDataTable(couponService.listForAdmin(query));
     }
 
     /** 手动向指定会员发放一张券 */

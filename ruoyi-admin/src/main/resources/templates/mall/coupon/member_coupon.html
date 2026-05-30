@@ -5,25 +5,52 @@
 <body class="gray-bg">
 <div class="container-div">
     <div class="row">
-        <!-- 手动发券表单 -->
+        <!-- Search filters -->
+        <div class="col-sm-12">
+            <form id="form-query" class="form-inline" style="margin-bottom:10px;">
+                <div class="form-group" style="margin-right:8px;">
+                    <label>Member ID &nbsp;</label>
+                    <input type="number" id="q-memberId" name="memberId" class="form-control" placeholder="Member ID" style="width:130px;">
+                </div>
+                <div class="form-group" style="margin-right:8px;">
+                    <label>Coupon &nbsp;</label>
+                    <input type="number" id="q-couponId" name="couponId" class="form-control" placeholder="Coupon ID" style="width:120px;">
+                </div>
+                <div class="form-group" style="margin-right:8px;">
+                    <label>Status &nbsp;</label>
+                    <select id="q-status" name="status" class="form-control" style="width:130px;">
+                        <option value="">All</option>
+                        <option value="0">Unused</option>
+                        <option value="1">Used</option>
+                        <option value="2">Expired</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="queryList()"><i class="fa fa-search"></i> Search</button>
+                <button type="button" class="btn btn-default" onclick="resetQuery()" style="margin-left:4px;"><i class="fa fa-refresh"></i> Reset</button>
+                <a class="btn btn-default" onclick="history.back()" style="margin-left:12px;"><i class="fa fa-arrow-left"></i> Back</a>
+            </form>
+        </div>
+
+        <!-- Issue coupon panel -->
         <div class="col-sm-12" shiro:hasPermission="mall:coupon:add" style="margin-bottom:12px;">
             <div class="ibox">
                 <div class="ibox-title"><h5>Issue Coupon to Member</h5></div>
                 <div class="ibox-content">
                     <div class="row">
                         <div class="col-sm-3">
-                            <input type="number" id="issueCouponId"  class="form-control" placeholder="Coupon ID">
+                            <input type="number" id="issueCouponId" class="form-control" placeholder="Coupon ID">
                         </div>
                         <div class="col-sm-3">
-                            <input type="number" id="issueMemberId"  class="form-control" placeholder="Member ID">
+                            <input type="number" id="issueMemberId" class="form-control" placeholder="Member ID">
                         </div>
                         <div class="col-sm-2">
-                            <button class="btn btn-primary" onclick="issueCoupon()">Issue</button>
+                            <button class="btn btn-success" onclick="issueCoupon()"><i class="fa fa-gift"></i> Issue</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-sm-12 select-table table-striped">
             <table id="bootstrap-table" data-mobile-responsive="true"></table>
         </div>
@@ -35,29 +62,59 @@
 
     $(function() {
         $.table.init({
-            url: prefix + "/list",
+            url: prefix + "/member-coupons/list",
             modalName: "Member Coupon",
             showSearch: false,
             showRefresh: true,
             showColumns: false,
             showToggle: false,
             columns: [
-                {field: 'id',         title: 'ID',      width: 70},
-                {field: 'memberId',   title: 'Member ID',  width: 90},
+                {field: 'id',         title: 'ID',        width: 70},
+                {field: 'memberId',   title: 'Member ID', width: 90},
+                {field: 'nickName',   title: 'Nickname',  width: 120, formatter: function(v) { return v || '—'; }},
                 {field: 'couponName', title: 'Coupon Name'},
-                {field: 'type',       title: 'Type',    width: 120},
-                {field: 'status',     title: 'Status',  width: 90, formatter: function(v) {
+                {field: 'type',       title: 'Type',      width: 120, formatter: function(v) {
+                    var map = {free_delivery: 'Free Delivery', amount_off: 'Amount Off', percent_off: 'Percent Off'};
+                    return map[v] || v;
+                }},
+                {field: 'discountAmount', title: 'Value', width: 100, formatter: function(v, row) {
+                    if (row.type === 'free_delivery') return '<i class="fa fa-truck"></i> Free';
+                    if (row.type === 'amount_off')    return '₱' + (v || 0);
+                    if (row.type === 'percent_off')   return row.discountPercent + '%';
+                    return '—';
+                }},
+                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '₱' + v : 'None'; }},
+                {field: 'status',     title: 'Status',    width: 90, formatter: function(v) {
                     var map = {0: '<span class="badge badge-primary">Unused</span>',
                                1: '<span class="badge badge-success">Used</span>',
                                2: '<span class="badge badge-default">Expired</span>'};
-                    return map[v] || v;
+                    return map[v] !== undefined ? map[v] : v;
                 }},
-                {field: 'orderNo',    title: 'Order No'},
+                {field: 'orderNo',    title: 'Order No',  formatter: function(v) { return v || '—'; }},
+                {field: 'usedTime',   title: 'Used At',   formatter: function(v) { return v || '—'; }},
                 {field: 'expiresAt',  title: 'Expires At'},
                 {field: 'createTime', title: 'Issued At'}
             ]
         });
     });
+
+    function queryList() {
+        var params = {};
+        var memberId = $('#q-memberId').val();
+        var couponId = $('#q-couponId').val();
+        var status   = $('#q-status').val();
+        if (memberId) params.memberId = memberId;
+        if (couponId) params.couponId = couponId;
+        if (status !== '') params.status = status;
+        $('#bootstrap-table').bootstrapTable('refresh', {query: params});
+    }
+
+    function resetQuery() {
+        $('#q-memberId').val('');
+        $('#q-couponId').val('');
+        $('#q-status').val('');
+        $('#bootstrap-table').bootstrapTable('refresh', {query: {}});
+    }
 
     function issueCoupon() {
         var couponId = $('#issueCouponId').val();
@@ -69,8 +126,12 @@
             contentType: "application/json",
             data: JSON.stringify({couponId: parseInt(couponId), memberId: parseInt(memberId)}),
             success: function(r) {
-                if (r.code === 0) { $.modal.alertSuccess("Issued successfully"); $('#bootstrap-table').bootstrapTable('refresh'); }
-                else              { $.modal.alertError(r.msg); }
+                if (r.code === 0) {
+                    $.modal.alertSuccess("Issued successfully");
+                    $('#bootstrap-table').bootstrapTable('refresh');
+                } else {
+                    $.modal.alertError(r.msg);
+                }
             }
         });
     }

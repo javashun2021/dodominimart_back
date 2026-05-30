@@ -20,6 +20,8 @@
         <result property="maxDiscountAmount" column="max_discount_amount"/>
         <result property="minOrderAmount"    column="min_order_amount"   />
         <result property="isFirstOrderOnly"  column="is_first_order_only"/>
+        <!-- 来自 JOIN mall_member -->
+        <result property="nickName"          column="nick_name"          />
     </resultMap>
 
     <select id="selectByMemberId" parameterType="Long" resultMap="MallMemberCouponResult">
@@ -58,5 +60,28 @@
         update mall_member_coupon set status = 2
         where status = 0 and expires_at &lt; now()
     </update>
+
+    <select id="selectMemberCouponList" parameterType="com.ruoyi.mall.domain.MallMemberCoupon" resultMap="MallMemberCouponResult">
+        select mc.id, mc.coupon_id, mc.member_id, mc.status, mc.expires_at,
+               mc.order_no, mc.used_time, mc.create_time,
+               c.name as coupon_name, c.type, c.discount_amount, c.discount_percent,
+               c.max_discount_amount, c.min_order_amount, c.is_first_order_only,
+               m.nick_name
+        from mall_member_coupon mc
+        inner join mall_coupon c on c.coupon_id = mc.coupon_id
+        left  join mall_member m on m.member_id = mc.member_id
+        <where>
+            <if test="memberId != null">
+                and mc.member_id = #{memberId}
+            </if>
+            <if test="couponId != null">
+                and mc.coupon_id = #{couponId}
+            </if>
+            <if test="status != null">
+                and mc.status = #{status}
+            </if>
+        </where>
+        order by mc.create_time desc
+    </select>
 
 </mapper>

@@ -224,6 +224,26 @@ public class MallOrderServiceImpl implements IMallOrderService
             couponService.markUsed(memberCouponId, memberId, order.getOrderNo());
         }
 
+        // 推荐奖励：被邀请人首单下单时，给邀请人 200 积分
+        try
+        {
+            int totalOrders = orderMapper.countAllByMemberId(memberId);
+            if (totalOrders == 1)
+            {
+                com.ruoyi.mall.domain.MallMember memberInfo = memberMapper.selectMemberById(memberId);
+                if (memberInfo != null && memberInfo.getReferrerId() != null)
+                {
+                    pointsService.earn(memberInfo.getReferrerId(), 200, 6, order.getOrderNo(),
+                            "Referral reward – your invitee placed their first order");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass())
+                    .warn("Referral reward failed for member {}: {}", memberId, e.getMessage());
+        }
+
         for (MallOrderItem item : items)
         {
             item.setOrderId(order.getOrderId());

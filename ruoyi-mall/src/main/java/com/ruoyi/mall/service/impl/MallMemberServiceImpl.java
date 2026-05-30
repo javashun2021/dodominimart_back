@@ -217,30 +217,40 @@ public class MallMemberServiceImpl implements IMallMemberService
 
     private void onNewMemberCreated(MallMember member, String referralCode)
     {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(getClass());
+
         // 1. Generate and persist unique invite code
         String inviteCode = generateInviteCode(member.getMemberId());
         memberMapper.updateInviteCode(member.getMemberId(), inviteCode);
 
         // 2. Bind referrer if a valid referral code was provided
+        boolean hasReferrer = false;
         if (referralCode != null && !referralCode.trim().isEmpty())
         {
             MallMember referrer = memberMapper.selectByInviteCode(referralCode.trim().toUpperCase());
             if (referrer != null && !referrer.getMemberId().equals(member.getMemberId()))
             {
                 memberMapper.updateReferrerId(member.getMemberId(), referrer.getMemberId());
+                hasReferrer = true;
             }
         }
 
-        // 3. Welcome gift: 200 points = ₱20, covers first delivery fee
+        // 3. Welcome points:
+        //    - No referral → 50 pts (1 record)
+        //    - Via referral → 50 pts registration + 150 pts referral bonus (2 records, total 200)
         try
         {
-            pointsService.earn(member.getMemberId(), 200, 3, null,
-                    "Welcome gift – covers your first delivery fee");
+            pointsService.earn(member.getMemberId(), 50, 3, null,
+                    "Welcome bonus – registration gift");
+            if (hasReferrer)
+            {
+                pointsService.earn(member.getMemberId(), 150, 5, null,
+                        "Referral bonus – joined via invitation");
+            }
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass())
-                    .warn("Welcome points failed for member {}: {}", member.getMemberId(), e.getMessage());
+            log.warn("Welcome points failed for member {}: {}", member.getMemberId(), e.getMessage());
         }
 
         // 4. Issue new-user coupons (Free Delivery + ₱30 Off + First Order 15% Off)
@@ -250,8 +260,7 @@ public class MallMemberServiceImpl implements IMallMemberService
         }
         catch (Exception e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass())
-                    .warn("Welcome coupons failed for member {}: {}", member.getMemberId(), e.getMessage());
+            log.warn("Welcome coupons failed for member {}: {}", member.getMemberId(), e.getMessage());
         }
     }
 

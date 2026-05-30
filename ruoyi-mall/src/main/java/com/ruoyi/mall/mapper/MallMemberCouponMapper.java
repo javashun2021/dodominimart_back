@@ -19,4 +19,7 @@ public interface MallMemberCouponMapper
 
     /** 批量过期已超时的券，供定时任务调用 */
     int expireOverdue();
+
+    /** 管理后台分页查询（JOIN mall_coupon + mall_member） */
+    List<MallMemberCoupon> selectMemberCouponList(MallMemberCoupon query);
 }

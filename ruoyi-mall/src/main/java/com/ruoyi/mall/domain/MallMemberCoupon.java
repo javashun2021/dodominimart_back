@@ -11,14 +11,15 @@ public class MallMemberCoupon implements Serializable
     private Long   id;
     private Long   couponId;
     private Long   memberId;
-    /** 0未使用 1已使用 2已过期 */
-    private int    status;
+    /** 0未使用 1已使用 2已过期；null 表示不过滤 */
+    private Integer status;
     private Date   expiresAt;
     private String orderNo;
     private Date   usedTime;
     private Date   createTime;
 
-    // ── 非 DB 字段（JOIN mall_coupon 填充） ──────────────────────────────────
+    // ── 非 DB 字段（JOIN mall_coupon + mall_member 填充） ───────────────────
+    private String     nickName;
     private String     couponName;
     private String     type;
     private BigDecimal discountAmount;
@@ -36,8 +37,8 @@ public class MallMemberCoupon implements Serializable
     public Long   getMemberId()                              { return memberId; }
     public void   setMemberId(Long v)                       { this.memberId = v; }
 
-    public int    getStatus()                                { return status; }
-    public void   setStatus(int v)                          { this.status = v; }
+    public Integer getStatus()                               { return status; }
+    public void    setStatus(Integer v)                     { this.status = v; }
 
     public Date   getExpiresAt()                             { return expiresAt; }
     public void   setExpiresAt(Date v)                      { this.expiresAt = v; }
@@ -50,6 +51,9 @@ public class MallMemberCoupon implements Serializable
 
     public Date   getCreateTime()                            { return createTime; }
     public void   setCreateTime(Date v)                     { this.createTime = v; }
+
+    public String     getNickName()                           { return nickName; }
+    public void       setNickName(String v)                  { this.nickName = v; }
 
     public String     getCouponName()                        { return couponName; }
     public void       setCouponName(String v)               { this.couponName = v; }

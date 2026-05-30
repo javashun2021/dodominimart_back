@@ -15,6 +15,9 @@
             <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:coupon:remove">
                 <i class="fa fa-remove"></i> Delete
             </a>
+            <a class="btn btn-info" onclick="viewMemberCoupons()" shiro:hasPermission="mall:coupon:view">
+                <i class="fa fa-users"></i> Member Coupons
+            </a>
         </div>
         <div class="col-sm-12 select-table table-striped">
             <table id="bootstrap-table" data-mobile-responsive="true"></table>
@@ -26,6 +29,10 @@
     var editFlag   = [[${@permission.hasPermi('mall:coupon:edit')}]];
     var removeFlag = [[${@permission.hasPermi('mall:coupon:remove')}]];
     var prefix = ctx + "mall/coupon";
+
+    function viewMemberCoupons() {
+        window.location.href = prefix + "/member-coupons";
+    }
 
     $(function() {
         $.table.init({
