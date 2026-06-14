@@ -22,6 +22,15 @@
                             </select>
                         </li>
                         <li>
+                            Order Type：
+                            <select name="orderSource">
+                                <option value="">All</option>
+                                <option value="IN_STORE">In-Store</option>
+                                <option value="NORMAL">Delivery (Normal)</option>
+                                <option value="FLASH_SALE">Flash Sale</option>
+                            </select>
+                        </li>
+                        <li>
                             <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
                             <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
                         </li>
@@ -44,9 +53,13 @@
                      '2':'<span class="badge" style="background:#5bc0de">Delivering</span>',
                      '3':'<span class="badge badge-success">Completed</span>',
                      '4':'<span class="badge badge-default">Cancelled</span>'};
-    var sourceMap  = {'NORMAL':     '<span class="badge badge-default">Normal</span>',
+    var sourceMap  = {'NORMAL':     '<span class="badge badge-default">Delivery</span>',
                       'FLASH_SALE': '<span class="badge" style="background:#e74c3c">Flash Sale</span>',
-                      'GROUP':      '<span class="badge" style="background:#8e44ad">Group Buy</span>'};
+                      'GROUP':      '<span class="badge" style="background:#8e44ad">Group Buy</span>',
+                      'IN_STORE':   '<span class="badge" style="background:#16a085">In-Store</span>'};
+    var payMap     = {'COD':   '<span class="badge badge-default">COD</span>',
+                      'GCASH': '<span class="badge badge-primary">GCash</span>',
+                      'STORE': '<span class="badge" style="background:#16a085">In-Store</span>'};
 
     $(function() {
         $.table.init({
@@ -56,8 +69,11 @@
                 {checkbox: true},
                 {field: 'orderNo',      title: 'Order No'},
                 {field: 'totalAmount',  title: 'Amount (PHP)', formatter: function(v) { return '₱' + v; }},
-                {field: 'orderSource',  title: 'Source', align: 'center',
+                {field: 'orderSource',  title: 'Type', align: 'center',
                     formatter: function(v) { return sourceMap[v] || v; }
+                },
+                {field: 'paymentMethod', title: 'Payment', align: 'center',
+                    formatter: function(v) { return payMap[v] || v; }
                 },
                 {field: 'status',       title: 'Status', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }
@@ -67,7 +83,11 @@
                 {title: 'Action', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-info btn-xs" href="' + prefix + '/detail/' + row.orderId + '"><i class="fa fa-eye"></i>Detail</a> ');
-                    if (row.status === '0') {
+                    if (row.status === '0' && row.orderSource === 'IN_STORE') {
+                        // 到店单：确认收款 → 直接完成并发奖励
+                        a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="confirmStorePayment(' + row.orderId + ')"><i class="fa fa-money"></i>Confirm Payment</a> ');
+                        a.push('<a class="btn btn-danger btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'4\')"><i class="fa fa-ban"></i>Cancel</a> ');
+                    } else if (row.status === '0') {
                         a.push('<a class="btn btn-primary btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'1\')"><i class="fa fa-check"></i>Confirm</a> ');
                         a.push('<a class="btn btn-danger btn-xs ' + editFlag + '" onclick="changeStatus(' + row.orderId + ',\'4\')"><i class="fa fa-ban"></i>Cancel</a> ');
                     }
@@ -87,6 +107,12 @@
         var msg = {1:'Confirm Order', 2:'Mark as Delivering', 3:'Mark as Completed', 4:'Cancel Order'}[status];
         $.modal.confirm('Are you sure to [' + msg + ']?', function() {
             $.operate.post(prefix + '/changeStatus', {orderId: orderId, status: status});
+        });
+    }
+
+    function confirmStorePayment(orderId) {
+        $.modal.confirm('Confirm payment received for this in-store order? It will be completed immediately.', function() {
+            $.operate.post(prefix + '/confirmStorePayment', {orderId: orderId});
         });
     }
 </script>

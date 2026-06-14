@@ -63,4 +63,21 @@ public class MallOrderController extends BaseController
     {
         return toAjax(orderService.updateOrderStatus(orderId, status, ShiroUtils.getLoginName()));
     }
+
+    /** 到店单确认收款 → 直接完成并发放完成奖励 */
+    @RequiresPermissions("mall:order:edit")
+    @Log(title = "订单管理", businessType = BusinessType.UPDATE)
+    @PostMapping("/confirmStorePayment")
+    @ResponseBody
+    public AjaxResult confirmStorePayment(Long orderId)
+    {
+        try
+        {
+            return toAjax(orderService.confirmInStorePayment(orderId, ShiroUtils.getLoginName()));
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
 }

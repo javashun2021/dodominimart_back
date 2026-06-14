@@ -56,13 +56,24 @@ public class ApiOrderController extends BaseApiController
     {
         Long memberId = getCurrentMemberId(request);
 
-        Long addressId;
+        String remark        = (String) body.getOrDefault("remark", "");
+        String paymentMethod = body.get("paymentMethod") != null
+                ? body.get("paymentMethod").toString().toUpperCase() : "COD";
+        boolean isStore = "STORE".equals(paymentMethod);
+
+        if ("GCASH".equals(paymentMethod) && !isGcashEnabled())
+        {
+            return AjaxResult.error("GCash payment is currently unavailable");
+        }
+
+        // 到店单（STORE）无需配送地址；其余支付方式需指定或使用默认地址
+        Long addressId = null;
         Object addressIdObj = body.get("addressId");
         if (addressIdObj != null)
         {
             addressId = Long.valueOf(addressIdObj.toString());
         }
-        else
+        else if (!isStore)
         {
             MallAddress defaultAddr = addressService.selectDefaultAddressByMemberId(memberId);
             if (defaultAddr == null)
@@ -70,14 +81,6 @@ public class ApiOrderController extends BaseApiController
                 return AjaxResult.error("Please set a delivery address");
             }
             addressId = defaultAddr.getAddressId();
-        }
-        String remark        = (String) body.getOrDefault("remark", "");
-        String paymentMethod = body.get("paymentMethod") != null
-                ? body.get("paymentMethod").toString().toUpperCase() : "COD";
-
-        if ("GCASH".equals(paymentMethod) && !isGcashEnabled())
-        {
-            return AjaxResult.error("GCash payment is currently unavailable");
         }
 
         @SuppressWarnings("unchecked")

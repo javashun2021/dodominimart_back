@@ -45,6 +45,8 @@
             <if test="memberId != null">AND member_id = #{memberId}</if>
             <if test="status != null and status != ''">AND status = #{status}</if>
             <if test="orderNo != null and orderNo != ''">AND order_no like concat('%', #{orderNo}, '%')</if>
+            <if test="orderSource != null and orderSource != ''">AND order_source = #{orderSource}</if>
+            <if test="paymentMethod != null and paymentMethod != ''">AND payment_method = #{paymentMethod}</if>
         </where>
         order by create_time desc
     </select>

@@ -21,6 +21,7 @@ import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallRunnerApplicationMapper;
 import com.ruoyi.mall.mapper.MallRunnerRatingMapper;
 import com.ruoyi.mall.service.FcmService;
+import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallPointsService;
 import com.ruoyi.mall.service.IMallRunnerService;
 import com.ruoyi.mall.service.ISsePushService;
@@ -37,6 +38,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     @Autowired private FcmService                   fcmService;
     @Autowired private ISsePushService              sseService;
     @Autowired private IMallPointsService           pointsService;
+    @Autowired private IMallOrderService            orderService;
 
     // ---- 申请相关 ----
 
@@ -142,40 +144,8 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         orderMapper.updateOrder(order);
         MallOrder completed = orderMapper.selectOrderById(orderId);
 
-        // 积分奖励：1分/₱1（按实付金额取整）
-        try
-        {
-            int pts = completed.getTotalAmount().intValue();
-            if (pts > 0)
-            {
-                pointsService.earn(completed.getMemberId(), pts, 1,
-                        completed.getOrderNo(), "Order #" + completed.getOrderNo() + " completed");
-            }
-        }
-        catch (Exception e)
-        {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Points earn failed after completeOrder: {}", e.getMessage());
-        }
-
-        // 邀请返积分：被邀请人完成第一笔订单时，给邀请人 200 积分
-        try
-        {
-            MallMember customer = memberMapper.selectMemberById(completed.getMemberId());
-            if (customer != null && customer.getReferrerId() != null)
-            {
-                int completedCount = orderMapper.countCompletedByMemberId(completed.getMemberId());
-                if (completedCount == 1)
-                {
-                    pointsService.earn(customer.getReferrerId(), 200, 5,
-                            String.valueOf(completed.getMemberId()),
-                            "Referral reward: new member completed first order");
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Referral reward failed after completeOrder: {}", e.getMessage());
-        }
+        // 完成奖励：1分/₱1 + 被邀请人首单完成给邀请人 200 积分（与到店单确认共用）
+        orderService.awardOrderCompletionRewards(completed);
 
         // 推送：SSE（Web）+ FCM（Mobile）
         try

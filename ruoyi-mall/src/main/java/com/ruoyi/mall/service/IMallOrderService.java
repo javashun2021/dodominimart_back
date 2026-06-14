@@ -18,7 +18,8 @@ public interface IMallOrderService
 
     /**
      * 创建订单（事务）：校验库存 → 生成订单 → 插入明细 → 扣减库存
-     * @param paymentMethod  "COD" 或 "GCASH"，null 时默认 COD
+     * @param addressId      配送地址 ID；到店单（STORE）传 null，无需配送地址
+     * @param paymentMethod  "COD" / "GCASH" / "STORE"（到店线下支付），null 时默认 COD
      * @param pointsToUse    本单使用积分数（0 = 不使用），100分=₱10
      * @param memberCouponId 本单使用的优惠券实例 ID，null = 不使用
      */
@@ -32,4 +33,16 @@ public interface IMallOrderService
 
     /** 标记订单支付成功（GCash 回调时调用） */
     void markOrderPaid(String orderNo, String paymentNo, BigDecimal amount);
+
+    /**
+     * 发放订单完成奖励：顾客 1分/₱1 + 被邀请人首单完成给邀请人 200 积分。
+     * 供 runner 送达完成 与 到店单确认收款 两条路径复用。
+     */
+    void awardOrderCompletionRewards(MallOrder order);
+
+    /**
+     * 店员确认到店单收款 → 订单直接完成并发奖励（仅 IN_STORE 且 status=0 时有效）。
+     * @return 受影响行数，1=成功
+     */
+    int confirmInStorePayment(Long orderId, String operator);
 }

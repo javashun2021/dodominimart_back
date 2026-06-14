@@ -100,8 +100,19 @@ public class MallOrderServiceImpl implements IMallOrderService
     @Transactional
     public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId)
     {
-        MallAddress address = addressMapper.selectAddressById(addressId);
-        if (address == null || !address.getMemberId().equals(memberId))
+        boolean isStore = "STORE".equalsIgnoreCase(paymentMethod);
+
+        // 到店单（STORE）无需配送地址；其余支付方式必须有有效地址
+        MallAddress address = null;
+        if (addressId != null)
+        {
+            address = addressMapper.selectAddressById(addressId);
+            if (address == null || !address.getMemberId().equals(memberId))
+            {
+                throw new RuntimeException("Invalid address");
+            }
+        }
+        else if (!isStore)
         {
             throw new RuntimeException("Invalid address");
         }
@@ -200,12 +211,13 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = new MallOrder();
         order.setOrderNo(generateOrderNo());
         order.setMemberId(memberId);
-        order.setAddressSnapshot(buildAddressSnapshot(address));
+        order.setAddressSnapshot(address != null ? buildAddressSnapshot(address) : "");
         order.setTotalAmount(total);
         order.setStatus("0");
         order.setPaymentMethod(paymentMethod != null ? paymentMethod.toUpperCase() : "COD");
         order.setRemark(remark != null ? remark : "");
-        order.setOrderSource(hasFlashSale ? "FLASH_SALE" : "NORMAL");
+        // 到店单标识：order_source = IN_STORE，便于后台区分配送单/到店单
+        order.setOrderSource(isStore ? "IN_STORE" : (hasFlashSale ? "FLASH_SALE" : "NORMAL"));
         order.setPointsUsed(actualPointsUsed);
         order.setMemberCouponId(memberCouponId);
         order.setCouponDiscount(couponDiscountAmt);
@@ -270,9 +282,13 @@ public class MallOrderServiceImpl implements IMallOrderService
                         "Your order #" + order.getOrderNo() + " is being processed",
                         java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
             }
-            fcmService.sendToTopic("runners", "New Order Available",
-                    "Tap to accept a delivery",
-                    java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+            // 到店单不走配送，不推送 runner
+            if (!isStore)
+            {
+                fcmService.sendToTopic("runners", "New Order Available",
+                        "Tap to accept a delivery",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+            }
         }
         catch (Exception e)
         {
@@ -438,6 +454,108 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after markOrderPaid: {}", e.getMessage());
         }
+    }
+
+    @Override
+    @Transactional
+    public void awardOrderCompletionRewards(MallOrder order)
+    {
+        if (order == null) return;
+
+        // 积分奖励：1分/₱1（按实付金额取整）
+        try
+        {
+            int pts = order.getTotalAmount() != null ? order.getTotalAmount().intValue() : 0;
+            if (pts > 0)
+            {
+                pointsService.earn(order.getMemberId(), pts, 1,
+                        order.getOrderNo(), "Order #" + order.getOrderNo() + " completed");
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Points earn failed on order completion: {}", e.getMessage());
+        }
+
+        // 邀请返积分：被邀请人完成第一笔订单时，给邀请人 200 积分
+        try
+        {
+            com.ruoyi.mall.domain.MallMember customer = memberMapper.selectMemberById(order.getMemberId());
+            if (customer != null && customer.getReferrerId() != null)
+            {
+                int completedCount = orderMapper.countCompletedByMemberId(order.getMemberId());
+                if (completedCount == 1)
+                {
+                    pointsService.earn(customer.getReferrerId(), 200, 5,
+                            String.valueOf(order.getMemberId()),
+                            "Referral reward: new member completed first order");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Referral reward failed on order completion: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public int confirmInStorePayment(Long orderId, String operator)
+    {
+        MallOrder order = orderMapper.selectOrderById(orderId);
+        if (order == null)
+        {
+            throw new RuntimeException("Order not found");
+        }
+        if (!"IN_STORE".equals(order.getOrderSource()) || !"STORE".equalsIgnoreCase(order.getPaymentMethod()))
+        {
+            throw new RuntimeException("Not an in-store order");
+        }
+        if (!"0".equals(order.getStatus()))
+        {
+            // 幂等保护：非待确认状态不重复确认/发奖励
+            throw new RuntimeException("Order is not awaiting payment confirmation");
+        }
+
+        Date now = new Date();
+        MallOrder update = new MallOrder();
+        update.setOrderId(orderId);
+        update.setStatus("3");
+        update.setPaymentStatus("PAID");
+        update.setPaidAmount(order.getTotalAmount());
+        update.setPaymentTime(now);
+        update.setUpdateBy(operator);
+        update.setUpdateTime(now);
+        int rows = orderMapper.updateOrder(update);
+
+        // 发放完成奖励（与配送送达一致）
+        awardOrderCompletionRewards(order);
+
+        // 推送顾客：订单完成
+        try
+        {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("orderNo", order.getOrderNo());
+            payload.put("status", "3");
+            payload.put("title", "Order Completed");
+            payload.put("body",  "Your in-store order #" + order.getOrderNo() + " is complete. Thank you!");
+            sseService.push(order.getMemberId(), "order_status", payload);
+
+            com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(order.getMemberId());
+            if (member != null && member.getFcmToken() != null)
+            {
+                fcmService.sendToToken(member.getFcmToken(), "Order Completed",
+                        "Your in-store order #" + order.getOrderNo() + " is complete. Thank you!",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after confirmInStorePayment: {}", e.getMessage());
+        }
+
+        return rows;
     }
 
     private String generateOrderNo()

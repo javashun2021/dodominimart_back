@@ -551,10 +551,10 @@ await storage.delete(key: 'jwt_token');
 
 | status | 含义 | 可进行的操作 |
 |--------|------|------------|
-| `"0"` | 待确认 | 会员可取消；COD 等待骑手接单；GCASH 等待支付 |
+| `"0"` | 待确认 | 会员可取消；COD 等待骑手接单；GCASH 等待支付；STORE（到店单）等待店员确认收款 |
 | `"1"` | 已确认 | — |
 | `"2"` | 配送中 | — |
-| `"3"` | 已完成 | — |
+| `"3"` | 已完成 | 到店单经店员确认收款后直接到达此状态 |
 | `"4"` | 已取消 | — |
 
 ### 支付状态说明（paymentStatus）
@@ -569,11 +569,20 @@ await storage.delete(key: 'jwt_token');
 
 | orderSource | 含义 |
 |-------------|------|
-| `"NORMAL"` | 普通下单 |
+| `"NORMAL"` | 普通配送下单 |
 | `"FLASH_SALE"` | 下单时命中限时优惠活动，价格已按活动价计算 |
 | `"GROUP"` | 拼团成功后由系统自动生成，不可主动下单创建 |
+| `"IN_STORE"` | **到店单**：会员在门店内购物、选择线下支付（`paymentMethod = "STORE"`）。无需配送地址，不进骑手配送流程，由店员在后台「确认收款」后直接完成 |
 
-> App 端可据此展示订单来源标签（如"限时特惠"、"拼团订单"），并在拼团订单中隐藏"再次购买"等按钮。
+> App 端可据此展示订单来源标签（如"限时特惠"、"拼团订单"、"到店自提"），并在拼团/到店订单中隐藏"再次购买"等按钮。
+
+### 支付方式说明（paymentMethod）
+
+| paymentMethod | 含义 |
+|---------------|------|
+| `"COD"` | 货到付款（默认），骑手送达时现金收款 |
+| `"GCASH"` | GCash 在线支付，下单后需调用 4.5 发起支付 |
+| `"STORE"` | **到店线下支付**：会员在门店内购物，无需配送地址；下单后订单为待确认（`status = "0"`），到收银台付款，店员在后台确认收款后订单直接完成（`status = "3"`）。该方式常驻可用，不受 GCash 开关影响 |
 
 ---
 
@@ -581,11 +590,13 @@ await storage.delete(key: 'jwt_token');
 
 `POST /api/v1/orders`
 
-> 支持 COD（货到付款）和 GCASH（在线支付）。GCASH 下单后需调用 4.5 发起支付。
+> 支持 COD（货到付款）、GCASH（在线支付）和 STORE（到店线下支付）。GCASH 下单后需调用 4.5 发起支付。
 >
 > **注意：** GCASH 支付受后台开关控制（`mall.gcash.enabled`）。开关关闭时，`paymentMethod=GCASH` 的下单请求会返回错误。App 端可在首页/支付页提前调用任意接口判断服务状态，或根据错误码提示用户改用 COD。
+>
+> **到店单（STORE）：** 会员在门店内购物时选择此方式，**无需传 `addressId`**，订单不计配送费、不进骑手流程。下单后订单为 `status = "0"`（待确认），到收银台付款后由店员在后台确认收款，订单直接变为 `status = "3"`（已完成）。App 端下单成功后直接进入"下单成功"页提示用户到收银台付款即可，无需轮询支付（也可轮询 4.3 订单详情等待 `status = "3"`）。
 
-**请求体：**
+**请求体（配送单 / GCASH）：**
 
 ```json
 {
@@ -599,14 +610,28 @@ await storage.delete(key: 'jwt_token');
 }
 ```
 
+**请求体（到店单 STORE，不带地址）：**
+
+```json
+{
+  "paymentMethod": "STORE",
+  "remark": "",
+  "items": [
+    { "productId": 1, "quantity": 2 }
+  ]
+}
+```
+
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `addressId` | long | 否 | 收货地址 ID；未传时自动使用默认地址 |
-| `paymentMethod` | string | 否 | `"COD"`（默认）或 `"GCASH"` |
+| `addressId` | long | 否 | 收货地址 ID；配送单（COD/GCASH）未传时自动使用默认地址；**到店单（STORE）无需传** |
+| `paymentMethod` | string | 否 | `"COD"`（默认）、`"GCASH"` 或 `"STORE"`（到店线下支付） |
 | `remark` | string | 否 | 备注 |
 | `items` | array | 是 | 商品列表，不能为空 |
 | `items[].productId` | long | 是 | 商品 ID |
 | `items[].quantity` | int | 是 | 数量（≥1） |
+
+> 响应中到店单的 `orderSource = "IN_STORE"`、`paymentMethod = "STORE"`、`status = "0"`，`addressSnapshot` 为空字符串。
 
 **成功响应：**
 
