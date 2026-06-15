@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title th:text="${shopName} + ' — Order'">Order</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f4f5f7; color: #222;
+               font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+        .wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
+        .card { background: #fff; border-radius: 12px; padding: 18px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 14px; }
+        .center { text-align: center; }
+        .logo { max-width: 140px; max-height: 70px; display: block; margin: 0 auto 8px; }
+        .shop-name { font-weight: 700; font-size: 18px; }
+        .muted { color: #888; font-size: 13px; }
+        h4 { margin: 0 0 10px; font-size: 14px; color: #1ab394; }
+        .info p { margin: 4px 0; font-size: 14px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; color: #fff; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 7px 4px; font-size: 14px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        td.num, th.num { text-align: right; white-space: nowrap; }
+        .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px; }
+        .totals .grand { font-weight: 700; font-size: 17px; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 6px; }
+        .open-app { display: block; text-align: center; background: #1ab394; color: #fff; text-decoration: none;
+                    padding: 13px; border-radius: 10px; font-weight: 600; font-size: 15px; }
+        .footer { text-align: center; color: #999; font-size: 12px; margin: 18px 0; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <div class="card center">
+        <img class="logo" th:src="@{/img/receipt-logo.jpg}" alt="logo">
+        <div class="shop-name" th:text="${shopName}">DODOMINIMART</div>
+        <div class="muted" th:if="${shopAddress != null and shopAddress != ''}" th:text="${shopAddress}"></div>
+        <div class="muted" th:if="${shopPhone != null and shopPhone != ''}" th:text="'Tel: ' + ${shopPhone}"></div>
+    </div>
+
+    <div class="card">
+        <h4>Order</h4>
+        <div class="info">
+            <p><strong>Order No:</strong> <span th:text="${order.orderNo}"></span></p>
+            <p><strong>Date:</strong> <span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm')}"></span></p>
+            <p><strong>Type:</strong>
+                <span th:switch="${order.orderSource}">
+                    <span th:case="'IN_STORE'">In-Store</span>
+                    <span th:case="*">Delivery</span>
+                </span>
+                &nbsp;|&nbsp; <strong>Payment:</strong> <span th:text="${order.paymentMethod}"></span>
+            </p>
+            <p><strong>Status:</strong>
+                <span th:switch="${order.status}">
+                    <span th:case="'0'" class="badge" style="background:#f0ad4e">Pending</span>
+                    <span th:case="'1'" class="badge" style="background:#337ab7">Confirmed</span>
+                    <span th:case="'2'" class="badge" style="background:#5bc0de">Delivering</span>
+                    <span th:case="'3'" class="badge" style="background:#1ab394">Completed</span>
+                    <span th:case="'4'" class="badge" style="background:#999">Cancelled</span>
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h4>Items</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th class="num">Price</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${order.items}">
+                    <td th:text="${item.productName}"></td>
+                    <td class="num" th:text="'₱' + ${item.price}"></td>
+                    <td class="num" th:text="${item.quantity}"></td>
+                    <td class="num" th:text="'₱' + ${item.subtotal}"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="totals" style="margin-top:10px">
+            <div class="row" th:if="${order.couponDiscount != null and order.couponDiscount.signum() > 0}">
+                <span>Coupon Discount</span><span th:text="'-₱' + ${order.couponDiscount}"></span>
+            </div>
+            <div class="row" th:if="${order.pointsUsed > 0}">
+                <span>Points Used</span><span th:text="'-₱' + ${order.pointsUsed}"></span>
+            </div>
+            <div class="row" th:if="${order.deliveryFee != null and order.deliveryFee.signum() > 0}">
+                <span>Delivery Fee</span><span th:text="'₱' + ${order.deliveryFee}"></span>
+            </div>
+            <div class="row grand">
+                <span>TOTAL</span><span th:text="'₱' + ${order.totalAmount}"></span>
+            </div>
+        </div>
+    </div>
+
+    <a class="open-app" th:href="${appScheme}">Open in App</a>
+
+    <div class="footer" th:text="${shopFooter}">Thank you for shopping!</div>
+
+</div>
+</body>
+</html>

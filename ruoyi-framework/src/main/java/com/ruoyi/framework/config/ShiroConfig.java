@@ -285,6 +285,9 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/druid/**", "user");
         filterChainDefinitionMap.put("/captcha/captchaImage**", "anon");
         filterChainDefinitionMap.put("/profile/**", "anon");
+        // 订单二维码：App Link/Universal Link 验证文件 + Token 公开订单页（扫码 web 看详情）
+        filterChainDefinitionMap.put("/.well-known/**", "anon");
+        filterChainDefinitionMap.put("/o/**", "anon");
         // 退出 logout地址，shiro去清除session
         filterChainDefinitionMap.put("/logout", "logout");
         // 不需要拦截的访问

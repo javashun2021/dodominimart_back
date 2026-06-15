@@ -16,6 +16,17 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.page.TableDataInfo;
 import com.ruoyi.framework.util.ShiroUtils;
 import com.ruoyi.framework.web.base.BaseController;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import javax.imageio.ImageIO;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.system.service.ISysConfigService;
@@ -31,6 +42,9 @@ public class MallOrderController extends BaseController
 
     @Autowired
     private ISysConfigService configService;
+
+    @Autowired
+    private com.ruoyi.web.service.ReceiptTokenService receiptTokenService;
 
     @RequiresPermissions("mall:order:view")
     @GetMapping
@@ -68,7 +82,41 @@ public class MallOrderController extends BaseController
         mmap.put("shopPhone",   cfg("app.contact.phone",   ""));
         mmap.put("shopAddress", cfg("app.receipt.address", ""));
         mmap.put("shopFooter",  cfg("app.receipt.footer",  "Thank you for shopping!"));
+
+        // 订单二维码：一个 URL 三端通吃 —— Android/iOS 装了 App 直接拉起订单详情（App Link/Universal Link），
+        // 否则浏览器打开 Token 公开订单页（/o/{id}?t=...）。Token 防止按 orderId 遍历他人订单。
+        String base = cfg("app.deeplink.base", "https://dodominimart.com");
+        String orderUrl = base + "/o/" + orderId + "?t=" + receiptTokenService.sign(orderId);
+        mmap.put("qrDataUri", qrDataUri(orderUrl, 220));
         return prefix + "/receipt";
+    }
+
+    /** 生成二维码并返回 base64 data URI（内嵌到打印页，离线可打印，仅依赖 zxing core） */
+    private String qrDataUri(String text, int size)
+    {
+        try
+        {
+            Map<EncodeHintType, Object> hints = new HashMap<>();
+            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+            hints.put(EncodeHintType.MARGIN, 1);
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+            BitMatrix matrix = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, hints);
+            BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    img.setRGB(x, y, matrix.get(x, y) ? 0x000000 : 0xFFFFFF);
+                }
+            }
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ImageIO.write(img, "png", bos);
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(bos.toByteArray());
+        }
+        catch (Exception e)
+        {
+            return "";
+        }
     }
 
     /** 读取系统参数，取不到时返回默认值 */
