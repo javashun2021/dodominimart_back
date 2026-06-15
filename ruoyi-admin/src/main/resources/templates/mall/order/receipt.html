@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Order Receipt</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #f0f0f0; font-family: "Segoe UI", Arial, sans-serif; color: #000; }
+
+        /* Top toolbar — hidden when printing */
+        .toolbar { text-align: center; padding: 14px; background: #fff; border-bottom: 1px solid #ddd; }
+        .toolbar button {
+            border: 1px solid #1ab394; background: #fff; color: #1ab394;
+            padding: 6px 16px; margin: 0 4px; border-radius: 4px; cursor: pointer; font-size: 13px;
+        }
+        .toolbar button.primary { background: #1ab394; color: #fff; }
+        .toolbar button.active  { background: #1ab394; color: #fff; }
+
+        /* Receipt container */
+        .receipt { background: #fff; margin: 20px auto; padding: 14px 16px; }
+        .center { text-align: center; }
+        .shop-name { font-weight: bold; }
+        .muted { color: #555; }
+        .line { border-top: 1px dashed #999; margin: 8px 0; }
+        .info p { margin: 2px 0; }
+        .row { display: flex; justify-content: space-between; }
+        .items { width: 100%; border-collapse: collapse; margin: 6px 0; }
+        .items th { text-align: left; border-bottom: 1px solid #000; padding: 3px 2px; }
+        .items td { padding: 3px 2px; vertical-align: top; }
+        .items td.num, .items th.num { text-align: right; white-space: nowrap; }
+        .totals .row { padding: 1px 0; }
+        .totals .grand { font-weight: bold; font-size: 1.1em; border-top: 1px solid #000; padding-top: 4px; margin-top: 4px; }
+        .footer { margin-top: 10px; }
+
+        /* 80mm thermal slip */
+        body.size-80 .receipt { width: 80mm; font-size: 12px; padding: 8px 6px; }
+        body.size-80 .shop-name { font-size: 15px; }
+        body.size-80 .items th, body.size-80 .items td { padding: 2px 1px; }
+
+        /* A4 full page */
+        body.size-a4 .receipt { width: 190mm; font-size: 14px; }
+        body.size-a4 .shop-name { font-size: 22px; }
+        body.size-a4 .items th { background: #f5f5f5; border: 1px solid #ccc; }
+        body.size-a4 .items td { border: 1px solid #eee; }
+
+        @media print {
+            body { background: #fff; }
+            .no-print { display: none !important; }
+            .receipt { margin: 0; padding: 0; }
+            @page { margin: 6mm; }
+            body.size-80 @page { margin: 0; }
+        }
+    </style>
+</head>
+<body class="size-80">
+
+<div class="toolbar no-print">
+    <button type="button" class="primary" onclick="window.print()">🖨 Print</button>
+    &nbsp;&nbsp;Paper:
+    <button type="button" id="btn-80" class="active" onclick="setSize('80')">80mm</button>
+    <button type="button" id="btn-a4" onclick="setSize('a4')">A4</button>
+</div>
+
+<div class="receipt">
+
+    <!-- Header -->
+    <div class="center">
+        <div class="shop-name" th:text="${shopName}">DODOMINIMART</div>
+        <div class="muted" th:if="${shopAddress != null and shopAddress != ''}" th:text="${shopAddress}"></div>
+        <div class="muted" th:if="${shopPhone != null and shopPhone != ''}" th:text="'Tel: ' + ${shopPhone}"></div>
+    </div>
+
+    <div class="line"></div>
+
+    <!-- Order info -->
+    <div class="info">
+        <p><strong>Order No:</strong> <span th:text="${order.orderNo}"></span></p>
+        <p><strong>Date:</strong> <span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
+        <p><strong>Type:</strong>
+            <span th:switch="${order.orderSource}">
+                <span th:case="'IN_STORE'">In-Store</span>
+                <span th:case="*">Delivery</span>
+            </span>
+            &nbsp;|&nbsp; <strong>Payment:</strong> <span th:text="${order.paymentMethod}"></span>
+        </p>
+        <p><strong>Status:</strong>
+            <span th:switch="${order.status}">
+                <span th:case="'0'">Pending</span>
+                <span th:case="'1'">Confirmed</span>
+                <span th:case="'2'">Delivering</span>
+                <span th:case="'3'">Completed</span>
+                <span th:case="'4'">Cancelled</span>
+            </span>
+        </p>
+    </div>
+
+    <div class="line"></div>
+
+    <!-- Items -->
+    <table class="items">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="num">Price</th>
+                <th class="num">Qty</th>
+                <th class="num">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${order.items}">
+                <td th:text="${item.productName}"></td>
+                <td class="num" th:text="'₱' + ${item.price}"></td>
+                <td class="num" th:text="${item.quantity}"></td>
+                <td class="num" th:text="'₱' + ${item.subtotal}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="line"></div>
+
+    <!-- Totals -->
+    <div class="totals">
+        <div class="row" th:if="${order.couponDiscount != null and order.couponDiscount.signum() > 0}">
+            <span>Coupon Discount</span><span th:text="'-₱' + ${order.couponDiscount}"></span>
+        </div>
+        <div class="row" th:if="${order.pointsUsed > 0}">
+            <span>Points Used</span><span th:text="'-₱' + ${order.pointsUsed}"></span>
+        </div>
+        <div class="row" th:if="${order.deliveryFee != null and order.deliveryFee.signum() > 0}">
+            <span>Delivery Fee</span><span th:text="'₱' + ${order.deliveryFee}"></span>
+        </div>
+        <div class="row grand">
+            <span>TOTAL</span><span th:text="'₱' + ${order.totalAmount}"></span>
+        </div>
+    </div>
+
+    <div class="line" th:if="${order.remark != null and order.remark != ''}"></div>
+    <p th:if="${order.remark != null and order.remark != ''}"><strong>Note:</strong> <span th:text="${order.remark}"></span></p>
+
+    <!-- Footer -->
+    <div class="footer center muted" th:text="${shopFooter}">Thank you for shopping!</div>
+
+</div>
+
+<script>
+    function setSize(s) {
+        document.body.className = 'size-' + s;
+        document.getElementById('btn-80').classList.toggle('active', s === '80');
+        document.getElementById('btn-a4').classList.toggle('active', s === 'a4');
+    }
+</script>
+</body>
+</html>

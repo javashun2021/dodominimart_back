@@ -83,6 +83,7 @@
                 {title: 'Action', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-info btn-xs" href="' + prefix + '/detail/' + row.orderId + '"><i class="fa fa-eye"></i>Detail</a> ');
+                    a.push('<a class="btn btn-default btn-xs" onclick="printReceipt(' + row.orderId + ')"><i class="fa fa-print"></i>Print</a> ');
                     if (row.status === '0' && row.orderSource === 'IN_STORE') {
                         // 到店单：确认收款 → 直接完成并发奖励
                         a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="confirmStorePayment(' + row.orderId + ')"><i class="fa fa-money"></i>Confirm Payment</a> ');
@@ -108,6 +109,10 @@
         $.modal.confirm('Are you sure to [' + msg + ']?', function() {
             $.operate.post(prefix + '/changeStatus', {orderId: orderId, status: status});
         });
+    }
+
+    function printReceipt(orderId) {
+        window.open(prefix + '/receipt/' + orderId);
     }
 
     function confirmStorePayment(orderId) {

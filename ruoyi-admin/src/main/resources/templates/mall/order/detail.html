@@ -81,6 +81,7 @@
 
             <div class="ibox-content">
                 <a class="btn btn-default" onclick="history.back()"><i class="fa fa-arrow-left"></i> Back to List</a>
+                <a class="btn btn-info" th:onclick="'printReceipt(' + ${order.orderId} + ')'"><i class="fa fa-print"></i> Print Receipt</a>
                 <span th:if="${order.status == '0'}">
                     <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'1\')'"><i class="fa fa-check"></i> Confirm Order</a>
                     <a class="btn btn-danger"  th:onclick="'changeStatus(' + ${order.orderId} + ',\'4\')'"><i class="fa fa-ban"></i> Cancel Order</a>
@@ -100,6 +101,10 @@
 <script th:inline="javascript">
     var prefix = ctx + "mall/order";
     var orderId = [[${order.orderId}]];
+
+    function printReceipt(id) {
+        window.open(prefix + '/receipt/' + id);
+    }
 
     function changeStatus(id, status) {
         var msg = {1:'Confirm Order', 2:'Mark as Delivering', 3:'Mark as Completed', 4:'Cancel Order'}[status];

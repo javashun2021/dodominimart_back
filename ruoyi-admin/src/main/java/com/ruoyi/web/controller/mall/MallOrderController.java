@@ -18,6 +18,7 @@ import com.ruoyi.framework.util.ShiroUtils;
 import com.ruoyi.framework.web.base.BaseController;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.service.IMallOrderService;
+import com.ruoyi.system.service.ISysConfigService;
 
 @Controller
 @RequestMapping("/mall/order")
@@ -27,6 +28,9 @@ public class MallOrderController extends BaseController
 
     @Autowired
     private IMallOrderService orderService;
+
+    @Autowired
+    private ISysConfigService configService;
 
     @RequiresPermissions("mall:order:view")
     @GetMapping
@@ -52,6 +56,33 @@ public class MallOrderController extends BaseController
     {
         mmap.put("order", orderService.selectOrderById(orderId));
         return prefix + "/detail";
+    }
+
+    /** 订单打印小票页（独立可打印页面，店员在新标签点 Print 走浏览器打印对话框） */
+    @RequiresPermissions("mall:order:view")
+    @GetMapping("/receipt/{orderId}")
+    public String receipt(@PathVariable Long orderId, ModelMap mmap)
+    {
+        mmap.put("order", orderService.selectOrderById(orderId));
+        mmap.put("shopName",    cfg("app.store.name",      "DODOMINIMART"));
+        mmap.put("shopPhone",   cfg("app.contact.phone",   ""));
+        mmap.put("shopAddress", cfg("app.receipt.address", ""));
+        mmap.put("shopFooter",  cfg("app.receipt.footer",  "Thank you for shopping!"));
+        return prefix + "/receipt";
+    }
+
+    /** 读取系统参数，取不到时返回默认值 */
+    private String cfg(String key, String defaultValue)
+    {
+        try
+        {
+            String v = configService.selectConfigByKey(key);
+            return (v != null && !v.isEmpty()) ? v : defaultValue;
+        }
+        catch (Exception e)
+        {
+            return defaultValue;
+        }
     }
 
     /** 变更订单状态（确认/配送/完成/取消） */
