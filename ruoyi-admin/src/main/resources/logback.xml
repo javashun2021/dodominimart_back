@@ -47,6 +47,19 @@
         </filter>
     </appender>
 	
+	<!-- App 客户端错误上报日志（/api/v1/app/error-log 收到的 Flutter 崩溃/错误）-->
+	<appender name="app_error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${log.path}/app-error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.path}/app-error.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<!-- 日志最大的历史 60天 -->
+			<maxHistory>60</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${log.pattern}</pattern>
+		</encoder>
+	</appender>
+
 	<!-- 用户访问日志输出  -->
     <appender name="sys-user" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${log.path}/sys-user.log</file>
@@ -83,4 +96,10 @@
     <logger name="sys-user" level="info">
         <appender-ref ref="sys-user"/>
     </logger>
-</configuration> 
+
+	<!--App 客户端错误上报日志（单独成文件，additivity=false 避免混入 sys 日志）-->
+    <logger name="APP_CLIENT_ERROR" level="info" additivity="false">
+        <appender-ref ref="app_error"/>
+        <appender-ref ref="console"/>
+    </logger>
+</configuration>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="apperror-form">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            Platform：
+                            <select name="platform">
+                                <option value="">All</option>
+                                <option value="android">android</option>
+                                <option value="ios">ios</option>
+                                <option value="web">web</option>
+                            </select>
+                        </li>
+                        <li>
+                            Type：
+                            <select name="type">
+                                <option value="">All</option>
+                                <option value="flutter">flutter</option>
+                                <option value="async">async</option>
+                                <option value="manual">manual</option>
+                            </select>
+                        </li>
+                        <li>App Version：<input type="text" name="appVersion"/></li>
+                        <li>Member ID：<input type="text" name="memberId"/></li>
+                        <li>Message：<input type="text" name="message" placeholder="keyword"/></li>
+                        <li>
+                            Received：
+                            <input type="text" class="time-input" placeholder="YYYY-MM-DD" name="params[beginTime]"/>
+                            <span>-</span>
+                            <input type="text" class="time-input" placeholder="YYYY-MM-DD" name="params[endTime]"/>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:apperror:remove">
+                <i class="fa fa-remove"></i> Delete
+            </a>
+            <a class="btn btn-warning" onclick="cleanOld()" shiro:hasPermission="mall:apperror:remove">
+                <i class="fa fa-trash"></i> Clean &gt;30 days
+            </a>
+        </div>
+
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var removeFlag = [[${@permission.hasPermi('mall:apperror:remove')}]];
+    var detailFlag = [[${@permission.hasPermi('mall:apperror:view')}]];
+    var prefix = ctx + "mall/apperror";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            removeUrl: prefix + "/remove",
+            modalName: "App Error",
+            sortName: "id",
+            sortOrder: "desc",
+            columns: [
+                {checkbox: true},
+                {field: 'id',          title: 'ID', width: 70, sortable: true},
+                {field: 'createTime',  title: 'Received', sortable: true, width: 150},
+                {field: 'platform',    title: 'Platform', width: 80},
+                {field: 'appVersion',  title: 'Version', width: 90},
+                {field: 'type',        title: 'Type', width: 80, formatter: function(v) {
+                    var map = {flutter:'label-danger', async:'label-warning', manual:'label-info'};
+                    return '<span class="label ' + (map[v] || 'label-default') + '">' + (v || '-') + '</span>';
+                }},
+                {field: 'memberId',    title: 'Member', width: 80, formatter: function(v) { return v || '-'; }},
+                {field: 'message',     title: 'Message', formatter: function(v, row) {
+                    if (!v) return '-';
+                    var esc = function(s) {
+                        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                    };
+                    var full = esc(v);
+                    var txt = v.length > 80 ? esc(v.substring(0, 80)) + '…' : full;
+                    return '<span title="' + full + '">' + txt + '</span>';
+                }},
+                {field: 'ip',          title: 'IP', width: 110},
+                {title: 'Action', align: 'center', width: 140, formatter: function(v, row) {
+                    var a = [];
+                    if (detailFlag) a.push('<a class="btn btn-info btn-xs" onclick="showDetail(\'' + row.id + '\')"><i class="fa fa-search"></i>Detail</a> ');
+                    if (removeFlag) a.push('<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>Delete</a>');
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+
+    function showDetail(id) {
+        $.modal.open("App Error Detail", prefix + "/detail/" + id, 900, 600);
+    }
+
+    function cleanOld() {
+        $.modal.confirm("Delete all App error logs older than 30 days?", function() {
+            $.operate.post(prefix + "/clean", { days: 30 });
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.mall.mapper.AppErrorLogMapper">
+
+    <resultMap id="ErrorLogResult" type="com.ruoyi.mall.domain.AppErrorLog">
+        <id     property="id"          column="id"/>
+        <result property="platform"    column="platform"/>
+        <result property="appVersion"  column="app_version"/>
+        <result property="type"        column="type"/>
+        <result property="message"     column="message"/>
+        <result property="stack"       column="stack"/>
+        <result property="context"     column="context"/>
+        <result property="memberId"    column="member_id"/>
+        <result property="ip"          column="ip"/>
+        <result property="clientTime"  column="client_time"/>
+        <result property="createTime"  column="create_time"/>
+    </resultMap>
+
+    <sql id="cols">id, platform, app_version, type, message, stack, context, member_id, ip, client_time, create_time</sql>
+
+    <select id="selectErrorLogList" parameterType="com.ruoyi.mall.domain.AppErrorLog" resultMap="ErrorLogResult">
+        SELECT <include refid="cols"/>
+        FROM app_error_log
+        <where>
+            <if test="platform != null and platform != ''"> AND platform = #{platform}</if>
+            <if test="type     != null and type     != ''"> AND type = #{type}</if>
+            <if test="appVersion != null and appVersion != ''"> AND app_version = #{appVersion}</if>
+            <if test="memberId != null"> AND member_id = #{memberId}</if>
+            <if test="message  != null and message  != ''"> AND message LIKE CONCAT('%', #{message}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND create_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND create_time &lt;= CONCAT(#{params.endTime}, ' 23:59:59')
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectErrorLogById" resultMap="ErrorLogResult">
+        SELECT <include refid="cols"/> FROM app_error_log WHERE id = #{id}
+    </select>
+
+    <insert id="insertErrorLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO app_error_log (platform, app_version, type, message, stack, context, member_id, ip, client_time, create_time)
+        VALUES (#{platform}, #{appVersion}, #{type}, #{message}, #{stack}, #{context}, #{memberId}, #{ip}, #{clientTime}, #{createTime})
+    </insert>
+
+    <delete id="deleteErrorLogByIds">
+        DELETE FROM app_error_log WHERE id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <delete id="deleteErrorLogBefore">
+        DELETE FROM app_error_log WHERE create_time &lt; #{before}
+    </delete>
+
+</mapper>

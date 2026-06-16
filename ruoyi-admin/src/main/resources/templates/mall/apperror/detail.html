@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:include="include :: header"></head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-sm-12">
+            <table class="table table-bordered" style="table-layout:fixed; word-break:break-word;">
+                <tbody>
+                    <tr>
+                        <th style="width:120px;">ID</th>
+                        <td th:text="${log.id}"></td>
+                        <th style="width:120px;">Received</th>
+                        <td th:text="${log.createTime != null} ? ${#dates.format(log.createTime,'yyyy-MM-dd HH:mm:ss')} : '-'"></td>
+                    </tr>
+                    <tr>
+                        <th>Platform</th>
+                        <td th:text="${log.platform}"></td>
+                        <th>App Version</th>
+                        <td th:text="${log.appVersion}"></td>
+                    </tr>
+                    <tr>
+                        <th>Type</th>
+                        <td th:text="${log.type}"></td>
+                        <th>Member ID</th>
+                        <td th:text="${log.memberId != null} ? ${log.memberId} : 'anonymous'"></td>
+                    </tr>
+                    <tr>
+                        <th>IP</th>
+                        <td th:text="${log.ip}"></td>
+                        <th>Client Time</th>
+                        <td th:text="${log.clientTime}"></td>
+                    </tr>
+                    <tr>
+                        <th>Context</th>
+                        <td colspan="3" th:text="${log.context}"></td>
+                    </tr>
+                    <tr>
+                        <th>Message</th>
+                        <td colspan="3" style="white-space:pre-wrap;" th:text="${log.message}"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 style="margin-top:16px;">Stack Trace</h4>
+            <pre style="max-height:320px; overflow:auto; background:#f7f7f9; border:1px solid #e1e1e8; padding:12px; font-size:12px;"
+                 th:text="${log.stack}"></pre>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+</body>
+</html>
