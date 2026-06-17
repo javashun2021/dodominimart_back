@@ -567,10 +567,11 @@ public class MallOrderServiceImpl implements IMallOrderService
 
     private String buildAddressSnapshot(MallAddress address)
     {
-        return String.format("{\"addressId\":%d,\"label\":\"%s\",\"fullAddress\":\"%s\"}",
+        return String.format("{\"addressId\":%d,\"label\":\"%s\",\"fullAddress\":\"%s\",\"phone\":\"%s\"}",
                 address.getAddressId(),
                 escapeJson(address.getLabel()),
-                escapeJson(address.getFullAddress()));
+                escapeJson(address.getFullAddress()),
+                escapeJson(address.getPhone()));
     }
 
     private String escapeJson(String s)

@@ -27,7 +27,9 @@ import com.google.zxing.EncodeHintType;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.ruoyi.mall.domain.MallMemberCoupon;
 import com.ruoyi.mall.domain.MallOrder;
+import com.ruoyi.mall.service.IMallCouponService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.system.service.ISysConfigService;
 
@@ -42,6 +44,9 @@ public class MallOrderController extends BaseController
 
     @Autowired
     private ISysConfigService configService;
+
+    @Autowired
+    private IMallCouponService couponService;
 
     @Autowired
     private com.ruoyi.web.service.ReceiptTokenService receiptTokenService;
@@ -68,7 +73,42 @@ public class MallOrderController extends BaseController
     @GetMapping("/detail/{orderId}")
     public String detail(@PathVariable Long orderId, ModelMap mmap)
     {
-        mmap.put("order", orderService.selectOrderById(orderId));
+        MallOrder order = orderService.selectOrderById(orderId);
+        mmap.put("order", order);
+        // 解析地址快照(JSON)为可读字段：收件人(label)/电话(phone)/地址(fullAddress)，
+        // 解析失败或老订单缺字段时，模板回退展示原始快照串。
+        if (order != null && order.getAddressSnapshot() != null && !order.getAddressSnapshot().isEmpty())
+        {
+            try
+            {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> snap = com.ruoyi.common.json.JSON.unmarshal(order.getAddressSnapshot(), Map.class);
+                if (snap != null)
+                {
+                    mmap.put("addrLabel", snap.get("label"));
+                    mmap.put("addrPhone", snap.get("phone"));
+                    mmap.put("addrFull",  snap.get("fullAddress"));
+                }
+            }
+            catch (Exception ignored) {}
+        }
+        // 用券订单：查出券名与类型(free_delivery/amount_off/percent_off)，让详情能显示「免配送券」等
+        if (order != null && order.getMemberCouponId() != null)
+        {
+            try
+            {
+                for (MallMemberCoupon mc : couponService.getMyCoupons(order.getMemberId()))
+                {
+                    if (order.getMemberCouponId().equals(mc.getId()))
+                    {
+                        mmap.put("couponName", mc.getCouponName());
+                        mmap.put("couponType", mc.getType());
+                        break;
+                    }
+                }
+            }
+            catch (Exception ignored) {}
+        }
         return prefix + "/detail";
     }
 

@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallAddress;
+import com.ruoyi.mall.domain.MallMember;
 import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallRunnerRating;
 import com.ruoyi.mall.domain.MallRunnerApplication;
 import com.ruoyi.mall.service.IMallAddressService;
+import com.ruoyi.mall.service.IMallMemberService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallRunnerService;
 import com.ruoyi.system.service.ISysConfigService;
@@ -46,6 +48,9 @@ public class ApiOrderController extends BaseApiController
 
     @Autowired
     private IMallAddressService addressService;
+
+    @Autowired
+    private IMallMemberService memberService;
 
     /**
      * 下单
@@ -178,6 +183,16 @@ public class ApiOrderController extends BaseApiController
                 order.setRunnerPhone(app.getPhone());
             }
         }
+        // 投递联系电话：新订单已写入地址快照(phone)，此处兜底填会员手机号，保证老订单也能展示
+        try
+        {
+            MallMember member = memberService.selectMemberById(order.getMemberId());
+            if (member != null)
+            {
+                order.setCustomerPhone(member.getPhone());
+            }
+        }
+        catch (Exception ignored) {}
         return AjaxResult.success("ok").put("data", order);
     }
 

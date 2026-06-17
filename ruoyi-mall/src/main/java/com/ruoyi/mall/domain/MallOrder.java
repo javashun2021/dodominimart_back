@@ -60,6 +60,8 @@ public class MallOrder implements Serializable
     private List<MallOrderItem> items;
     /** 非DB：接单 runner 的手机号（详情接口填充） */
     private String runnerPhone;
+    /** 非DB：本单投递联系电话（详情接口填充，App 展示用） */
+    private String customerPhone;
 
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
@@ -132,6 +134,9 @@ public class MallOrder implements Serializable
 
     public String getRunnerPhone()         { return runnerPhone; }
     public void   setRunnerPhone(String v) { this.runnerPhone = v; }
+
+    public String getCustomerPhone()         { return customerPhone; }
+    public void   setCustomerPhone(String v) { this.customerPhone = v; }
 
     public Long   getMemberCouponId()              { return memberCouponId; }
     public void   setMemberCouponId(Long v)       { this.memberCouponId = v; }

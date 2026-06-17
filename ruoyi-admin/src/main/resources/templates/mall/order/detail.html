@@ -20,6 +20,12 @@
                         <p><strong>Order No：</strong><span th:text="${order.orderNo}"></span></p>
                         <p><strong>Order Time：</strong><span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
                         <p><strong>Total Amount：</strong>₱<span th:text="${order.totalAmount}"></span></p>
+                        <p>
+                            <strong>Payment：</strong>
+                            <span th:text="${order.paymentMethod ?: 'COD'}"></span>
+                            <span th:if="${order.paymentStatus != null and order.paymentStatus != ''}"
+                                  th:text="'(' + ${order.paymentStatus} + ')'"></span>
+                        </p>
                         <p><strong>Member Note：</strong><span th:text="${order.remark ?: '-'}"></span></p>
                     </div>
                     <div class="col-sm-6">
@@ -42,7 +48,13 @@
 
             <div class="ibox-content detail-section">
                 <h4>Delivery Address</h4>
-                <p th:text="${order.addressSnapshot}"></p>
+                <div th:if="${addrFull != null and addrFull != ''}">
+                    <p th:if="${addrLabel != null and addrLabel != ''}"><strong>Receiver：</strong><span th:text="${addrLabel}"></span></p>
+                    <p th:if="${addrPhone != null and addrPhone != ''}"><strong>Phone：</strong><span th:text="${addrPhone}"></span></p>
+                    <p><strong>Address：</strong><span th:text="${addrFull}"></span></p>
+                </div>
+                <p th:unless="${addrFull != null and addrFull != ''}"
+                   th:text="${order.addressSnapshot != null and order.addressSnapshot != '' ? order.addressSnapshot : 'In-store pickup / No address'}"></p>
             </div>
 
             <div class="ibox-content detail-section">
@@ -72,7 +84,27 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="text-right"><strong>Total</strong></td>
+                            <td colspan="4" class="text-right">Items Subtotal</td>
+                            <td>₱<span th:text="${#aggregates.sum(order.items.![subtotal])}"></span></td>
+                        </tr>
+                        <tr th:if="${order.memberCouponId != null}" style="color:#1ab394">
+                            <td colspan="4" class="text-right">
+                                Coupon<span th:if="${couponName != null and couponName != ''}"
+                                            th:text="' (' + ${couponName} + ')'"></span>
+                            </td>
+                            <td th:with="isFree=${couponType == 'free_delivery' or (couponType == null and (order.couponDiscount == null or order.couponDiscount.signum() == 0))}">
+                                <span th:if="${isFree}">Free Delivery</span>
+                                <span th:unless="${isFree}">−₱<span th:text="${order.couponDiscount}"></span></span>
+                            </td>
+                        </tr>
+                        <tr th:if="${order.pointsUsed > 0}" style="color:#1ab394">
+                            <td colspan="4" class="text-right">
+                                Points Used (<span th:text="${order.pointsUsed}"></span> pts)
+                            </td>
+                            <td>−₱<span th:text="${order.pointsUsed / 10}"></span></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-right"><strong>Total Payable</strong></td>
                             <td><strong>₱<span th:text="${order.totalAmount}"></span></strong></td>
                         </tr>
                     </tfoot>
