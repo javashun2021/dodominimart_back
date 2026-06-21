@@ -31,6 +31,10 @@ public class MallProduct extends BaseEntity
 
     private String imageUrl;
 
+    /** 库内条码/SKU（Code128，标签打印 + POS 扫码用） */
+    @Excel(name = "条码")
+    private String barcode;
+
     /** 状态（0上架 1下架） */
     @Excel(name = "状态", readConverterExp = "0=上架,1=下架")
     private String status;
@@ -83,6 +87,9 @@ public class MallProduct extends BaseEntity
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

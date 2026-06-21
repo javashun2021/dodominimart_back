@@ -36,6 +36,9 @@
             <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:product:remove">
                 <i class="fa fa-remove"></i> Delete
             </a>
+            <a class="btn btn-info" onclick="printLabels()" shiro:hasPermission="mall:product:view">
+                <i class="fa fa-tags"></i> Print Label
+            </a>
         </div>
         <div class="col-sm-12 select-table table-striped">
             <table id="bootstrap-table" data-mobile-responsive="true"></table>
@@ -47,6 +50,20 @@
     var editFlag   = [[${@permission.hasPermi('mall:product:edit')}]];
     var removeFlag = [[${@permission.hasPermi('mall:product:remove')}]];
     var prefix = ctx + "mall/product";
+
+    // 打印标签：取勾选商品 → 询问份数 → 新标签页打开标签打印页
+    function printLabels() {
+        var ids = $.table.selectColumns('productId');
+        if (ids.length === 0) {
+            $.modal.alertWarning('Please select at least one product');
+            return;
+        }
+        var copies = prompt('Copies per product?', '1');
+        if (copies === null) return;
+        copies = parseInt(copies, 10);
+        if (isNaN(copies) || copies < 1) copies = 1;
+        window.open(prefix + '/label?ids=' + ids.join(',') + '&copies=' + copies);
+    }
 
     $(function() {
         $.table.init({

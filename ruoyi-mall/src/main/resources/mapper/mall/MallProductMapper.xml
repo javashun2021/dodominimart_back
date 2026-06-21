@@ -11,6 +11,7 @@
         <result property="price"           column="price"           />
         <result property="stock"           column="stock"           />
         <result property="imageUrl"        column="image_url"       />
+        <result property="barcode"         column="barcode"         />
         <result property="status"          column="status"          />
         <result property="sort"            column="sort"            />
         <result property="delFlag"         column="del_flag"        />
@@ -33,7 +34,7 @@
 
     <sql id="selectProductVo">
         select p.product_id, p.category_id, p.name, p.description, p.price, p.stock,
-               p.image_url, p.status, p.sort, p.del_flag, p.create_by, p.create_time,
+               p.image_url, p.barcode, p.status, p.sort, p.del_flag, p.create_by, p.create_time,
                p.update_by, p.update_time,
                fs.sale_id       as flash_sale_id,
                fs.flash_price   as flash_price,
@@ -86,9 +87,9 @@
     </select>
 
     <insert id="insertProduct" parameterType="com.ruoyi.mall.domain.MallProduct" useGeneratedKeys="true" keyProperty="productId">
-        insert into mall_product(category_id, name, description, price, stock, image_url, status, sort,
+        insert into mall_product(category_id, name, description, price, stock, image_url, barcode, status, sort,
                                  del_flag, create_by, create_time)
-        values(#{categoryId}, #{name}, #{description}, #{price}, #{stock}, #{imageUrl}, #{status}, #{sort},
+        values(#{categoryId}, #{name}, #{description}, #{price}, #{stock}, #{imageUrl}, #{barcode}, #{status}, #{sort},
                #{delFlag}, #{createBy}, #{createTime})
     </insert>
 
@@ -101,6 +102,7 @@
             <if test="price != null">price = #{price},</if>
             <if test="stock != null">stock = #{stock},</if>
             <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="barcode != null">barcode = #{barcode},</if>
             <if test="status != null">status = #{status},</if>
             <if test="sort != null">sort = #{sort},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
