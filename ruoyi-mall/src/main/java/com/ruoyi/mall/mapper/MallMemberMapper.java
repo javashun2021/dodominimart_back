@@ -25,6 +25,9 @@ public interface MallMemberMapper
 
     int updateMember(MallMember member);
 
+    /** 后台设置会员角色：customer/cashier/admin */
+    int updateRole(@Param("memberId") Long memberId, @Param("role") String role);
+
     int updateFcmToken(@Param("memberId") Long memberId, @Param("fcmToken") String fcmToken);
 
     MallMember selectByInviteCode(String inviteCode);

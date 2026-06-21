@@ -28,9 +28,9 @@
     <select id="selectByProductId" resultMap="ReviewResult">
         SELECT r.review_id, r.order_id, r.product_id, r.member_id,
                r.score, r.content, r.images, r.create_time,
-               m.nick_name AS member_nickname,
-               m.avatar    AS member_avatar,
-               p.name      AS product_name
+               m.nick_name  AS member_nickname,
+               m.avatar_url AS member_avatar,
+               p.name       AS product_name
         FROM mall_product_review r
         LEFT JOIN mall_member  m ON m.member_id = r.member_id
         LEFT JOIN mall_product p ON p.product_id = r.product_id

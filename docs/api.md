@@ -868,6 +868,8 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     "nickName": "张三",
     "avatarUrl": "https://lh3.googleusercontent.com/...",
     "phone": "09171234567",
+    "gender": "1",
+    "birthday": "1995-08-20",
     "status": "0",
     "createTime": "2025-05-01T10:00:00.000+08:00"
   }
@@ -881,6 +883,8 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 | `nickName` | string | 昵称 |
 | `avatarUrl` | string | 头像 URL（Google 登录时自动写入，也可通过 PUT 接口更新） |
 | `phone` | string | 手机号，可能为 null |
+| `gender` | string | 性别：`"0"` = 未知（默认），`"1"` = 男，`"2"` = 女 |
+| `birthday` | string | 生日 `yyyy-MM-dd`，未设置为 null |
 | `status` | string | `"0"` = 正常，`"1"` = 禁用 |
 
 ---
@@ -889,7 +893,7 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 `PUT /api/v1/member/profile`
 
-> 支持修改 `nickName`、`phone`、`avatarUrl`，三个字段均为可选，只传需要修改的字段即可。
+> 支持修改 `nickName`、`phone`、`avatarUrl`、`gender`、`birthday`，所有字段均为可选，只传需要修改的字段即可。
 
 **请求体：**
 
@@ -897,11 +901,22 @@ await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 {
   "nickName": "新昵称",
   "phone": "09179876543",
-  "avatarUrl": "/profile/upload/2024/01/10/abcd1234.jpg"
+  "avatarUrl": "/profile/upload/2024/01/10/abcd1234.jpg",
+  "gender": "1",
+  "birthday": "1995-08-20"
 }
 ```
 
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `nickName` | 否 | 显示名称，1-50 字符 |
+| `phone` | 否 | 手机号，≤20 字符 |
+| `avatarUrl` | 否 | 头像相对路径，≤500 字符 |
+| `gender` | 否 | 性别：`"0"` 未知 / `"1"` 男 / `"2"` 女；传空串按 `"0"` 处理 |
+| `birthday` | 否 | 生日，格式 `yyyy-MM-dd`，不能晚于今天 |
+
 > `avatarUrl` 请先调用 `POST /api/v1/upload/image` 上传图片，将返回的 `path` 填入此字段。
+> `gender` 非法值或 `birthday` 格式错误 / 未来日期会返回 `code != 0` 的错误信息。
 
 **成功响应：**
 

@@ -48,3 +48,4 @@ ALTER TABLE mall_product ADD COLUMN barcode VARCHAR(64) NULL COMMENT '库内条�
 ALTER TABLE mall_product ADD UNIQUE KEY uk_barcode (barcode);
 -- 给存量商品回填：用 productId 零填充生成，如 P0000123（也可后台改成厂商条码）
 UPDATE mall_product SET barcode = CONCAT('P', LPAD(product_id, 7, '0')) WHERE barcode IS NULL;
+

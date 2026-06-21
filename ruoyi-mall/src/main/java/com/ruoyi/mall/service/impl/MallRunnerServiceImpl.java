@@ -14,10 +14,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.mall.domain.MallMember;
 import com.ruoyi.mall.domain.MallOrder;
+import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallRunnerApplication;
 import com.ruoyi.mall.domain.MallRunnerRating;
 import com.ruoyi.mall.mapper.MallMemberMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
+import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallRunnerApplicationMapper;
 import com.ruoyi.mall.mapper.MallRunnerRatingMapper;
 import com.ruoyi.mall.service.FcmService;
@@ -34,6 +36,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     @Autowired private MallRunnerApplicationMapper appMapper;
     @Autowired private MallRunnerRatingMapper       ratingMapper;
     @Autowired private MallOrderMapper              orderMapper;
+    @Autowired private MallOrderItemMapper          orderItemMapper;
     @Autowired private MallMemberMapper             memberMapper;
     @Autowired private FcmService                   fcmService;
     @Autowired private ISsePushService              sseService;
@@ -71,7 +74,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         {
             return java.util.Collections.emptyList();
         }
-        return orderMapper.selectAvailableForRunner();
+        return enrichOrders(orderMapper.selectAvailableForRunner());
     }
 
     @Override
@@ -176,7 +179,37 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     @Override
     public List<MallOrder> getMyDeliveries(Long memberId)
     {
-        return orderMapper.selectByRunnerMemberId(memberId);
+        return enrichOrders(orderMapper.selectByRunnerMemberId(memberId));
+    }
+
+    /**
+     * 给 runner 列表的订单补充：商品明细(批量) + 顾客姓名/电话(取下单会员)。
+     * 让“可接单/我的配送”列表能展示商品项和联系人，而不只是地址。
+     */
+    private List<MallOrder> enrichOrders(List<MallOrder> list)
+    {
+        if (list == null || list.isEmpty()) return list;
+        // 1) 批量拉商品明细，1 次查询
+        List<Long> orderIds = list.stream().map(MallOrder::getOrderId).collect(Collectors.toList());
+        List<MallOrderItem> allItems = orderItemMapper.selectItemsByOrderIds(orderIds);
+        Map<Long, List<MallOrderItem>> itemsMap = allItems.stream()
+                .collect(Collectors.groupingBy(MallOrderItem::getOrderId));
+        // 2) 顾客姓名/电话取下单会员（地址快照里没有联系人时的可靠来源）
+        for (MallOrder o : list)
+        {
+            o.setItems(itemsMap.getOrDefault(o.getOrderId(), new ArrayList<>()));
+            try
+            {
+                MallMember m = memberMapper.selectMemberById(o.getMemberId());
+                if (m != null)
+                {
+                    o.setCustomerName(m.getNickName());
+                    o.setCustomerPhone(m.getPhone());
+                }
+            }
+            catch (Exception ignored) {}
+        }
+        return list;
     }
 
     // ---- 评价 ----

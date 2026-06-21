@@ -213,6 +213,12 @@ public class MallMemberServiceImpl implements IMallMemberService
         return memberMapper.updateMember(member);
     }
 
+    @Override
+    public int updateRole(Long memberId, String role)
+    {
+        return memberMapper.updateRole(memberId, role);
+    }
+
     // ── private helpers ──────────────────────────────────────────────────────
 
     private void onNewMemberCreated(MallMember member, String referralCode)

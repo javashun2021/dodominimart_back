@@ -72,6 +72,7 @@
             modalName: "App Error",
             sortName: "id",
             sortOrder: "desc",
+            uniqueId: "id",
             columns: [
                 {checkbox: true},
                 {field: 'id',          title: 'ID', width: 70, sortable: true},
@@ -85,13 +86,9 @@
                 {field: 'memberId',    title: 'Member', width: 80, formatter: function(v) { return v || '-'; }},
                 {field: 'message',     title: 'Message', formatter: function(v, row) {
                     if (!v) return '-';
-                    var esc = function(s) {
-                        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-                            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-                    };
-                    var full = esc(v);
-                    var txt = v.length > 80 ? esc(v.substring(0, 80)) + '…' : full;
-                    return '<span title="' + full + '">' + txt + '</span>';
+                    var txt = v.length > 80 ? escHtml(v.substring(0, 80)) + '…' : escHtml(v);
+                    return '<a href="javascript:void(0)" class="text-primary" title="Click to view full message" '
+                         + 'onclick="showMessage(\'' + row.id + '\')">' + txt + '</a>';
                 }},
                 {field: 'ip',          title: 'IP', width: 110},
                 {title: 'Action', align: 'center', width: 140, formatter: function(v, row) {
@@ -103,6 +100,30 @@
             ]
         });
     });
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // 点击 Message 弹窗展示完整内容（含上下文/堆栈，数据已在行内，无需再请求）
+    function showMessage(id) {
+        var row = $('#bootstrap-table').bootstrapTable('getRowByUniqueId', id);
+        if (!row) return;
+        var html = '<div style="padding:14px; font-size:13px; line-height:1.6;">'
+                 + '<pre style="white-space:pre-wrap; word-break:break-word; margin:0; '
+                 + 'background:#f7f7f9; border:1px solid #e1e1e8; border-radius:4px; padding:12px;">'
+                 + escHtml(row.message || '')
+                 + '</pre></div>';
+        layer.open({
+            type: 1,
+            title: 'Error Message #' + id,
+            area: ['680px', '460px'],
+            shadeClose: true,
+            maxmin: true,
+            content: html
+        });
+    }
 
     function showDetail(id) {
         $.modal.open("App Error Detail", prefix + "/detail/" + id, 900, 600);

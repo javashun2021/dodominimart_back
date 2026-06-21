@@ -33,8 +33,9 @@
     </div>
 </div>
 <div th:include="include :: footer"></div>
-<script>
+<script th:inline="javascript">
     var prefix = ctx + "mall/member";
+    var editFlag = [[${@permission.hasPermi('mall:member:edit')}]];
     $(function() {
         $.table.init({
             url: prefix + "/list",
@@ -55,10 +56,32 @@
                             : '<span class="badge badge-danger">Disabled</span>';
                     }
                 },
-                {field: 'createTime', title: 'Registered At', sortable: true}
+                {field: 'role',       title: 'Role', align: 'center',
+                    formatter: function(v) {
+                        if (v === 'cashier') return '<span class="badge" style="background:#1ab394">Cashier</span>';
+                        if (v === 'admin')   return '<span class="badge" style="background:#23c6c8">Admin</span>';
+                        return '<span class="badge badge-default">Customer</span>';
+                    }
+                },
+                {field: 'createTime', title: 'Registered At', sortable: true},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    if (row.role === 'cashier') {
+                        return '<a class="btn btn-warning btn-xs ' + editFlag + '" onclick="setRole(\'' + row.memberId + '\',\'customer\')"><i class="fa fa-user"></i> Unset Cashier</a>';
+                    }
+                    if (row.role === 'admin') { return '<span class="text-muted">-</span>'; }
+                    return '<a class="btn btn-success btn-xs ' + editFlag + '" onclick="setRole(\'' + row.memberId + '\',\'cashier\')"><i class="fa fa-shopping-cart"></i> Set Cashier</a>';
+                }}
             ]
         });
     });
+
+    // 设置会员角色（收银员/顾客）
+    function setRole(memberId, role) {
+        var msg = role === 'cashier' ? 'Set this member as Cashier?' : 'Change this member back to Customer?';
+        $.modal.confirm(msg, function() {
+            $.operate.post(prefix + '/role', { memberId: memberId, role: role });
+        });
+    }
 </script>
 </body>
 </html>

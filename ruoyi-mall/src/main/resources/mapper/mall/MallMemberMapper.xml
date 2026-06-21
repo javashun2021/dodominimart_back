@@ -91,6 +91,11 @@
         where member_id = #{memberId}
     </update>
 
+    <update id="updateRole">
+        update mall_member set role = #{role}, update_time = now()
+        where member_id = #{memberId}
+    </update>
+
     <select id="selectByInviteCode" parameterType="String" resultMap="MallMemberResult">
         <include refid="selectMemberVo"/> where invite_code = #{inviteCode}
     </select>

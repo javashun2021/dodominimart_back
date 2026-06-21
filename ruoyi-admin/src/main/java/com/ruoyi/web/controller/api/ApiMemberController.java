@@ -1,5 +1,8 @@
 package com.ruoyi.web.controller.api;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -51,12 +54,14 @@ public class ApiMemberController extends BaseApiController
         {
             return AjaxResult.error("Member not found");
         }
+        // 不要把密码哈希返回给客户端
+        member.setPasswordHash(null);
         return AjaxResult.success("ok").put("data", member);
     }
 
     /**
-     * 更新个人信息（只允许改 nickName 和 phone）
-     * Body: { "nickName": "...", "phone": "..." }
+     * 更新个人信息（可改 nickName / phone / avatarUrl / gender / birthday，均为可选）
+     * Body: { "nickName": "...", "phone": "...", "avatarUrl": "...", "gender": "1", "birthday": "1995-08-20" }
      */
     @PutMapping("/profile")
     public AjaxResult updateProfile(@RequestBody Map<String, String> body, HttpServletRequest request)
@@ -90,6 +95,38 @@ public class ApiMemberController extends BaseApiController
                 return AjaxResult.error("Avatar URL is too long");
             }
             member.setAvatarUrl(avatar);
+        }
+        if (body.containsKey("gender"))
+        {
+            String gender = body.get("gender");
+            if (gender != null && !gender.isEmpty()
+                    && !"0".equals(gender) && !"1".equals(gender) && !"2".equals(gender))
+            {
+                return AjaxResult.error("Gender must be 0 (unknown), 1 (male) or 2 (female)");
+            }
+            member.setGender((gender == null || gender.isEmpty()) ? "0" : gender);
+        }
+        if (body.containsKey("birthday"))
+        {
+            String birthday = body.get("birthday");
+            if (birthday != null && !birthday.trim().isEmpty())
+            {
+                try
+                {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    sdf.setLenient(false);
+                    Date date = sdf.parse(birthday.trim());
+                    if (date.after(new Date()))
+                    {
+                        return AjaxResult.error("Birthday cannot be in the future");
+                    }
+                    member.setBirthday(date);
+                }
+                catch (ParseException e)
+                {
+                    return AjaxResult.error("Birthday must be in yyyy-MM-dd format");
+                }
+            }
         }
         memberService.updateMember(member);
         return AjaxResult.success("Profile updated");

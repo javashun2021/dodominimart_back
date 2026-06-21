@@ -35,4 +35,7 @@ public interface IMallMemberService
     MallMember loginByEmail(String email, String password);
 
     int updateMember(MallMember member);
+
+    /** 后台设置会员角色：customer/cashier/admin */
+    int updateRole(Long memberId, String role);
 }

@@ -39,7 +39,9 @@ public class SysLoginController extends BaseController
     @ResponseBody
     public AjaxResult ajaxLogin(String username, String password, Boolean rememberMe)
     {
-        UsernamePasswordToken token = new UsernamePasswordToken(username, password, rememberMe);
+        // rememberMe 可能未随请求提交（如 API/自定义登录页），为 null 时默认为 false，避免自动拆箱 NPE
+        boolean remember = rememberMe != null && rememberMe;
+        UsernamePasswordToken token = new UsernamePasswordToken(username, password, remember);
         Subject subject = SecurityUtils.getSubject();
         try
         {
