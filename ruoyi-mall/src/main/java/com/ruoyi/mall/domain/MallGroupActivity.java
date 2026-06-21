@@ -32,6 +32,8 @@ public class MallGroupActivity
     private java.math.BigDecimal originalPrice;
     /** 非DB：最优（最低）拼团价，商品列表用 */
     private java.math.BigDecimal bestPrice;
+    /** 非DB：是否「即将开始」(now < startTime)，App 据此显示倒计时并禁用开团按钮 */
+    private boolean upcoming;
 
     public Long getActivityId() { return activityId; }
     public void setActivityId(Long activityId) { this.activityId = activityId; }
@@ -74,4 +76,7 @@ public class MallGroupActivity
 
     public java.math.BigDecimal getBestPrice() { return bestPrice; }
     public void setBestPrice(java.math.BigDecimal bestPrice) { this.bestPrice = bestPrice; }
+
+    public boolean getUpcoming() { return upcoming; }
+    public void setUpcoming(boolean upcoming) { this.upcoming = upcoming; }
 }

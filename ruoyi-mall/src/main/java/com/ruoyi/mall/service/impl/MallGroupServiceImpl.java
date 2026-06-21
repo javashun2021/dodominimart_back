@@ -131,6 +131,21 @@ public class MallGroupServiceImpl implements IMallGroupService
         MallGroupActivity query = new MallGroupActivity();
         query.setStatus("0");
         List<MallGroupActivity> list = activityMapper.selectActivityList(query);
+        // 展示窗口 = [start - 1h, end]：开始前 1 小时起就展示（让顾客提前知道有活动、做倒计时预热），
+        // 已过期（now > end）的不再展示。startTime/endTime 必填，缺失则不展示。
+        // 同时标记 upcoming=true（now < start，尚未开始）——App 据此显示「即将开始」并禁用开团按钮，
+        // 避免顾客点进去撞上 createGroup 的「not in valid time range」拦截。
+        Date now = new Date();
+        long preheatMs = 60L * 60 * 1000; // 开团前 1 小时预热
+        list = list.stream()
+                .filter(a -> a.getStartTime() != null && a.getEndTime() != null
+                        && now.getTime() >= a.getStartTime().getTime() - preheatMs
+                        && !now.after(a.getEndTime()))
+                .collect(Collectors.toList());
+        for (MallGroupActivity a : list)
+        {
+            a.setUpcoming(now.before(a.getStartTime()));
+        }
         fillTiers(list);
         return list;
     }
