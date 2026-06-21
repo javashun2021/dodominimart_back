@@ -82,6 +82,18 @@ public class MallRunnerController extends BaseController
         return prefix + "/settle";
     }
 
+    /** 已通过审核的跑腿员列表（结算页「姓名」下拉用：返回 memberId/realName/nickName/phone） */
+    @RequiresPermissions("mall:runner:settle")
+    @GetMapping("/approvedRunners")
+    @ResponseBody
+    public AjaxResult approvedRunners()
+    {
+        MallRunnerApplication query = new MallRunnerApplication();
+        query.setStatus("1");
+        List<MallRunnerApplication> list = runnerService.listApplications(query);
+        return AjaxResult.success().put("data", list);
+    }
+
     /** 未结算 GCash 跑腿订单（按 runner 分组） */
     @RequiresPermissions("mall:runner:settle")
     @GetMapping("/unsettled")

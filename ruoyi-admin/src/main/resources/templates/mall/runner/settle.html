@@ -26,13 +26,18 @@
     <div class="row">
         <div class="col-sm-12">
             <div style="margin-top:12px;margin-bottom:12px;background:#fff;padding:12px 16px;border-radius:4px;border:1px solid #e3e3e3;">
-                <span style="font-size:14px;">Runner Member ID：</span>
+                <span style="font-size:14px;">Runner Name：</span>
+                <select id="search-runner-name" onchange="onPickName()"
+                        style="width:200px;height:32px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;margin:0 8px;">
+                    <option value="">All Runners</option>
+                </select>
+                <span style="font-size:14px;">Member ID：</span>
                 <input type="number" id="search-runner-id" placeholder="Filter by member ID"
-                       style="width:200px;height:32px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;margin:0 8px;"/>
+                       style="width:160px;height:32px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;margin:0 8px;"/>
                 <button class="btn btn-primary btn-sm" onclick="loadData()">
                     <i class="fa fa-search"></i>&nbsp;Search
                 </button>
-                <button class="btn btn-default btn-sm" onclick="$('#search-runner-id').val('');loadData();">
+                <button class="btn btn-default btn-sm" onclick="resetFilter()">
                     <i class="fa fa-refresh"></i>&nbsp;Reset
                 </button>
             </div>
@@ -67,8 +72,35 @@
     var prefix = ctx + "mall/runner";
 
     $(function() {
+        loadRunnerOptions();
         loadData();
     });
+
+    // 拉取已审核跑腿员，填充「姓名」下拉（value=memberId，显示真实姓名/昵称）
+    function loadRunnerOptions() {
+        $.get(prefix + '/approvedRunners', function(res) {
+            if (res.code !== 0 || !res.data) return;
+            var $sel = $('#search-runner-name');
+            $.each(res.data, function(i, r) {
+                var name = r.realName || r.nickName || ('Member ' + r.memberId);
+                $sel.append('<option value="' + r.memberId + '">'
+                    + escHtml(name) + ' (ID ' + r.memberId + ')</option>');
+            });
+        });
+    }
+
+    // 选姓名 → 同步 Member ID 输入框并立即查询
+    function onPickName() {
+        var id = $('#search-runner-name').val();
+        $('#search-runner-id').val(id);
+        loadData();
+    }
+
+    function resetFilter() {
+        $('#search-runner-name').val('');
+        $('#search-runner-id').val('');
+        loadData();
+    }
 
     function loadData() {
         $('#settle-list-container').html(
