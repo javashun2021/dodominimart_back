@@ -56,6 +56,15 @@ public class MallOrder implements Serializable
     /** 优惠券减免金额 */
     private java.math.BigDecimal couponDiscount;
 
+    /** POS 到店实付方式：CASH/GCASH（阶段1 仅 CASH） */
+    private String tenderType;
+    /** POS 收现金额 */
+    private java.math.BigDecimal cashReceived;
+    /** POS 找零 */
+    private java.math.BigDecimal changeDue;
+    /** POS 开单收银员 memberId */
+    private Long cashierId;
+
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
     /** 非DB：接单 runner 的手机号（详情接口填充） */
@@ -143,4 +152,16 @@ public class MallOrder implements Serializable
 
     public java.math.BigDecimal getCouponDiscount()                              { return couponDiscount; }
     public void                 setCouponDiscount(java.math.BigDecimal v)       { this.couponDiscount = v; }
+
+    public String getTenderType()         { return tenderType; }
+    public void   setTenderType(String v) { this.tenderType = v; }
+
+    public java.math.BigDecimal getCashReceived()                        { return cashReceived; }
+    public void                 setCashReceived(java.math.BigDecimal v)  { this.cashReceived = v; }
+
+    public java.math.BigDecimal getChangeDue()                           { return changeDue; }
+    public void                 setChangeDue(java.math.BigDecimal v)      { this.changeDue = v; }
+
+    public Long getCashierId()         { return cashierId; }
+    public void setCashierId(Long v)   { this.cashierId = v; }
 }

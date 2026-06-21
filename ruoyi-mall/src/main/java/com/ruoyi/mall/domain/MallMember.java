@@ -2,6 +2,7 @@ package com.ruoyi.mall.domain;
 
 import java.io.Serializable;
 import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
  * App 会员表 mall_member
@@ -19,8 +20,15 @@ public class MallMember implements Serializable
     private String nickName;
     private String avatarUrl;
     private String phone;
+    /** 性别（0未知 1男 2女） */
+    private String gender;
+    /** 生日 */
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
+    private Date birthday;
     /** 状态（0正常 1禁用） */
     private String status;
+    /** 角色：customer(默认) / cashier / admin —— POS 收银台门禁用 */
+    private String role;
     /** 密码哈希，BCrypt，邮箱注册用户有值，Google/Apple 用户为 null */
     private String passwordHash;
     private Date createTime;
@@ -57,8 +65,17 @@ public class MallMember implements Serializable
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+
+    public Date getBirthday() { return birthday; }
+    public void setBirthday(Date birthday) { this.birthday = birthday; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }

@@ -18,6 +18,9 @@ public interface MallOrderMapper
 
     int updateOrder(MallOrder order);
 
+    /** POS：写入到店实付方式/收现/找零/收银员 */
+    int updatePosTender(MallOrder order);
+
     /** 查询可被跑腿接单的订单（status=1 且 runner_member_id IS NULL） */
     List<MallOrder> selectAvailableForRunner();
 

@@ -45,4 +45,23 @@ public interface IMallOrderService
      * @return 受影响行数，1=成功
      */
     int confirmInStorePayment(Long orderId, String operator);
+
+    /**
+     * POS：写入到店实付方式/收现/找零/收银员（在 confirmInStorePayment 之前调用）。
+     * @return 受影响行数
+     */
+    int applyPosTender(Long orderId, String tenderType, BigDecimal cashReceived, BigDecimal changeDue, Long cashierId);
+
+    /**
+     * POS 收银开单 + 收款（单事务，原子）：
+     * createOrder(STORE 到店分支) → 校验收现≥应付 → 写 tender/找零 → confirmInStorePayment 直接完成。
+     * 收现不足会抛异常并整体回滚（含库存扣减）。
+     * @param ownerId      下单归属会员（散客传 walk-in 账号）
+     * @param cashierId    开单收银员 memberId
+     * @param tenderType   实付方式（阶段1 CASH）
+     * @param cashReceived 收现金额
+     * @return 已完成的订单（含 tender/找零/明细）
+     */
+    MallOrder createPosOrder(Long ownerId, List<MallOrderItem> items, Long cashierId,
+            String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId);
 }

@@ -11,7 +11,10 @@
         <result property="nickName"     column="nick_name"    />
         <result property="avatarUrl"    column="avatar_url"   />
         <result property="phone"        column="phone"        />
+        <result property="gender"       column="gender"       />
+        <result property="birthday"     column="birthday"     />
         <result property="status"        column="status"         />
+        <result property="role"          column="role"           />
         <result property="passwordHash"  column="password_hash"  />
         <result property="createTime"    column="create_time"    />
         <result property="updateTime"    column="update_time"    />
@@ -22,7 +25,7 @@
     </resultMap>
 
     <sql id="selectMemberVo">
-        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time, update_time, fcm_token, points, invite_code, referrer_id
+        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, gender, birthday, status, role, password_hash, create_time, update_time, fcm_token, points, invite_code, referrer_id
         from mall_member
     </sql>
 
@@ -52,6 +55,10 @@
         <include refid="selectMemberVo"/> where email = #{email}
     </select>
 
+    <select id="selectMemberByPhone" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where phone = #{phone} order by member_id limit 1
+    </select>
+
     <select id="selectMembersByIds" resultMap="MallMemberResult">
         <include refid="selectMemberVo"/>
         where member_id in
@@ -71,6 +78,8 @@
             <if test="nickName != null">nick_name = #{nickName},</if>
             <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
             <if test="phone != null">phone = #{phone},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
             <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
         </set>

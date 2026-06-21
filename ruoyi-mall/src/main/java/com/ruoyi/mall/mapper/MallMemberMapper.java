@@ -18,6 +18,9 @@ public interface MallMemberMapper
 
     MallMember selectMemberByEmail(String email);
 
+    /** 按手机号查会员（POS 收银台关联会员用，取最早一个） */
+    MallMember selectMemberByPhone(String phone);
+
     int insertMember(MallMember member);
 
     int updateMember(MallMember member);

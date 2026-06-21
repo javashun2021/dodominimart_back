@@ -558,6 +558,47 @@ public class MallOrderServiceImpl implements IMallOrderService
         return rows;
     }
 
+    @Override
+    public int applyPosTender(Long orderId, String tenderType, BigDecimal cashReceived, BigDecimal changeDue, Long cashierId)
+    {
+        MallOrder o = new MallOrder();
+        o.setOrderId(orderId);
+        o.setTenderType(tenderType);
+        o.setCashReceived(cashReceived);
+        o.setChangeDue(changeDue);
+        o.setCashierId(cashierId);
+        o.setUpdateTime(new Date());
+        return orderMapper.updatePosTender(o);
+    }
+
+    @Override
+    @Transactional
+    public MallOrder createPosOrder(Long ownerId, List<MallOrderItem> items, Long cashierId,
+            String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId)
+    {
+        // 走到店分支：免地址、payment_method=STORE、order_source=IN_STORE、自动算 total
+        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId);
+
+        BigDecimal total = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+        if (cashReceived == null || cashReceived.compareTo(total) < 0)
+        {
+            // 同一事务内抛出 → createOrder 的库存扣减一并回滚
+            throw new RuntimeException("Cash received is less than total payable");
+        }
+        BigDecimal change = cashReceived.subtract(total);
+
+        applyPosTender(order.getOrderId(), tenderType, cashReceived, change, cashierId);
+        confirmInStorePayment(order.getOrderId(), "cashier:" + cashierId);
+
+        // 回填给调用方（打印/返回用）
+        order.setTenderType(tenderType);
+        order.setCashReceived(cashReceived);
+        order.setChangeDue(change);
+        order.setCashierId(cashierId);
+        order.setStatus("3");
+        return order;
+    }
+
     private String generateOrderNo()
     {
         String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());

@@ -28,6 +28,10 @@
         <result property="pointsUsed"         column="points_used"          />
         <result property="memberCouponId"     column="member_coupon_id"     />
         <result property="couponDiscount"     column="coupon_discount"      />
+        <result property="tenderType"         column="tender_type"          />
+        <result property="cashReceived"       column="cash_received"        />
+        <result property="changeDue"          column="change_due"           />
+        <result property="cashierId"          column="cashier_id"           />
     </resultMap>
 
     <sql id="selectOrderVo">
@@ -35,7 +39,8 @@
                remark, payment_method, payment_status, payment_no, paid_amount, payment_time,
                cancel_reason, order_source, create_time, update_by, update_time,
                runner_member_id, runner_accepted_time, delivery_fee, runner_fee_settled,
-               points_used, member_coupon_id, coupon_discount
+               points_used, member_coupon_id, coupon_discount,
+               tender_type, cash_received, change_due, cashier_id
         from mall_order
     </sql>
 
@@ -84,6 +89,16 @@
             <if test="updateBy != null">update_by = #{updateBy},</if>
             update_time = #{updateTime}
         </set>
+        where order_id = #{orderId}
+    </update>
+
+    <update id="updatePosTender" parameterType="com.ruoyi.mall.domain.MallOrder">
+        update mall_order
+        set tender_type   = #{tenderType},
+            cash_received = #{cashReceived},
+            change_due    = #{changeDue},
+            cashier_id    = #{cashierId},
+            update_time   = #{updateTime}
         where order_id = #{orderId}
     </update>
 
