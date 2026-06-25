@@ -52,12 +52,12 @@ public class MallReviewServiceImpl implements IMallReviewService
             newReviewCount++;
         }
 
-        // 每条新评价奖励 10 积分
+        // 每条新评价奖励 20 积分
         if (newReviewCount > 0)
         {
             try
             {
-                pointsService.earn(memberId, newReviewCount * 10, 2,
+                pointsService.earn(memberId, newReviewCount * 20, 2,
                         String.valueOf(orderId), "Review bonus ×" + newReviewCount);
             }
             catch (Exception e)

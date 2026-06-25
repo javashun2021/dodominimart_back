@@ -73,8 +73,8 @@
                                payment_method, payment_status, order_source, points_used,
                                member_coupon_id, coupon_discount, create_time)
         values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
-               #{paymentMethod}, 'UNPAID', #{orderSource}, #{pointsUsed},
-               #{memberCouponId}, #{couponDiscount}, #{createTime})
+               #{paymentMethod}, 'UNPAID', #{orderSource}, ifnull(#{pointsUsed}, 0),
+               #{memberCouponId}, ifnull(#{couponDiscount}, 0), #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">
