@@ -47,3 +47,11 @@ uploadPath/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+######################################################################
+# 本地产物 / 大数据导出（不进版本库；迁移脚本 vNN_*.sql 仍正常提交）
+sql/dodominimart_full_dump*.sql
+sql/data_english.sql
+sql/menu_english.sql
+.mcp.json
+/deploy/
