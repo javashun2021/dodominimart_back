@@ -219,6 +219,33 @@ public class MallMemberServiceImpl implements IMallMemberService
         return memberMapper.updateRole(memberId, role);
     }
 
+    @Override
+    public void setPassword(Long memberId, String oldPassword, String newPassword)
+    {
+        if (newPassword == null || newPassword.length() < 6 || newPassword.length() > 32)
+        {
+            throw new RuntimeException("Password must be 6-32 characters");
+        }
+        MallMember member = memberMapper.selectMemberById(memberId);
+        if (member == null)
+        {
+            throw new RuntimeException("Member not found");
+        }
+        if (member.getEmail() == null || member.getEmail().trim().isEmpty())
+        {
+            throw new RuntimeException("Your account has no email, cannot set a password");
+        }
+        // 已有密码：必须校验旧密码
+        if (member.getPasswordHash() != null)
+        {
+            if (oldPassword == null || !BCRYPT.matches(oldPassword, member.getPasswordHash()))
+            {
+                throw new RuntimeException("Current password is incorrect");
+            }
+        }
+        memberMapper.updatePassword(memberId, BCRYPT.encode(newPassword));
+    }
+
     // ── private helpers ──────────────────────────────────────────────────────
 
     private void onNewMemberCreated(MallMember member, String referralCode)

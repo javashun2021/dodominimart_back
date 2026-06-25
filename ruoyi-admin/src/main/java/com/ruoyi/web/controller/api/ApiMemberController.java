@@ -54,9 +54,33 @@ public class ApiMemberController extends BaseApiController
         {
             return AjaxResult.error("Member not found");
         }
-        // 不要把密码哈希返回给客户端
+        // 标记是否已设置登录密码（供前端显示“设置/修改密码”），再清除哈希
+        member.setHasPassword(member.getPasswordHash() != null);
         member.setPasswordHash(null);
         return AjaxResult.success("ok").put("data", member);
+    }
+
+    /**
+     * 设置 / 修改登录密码
+     * PUT /api/v1/member/password
+     * Body: { "oldPassword": "...", "newPassword": "..." }
+     * Google/Apple 登录用户首次设置时可不传 oldPassword。
+     */
+    @PutMapping("/password")
+    public AjaxResult updatePassword(@RequestBody Map<String, String> body, HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+        try
+        {
+            memberService.setPassword(memberId, oldPassword, newPassword);
+            return AjaxResult.success("Password updated");
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
     }
 
     /**

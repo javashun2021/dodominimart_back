@@ -30,6 +30,9 @@ public interface MallMemberMapper
 
     int updateFcmToken(@Param("memberId") Long memberId, @Param("fcmToken") String fcmToken);
 
+    /** 设置/修改登录密码（BCrypt 哈希） */
+    int updatePassword(@Param("memberId") Long memberId, @Param("passwordHash") String passwordHash);
+
     MallMember selectByInviteCode(String inviteCode);
 
     int updateInviteCode(@Param("memberId") Long memberId, @Param("inviteCode") String inviteCode);

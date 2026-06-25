@@ -38,4 +38,11 @@ public interface IMallMemberService
 
     /** 后台设置会员角色：customer/cashier/admin */
     int updateRole(Long memberId, String role);
+
+    /**
+     * 设置 / 修改登录密码。
+     * 若会员尚未设置过密码（如 Google/Apple 登录用户），oldPassword 可为空，直接设置；
+     * 若已有密码，则必须校验 oldPassword 正确。
+     */
+    void setPassword(Long memberId, String oldPassword, String newPassword);
 }

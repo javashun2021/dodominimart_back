@@ -86,6 +86,11 @@
         where member_id = #{memberId}
     </update>
 
+    <update id="updatePassword">
+        update mall_member set password_hash = #{passwordHash}, update_time = now()
+        where member_id = #{memberId}
+    </update>
+
     <update id="updateFcmToken">
         update mall_member set fcm_token = #{fcmToken}, update_time = now()
         where member_id = #{memberId}

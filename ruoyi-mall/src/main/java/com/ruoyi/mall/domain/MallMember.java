@@ -80,6 +80,11 @@ public class MallMember implements Serializable
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
+    /** 是否已设置登录密码（瞬时字段，不入库），用于前端判断显示“设置”还是“修改”密码 */
+    private Boolean hasPassword;
+    public Boolean getHasPassword() { return hasPassword; }
+    public void setHasPassword(Boolean hasPassword) { this.hasPassword = hasPassword; }
+
     public Date getCreateTime() { return createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }
 
