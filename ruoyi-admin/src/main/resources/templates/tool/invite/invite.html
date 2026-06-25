@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <div class="row">
+        <div class="col-sm-8 col-sm-offset-2">
+            <div class="ibox">
+                <div class="ibox-title">
+                    <h5><i class="fa fa-paper-plane"></i> &nbsp;Batch Invite Testers (Google Play)</h5>
+                </div>
+                <div class="ibox-content">
+                    <p class="text-muted">
+                        Enter one or more email addresses below — separated by a new line, comma, semicolon or space.
+                        Each address receives a styled invitation email containing the Google Play test link
+                        (<a href="https://play.google.com/apps/testing/com.dodominimart.app" target="_blank">testing link</a>)
+                        and the <a href="https://dodominimart.com/tester-guide.html" target="_blank">tester guide</a>.
+                    </p>
+
+                    <form id="form-invite" onsubmit="return false;">
+                        <div class="form-group">
+                            <label class="control-label">Tester Email Addresses <span class="red">*</span></label>
+                            <textarea id="emails" name="emails" class="form-control" rows="10"
+                                      placeholder="alice@gmail.com&#10;bob@gmail.com, carol@gmail.com&#10;dave@gmail.com"></textarea>
+                            <p class="help-block">
+                                <span id="countHint">0</span> address(es) detected.
+                            </p>
+                        </div>
+                        <div class="form-group text-right">
+                            <button type="button" class="btn btn-default" onclick="$('#emails').val('');updateCount();">
+                                <i class="fa fa-eraser"></i> Clear
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btnSend" onclick="sendInvites()">
+                                <i class="fa fa-paper-plane"></i> Send Invitations
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="resultBox" style="display:none;margin-top:14px"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "tool/invite";
+
+    function updateCount() {
+        var raw = $('#emails').val() || '';
+        var parts = raw.split(/[\s,;]+/).filter(function (s) { return s.trim().length > 0; });
+        // de-dupe
+        var seen = {};
+        var n = 0;
+        parts.forEach(function (p) { if (!seen[p]) { seen[p] = 1; n++; } });
+        $('#countHint').text(n);
+    }
+
+    $('#emails').on('input', updateCount);
+
+    function sendInvites() {
+        var emails = ($('#emails').val() || '').trim();
+        if (emails.length === 0) {
+            $.modal.alertWarning("Please enter at least one email address.");
+            return;
+        }
+        $.modal.confirm("Send invitation emails to " + $('#countHint').text() + " tester(s)?", function () {
+            $('#btnSend').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Sending...');
+            $.modal.loading("Sending invitations, please wait...");
+            $.ajax({
+                url: prefix + "/send",
+                type: "post",
+                data: { emails: emails },
+                success: function (res) {
+                    $.modal.closeLoading();
+                    $('#btnSend').prop('disabled', false).html('<i class="fa fa-paper-plane"></i> Send Invitations');
+                    var ok = res.code === web_status.SUCCESS;
+                    var box = $('#resultBox');
+                    box.removeClass().addClass(ok ? 'alert alert-success' : 'alert alert-danger')
+                       .html('<i class="fa ' + (ok ? 'fa-check-circle' : 'fa-times-circle') + '"></i> ' + res.msg)
+                       .show();
+                    if (ok) {
+                        $.modal.msgSuccess(res.msg);
+                    } else {
+                        $.modal.msgError(res.msg);
+                    }
+                },
+                error: function () {
+                    $.modal.closeLoading();
+                    $('#btnSend').prop('disabled', false).html('<i class="fa fa-paper-plane"></i> Send Invitations');
+                    $.modal.alertError("Request failed. Please try again.");
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>
