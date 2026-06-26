@@ -43,6 +43,9 @@ public class ApiRunnerController extends BaseApiController
     @Autowired
     private MallMemberMapper memberMapper;
 
+    @Autowired
+    private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
+
     /** 查询本人申请状态 */
     @GetMapping("/runner/application")
     public AjaxResult getApplication(HttpServletRequest request)
@@ -92,6 +95,17 @@ public class ApiRunnerController extends BaseApiController
         try
         {
             MallOrder order = runnerService.acceptOrder(orderId, memberId);
+
+            // Telegram 后台提醒：Runner 接单
+            try
+            {
+                com.ruoyi.mall.domain.MallMember runner = memberMapper.selectMemberById(memberId);
+                String name = runner != null ? runner.getNickName() : ("#" + memberId);
+                telegramNotifyService.notify("🛵 Runner 接单 " + order.getOrderNo()
+                        + "\nRunner：" + name);
+            }
+            catch (Exception ignored) {}
+
             return AjaxResult.success("Order accepted").put("data", order);
         }
         catch (RuntimeException e)

@@ -52,6 +52,9 @@ public class ApiOrderController extends BaseApiController
     @Autowired
     private IMallMemberService memberService;
 
+    @Autowired
+    private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
+
     /**
      * 下单
      * Body: { "addressId": 1, "paymentMethod": "COD|GCASH", "remark": "...", "items": [...] }
@@ -132,6 +135,19 @@ public class ApiOrderController extends BaseApiController
         try
         {
             MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod, pointsToUse, memberCouponId);
+
+            // Telegram 后台提醒：新订单
+            try
+            {
+                MallMember buyer = memberService.selectMemberById(memberId);
+                String name = buyer != null ? buyer.getNickName() : ("#" + memberId);
+                telegramNotifyService.notify("🛒 新订单 " + order.getOrderNo()
+                        + "\n顾客：" + name
+                        + "\n金额：₱" + order.getTotalAmount()
+                        + "\n支付：" + paymentMethod);
+            }
+            catch (Exception ignored) {}
+
             return AjaxResult.success("Order placed successfully").put("data", order);
         }
         catch (RuntimeException e)

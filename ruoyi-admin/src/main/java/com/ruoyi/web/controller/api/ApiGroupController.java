@@ -32,6 +32,38 @@ public class ApiGroupController extends BaseApiController
     @Autowired
     private IMallGroupService groupService;
 
+    @Autowired
+    private com.ruoyi.mall.service.IMallMemberService memberService;
+
+    @Autowired
+    private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
+
+    /** 拼团提醒文案（发起/加入），会员名取不到时用 #id 兜底 */
+    private void notifyGroup(String action, Long memberId, com.ruoyi.mall.domain.MallGroupOrder go)
+    {
+        try
+        {
+            com.ruoyi.mall.domain.MallMember m = memberService.selectMemberById(memberId);
+            String name = m != null ? m.getNickName() : ("#" + memberId);
+            StringBuilder sb = new StringBuilder();
+            sb.append("👥 ").append(action).append("\n会员：").append(name);
+            if (go != null && go.getActivityTitle() != null && !go.getActivityTitle().isEmpty())
+            {
+                sb.append("\n活动：").append(go.getActivityTitle());
+            }
+            if (go != null && go.getInviteCode() != null)
+            {
+                sb.append("\n团号：").append(go.getInviteCode());
+                if (go.getCurrentSize() != null)
+                {
+                    sb.append("（已 ").append(go.getCurrentSize()).append(" 人）");
+                }
+            }
+            telegramNotifyService.notify(sb.toString());
+        }
+        catch (Exception ignored) {}
+    }
+
     /**
      * 某活动下开放中的拼团单列表（公开，供 App 展示可加入的团）
      * GET /api/v1/group-orders?activityId=1
@@ -80,6 +112,7 @@ public class ApiGroupController extends BaseApiController
                     ? Long.valueOf(body.get("addressId").toString()) : null;
 
             MallGroupOrder result = groupService.createGroup(activityId, memberId, quantity, addressId);
+            notifyGroup("发起拼团", memberId, result);
             return AjaxResult.success("Group created").put("data", result);
         }
         catch (RuntimeException e)
@@ -143,6 +176,7 @@ public class ApiGroupController extends BaseApiController
                     ? Long.valueOf(body.get("addressId").toString()) : null;
 
             MallGroupOrder result = groupService.joinGroup(inviteCode, memberId, quantity, addressId);
+            notifyGroup("加入拼团", memberId, result);
             return AjaxResult.success("Joined group").put("data", result);
         }
         catch (RuntimeException e)

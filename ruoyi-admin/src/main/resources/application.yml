@@ -146,6 +146,12 @@ mall:
     bundle-id: com.dodominimart.app
     # Web（Sign in with Apple JS）用的 Services ID；web 端 identityToken 的 aud 是它而非 Bundle ID。留空则不接受 web 登录。
     web-client-id: com.dodominimart.web
+  telegram:
+    # 后台提醒机器人（@dodominimart_bot）：下单/接单/拼团/新注册等推到管理群
+    # 注意：bot-token 是密钥。可用环境变量 MALL_TELEGRAM_BOT_TOKEN 覆盖。留空则静默不发。
+    bot-token: 8920720410:AAGMqVpcAivZk5WSp5-7BQkiJO4h_AuvDzk
+    chat-id: "-5351153130"
+    enabled: true
   google:
     # Google OAuth2 Client ID 列表（支持多个，用逗号分隔）
     # Android/Web 用 Web application 类型；iOS 用 iOS 类型

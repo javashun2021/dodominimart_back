@@ -36,6 +36,9 @@ public class MallMemberServiceImpl implements IMallMemberService
     @Autowired
     private IMallCouponService couponService;
 
+    @Autowired
+    private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
+
     @Override
     public List<MallMember> selectMemberList(MallMember member)
     {
@@ -258,6 +261,7 @@ public class MallMemberServiceImpl implements IMallMemberService
 
         // 2. Bind referrer if a valid referral code was provided
         boolean hasReferrer = false;
+        String referrerName = null;
         if (referralCode != null && !referralCode.trim().isEmpty())
         {
             MallMember referrer = memberMapper.selectByInviteCode(referralCode.trim().toUpperCase());
@@ -265,6 +269,7 @@ public class MallMemberServiceImpl implements IMallMemberService
             {
                 memberMapper.updateReferrerId(member.getMemberId(), referrer.getMemberId());
                 hasReferrer = true;
+                referrerName = referrer.getNickName();
             }
         }
 
@@ -295,6 +300,19 @@ public class MallMemberServiceImpl implements IMallMemberService
         {
             log.warn("Welcome coupons failed for member {}: {}", member.getMemberId(), e.getMessage());
         }
+
+        // 5. Telegram 后台提醒：新会员注册（有邀请人则展示邀请人昵称）
+        try
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("🎉 新会员注册\n昵称：").append(member.getNickName());
+            if (hasReferrer && referrerName != null)
+            {
+                sb.append("\n邀请人：").append(referrerName);
+            }
+            telegramNotifyService.notify(sb.toString());
+        }
+        catch (Exception ignored) {}
     }
 
     private String generateInviteCode(Long memberId)
