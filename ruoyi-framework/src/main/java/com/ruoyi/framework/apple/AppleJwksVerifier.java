@@ -38,6 +38,10 @@ public class AppleJwksVerifier
     @Value("${mall.apple.bundle-id}")
     private String bundleId;
 
+    /** Web（Sign in with Apple JS）的 Services ID；web 端 token 的 aud 是它。可为空。 */
+    @Value("${mall.apple.web-client-id:}")
+    private String webClientId;
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper  = new ObjectMapper();
 
@@ -65,10 +69,15 @@ public class AppleJwksVerifier
         {
             throw new Exception("Apple token issuer mismatch: " + claims.getIssuer());
         }
-        if (!bundleId.equals(claims.getAudience()))
+        String aud = claims.getAudience();
+        // 原生 App 的 aud 是 Bundle ID；Web（Sign in with Apple JS）的 aud 是 Services ID，两者都接受
+        boolean audOk = bundleId.equals(aud)
+                || (webClientId != null && !webClientId.isEmpty() && webClientId.equals(aud));
+        if (!audOk)
         {
             throw new Exception("Apple token audience mismatch (expected " + bundleId
-                    + ", got " + claims.getAudience() + ")");
+                    + (webClientId != null && !webClientId.isEmpty() ? " or " + webClientId : "")
+                    + ", got " + aud + ")");
         }
         return claims;
     }

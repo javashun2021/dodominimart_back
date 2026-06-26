@@ -144,6 +144,8 @@ mall:
   apple:
     # iOS App Bundle ID，用于验证 identityToken 的 aud 字段
     bundle-id: com.dodominimart.app
+    # Web（Sign in with Apple JS）用的 Services ID；web 端 identityToken 的 aud 是它而非 Bundle ID。留空则不接受 web 登录。
+    web-client-id: com.dodominimart.web
   google:
     # Google OAuth2 Client ID 列表（支持多个，用逗号分隔）
     # Android/Web 用 Web application 类型；iOS 用 iOS 类型
