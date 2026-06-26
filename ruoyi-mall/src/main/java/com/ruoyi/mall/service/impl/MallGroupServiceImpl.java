@@ -365,6 +365,7 @@ public class MallGroupServiceImpl implements IMallGroupService
             item.setProductImage(product.getImageUrl());
             item.setQuantity(m.getQuantity());
             item.setPrice(unitPrice);
+            item.setOriginalPrice(product.getPrice()); // 原价快照（拼团价低于原价，用于展示优惠）
             item.setSubtotal(subtotal);
 
             MallOrder order = new MallOrder();

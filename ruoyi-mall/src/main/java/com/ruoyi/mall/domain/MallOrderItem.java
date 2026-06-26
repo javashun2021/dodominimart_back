@@ -17,8 +17,10 @@ public class MallOrderItem implements Serializable
     private String productName;
     /** 商品图片（快照） */
     private String productImage;
-    /** 下单时单价（快照） */
+    /** 下单时实付单价（快照：限时价/拼团价/原价） */
     private BigDecimal price;
+    /** 下单时商品原价（快照，用于展示划线价/优惠额；可为空） */
+    private BigDecimal originalPrice;
     private Integer quantity;
     private BigDecimal subtotal;
 
@@ -39,6 +41,9 @@ public class MallOrderItem implements Serializable
 
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
+
+    public BigDecimal getOriginalPrice() { return originalPrice; }
+    public void setOriginalPrice(BigDecimal originalPrice) { this.originalPrice = originalPrice; }
 
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }

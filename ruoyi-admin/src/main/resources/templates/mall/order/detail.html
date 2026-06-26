@@ -64,7 +64,8 @@
                         <tr>
                             <th>Image</th>
                             <th>Product Name</th>
-                            <th>Unit Price (PHP)</th>
+                            <th>Original (PHP)</th>
+                            <th>Paid (PHP)</th>
                             <th>Qty</th>
                             <th>Subtotal (PHP)</th>
                         </tr>
@@ -77,6 +78,12 @@
                                 <span th:unless="${item.productImage != null and item.productImage != ''}">-</span>
                             </td>
                             <td th:text="${item.productName}"></td>
+                            <td>
+                                <span th:if="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}"
+                                      style="color:#999;text-decoration:line-through"
+                                      th:text="'₱' + ${item.originalPrice}"></span>
+                                <span th:unless="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}">-</span>
+                            </td>
                             <td th:text="'₱' + ${item.price}"></td>
                             <td th:text="${item.quantity}"></td>
                             <td th:text="'₱' + ${item.subtotal}"></td>
@@ -84,11 +91,11 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="text-right">Items Subtotal</td>
+                            <td colspan="5" class="text-right">Items Subtotal</td>
                             <td>₱<span th:text="${#aggregates.sum(order.items.![subtotal])}"></span></td>
                         </tr>
                         <tr th:if="${order.memberCouponId != null}" style="color:#1ab394">
-                            <td colspan="4" class="text-right">
+                            <td colspan="5" class="text-right">
                                 Coupon<span th:if="${couponName != null and couponName != ''}"
                                             th:text="' (' + ${couponName} + ')'"></span>
                             </td>
@@ -98,13 +105,13 @@
                             </td>
                         </tr>
                         <tr th:if="${order.pointsUsed > 0}" style="color:#1ab394">
-                            <td colspan="4" class="text-right">
+                            <td colspan="5" class="text-right">
                                 Points Used (<span th:text="${order.pointsUsed}"></span> pts)
                             </td>
                             <td>−₱<span th:text="${order.pointsUsed / 10}"></span></td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-right"><strong>Total Payable</strong></td>
+                            <td colspan="5" class="text-right"><strong>Total Payable</strong></td>
                             <td><strong>₱<span th:text="${order.totalAmount}"></span></strong></td>
                         </tr>
                     </tfoot>

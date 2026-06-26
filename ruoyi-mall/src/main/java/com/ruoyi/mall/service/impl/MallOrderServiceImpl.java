@@ -147,6 +147,7 @@ public class MallOrderServiceImpl implements IMallOrderService
                 flashSaleMap.put(item.getProductId(), flashSale);
             }
             item.setPrice(unitPrice);
+            item.setOriginalPrice(product.getPrice()); // 原价快照（限时/拼团时高于实付，用于展示优惠）
             item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
         }
 
