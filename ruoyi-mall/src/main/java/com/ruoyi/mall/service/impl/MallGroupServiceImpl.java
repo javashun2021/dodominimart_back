@@ -374,7 +374,7 @@ public class MallGroupServiceImpl implements IMallGroupService
             order.setTotalAmount(subtotal);
             order.setStatus("1");
             order.setPaymentMethod("COD");
-            order.setRemark("拼团成功");
+            order.setRemark("Group buy successful");
             order.setOrderSource("GROUP");
             order.setPointsUsed(0);
             order.setCouponDiscount(BigDecimal.ZERO);
