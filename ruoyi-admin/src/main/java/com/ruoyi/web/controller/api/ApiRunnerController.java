@@ -101,8 +101,8 @@ public class ApiRunnerController extends BaseApiController
             {
                 com.ruoyi.mall.domain.MallMember runner = memberMapper.selectMemberById(memberId);
                 String name = runner != null ? runner.getNickName() : ("#" + memberId);
-                telegramNotifyService.notify("🛵 Runner 接单 " + order.getOrderNo()
-                        + "\nRunner：" + name);
+                telegramNotifyService.notify("🛵 Order Accepted " + order.getOrderNo()
+                        + "\nRunner: " + name);
             }
             catch (Exception ignored) {}
 

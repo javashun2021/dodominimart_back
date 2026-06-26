@@ -46,17 +46,17 @@ public class ApiGroupController extends BaseApiController
             com.ruoyi.mall.domain.MallMember m = memberService.selectMemberById(memberId);
             String name = m != null ? m.getNickName() : ("#" + memberId);
             StringBuilder sb = new StringBuilder();
-            sb.append("👥 ").append(action).append("\n会员：").append(name);
+            sb.append("👥 ").append(action).append("\nMember: ").append(name);
             if (go != null && go.getActivityTitle() != null && !go.getActivityTitle().isEmpty())
             {
-                sb.append("\n活动：").append(go.getActivityTitle());
+                sb.append("\nActivity: ").append(go.getActivityTitle());
             }
             if (go != null && go.getInviteCode() != null)
             {
-                sb.append("\n团号：").append(go.getInviteCode());
+                sb.append("\nGroup: ").append(go.getInviteCode());
                 if (go.getCurrentSize() != null)
                 {
-                    sb.append("（已 ").append(go.getCurrentSize()).append(" 人）");
+                    sb.append(" (").append(go.getCurrentSize()).append(" members)");
                 }
             }
             telegramNotifyService.notify(sb.toString());
@@ -112,7 +112,7 @@ public class ApiGroupController extends BaseApiController
                     ? Long.valueOf(body.get("addressId").toString()) : null;
 
             MallGroupOrder result = groupService.createGroup(activityId, memberId, quantity, addressId);
-            notifyGroup("发起拼团", memberId, result);
+            notifyGroup("Group Started", memberId, result);
             return AjaxResult.success("Group created").put("data", result);
         }
         catch (RuntimeException e)
@@ -176,7 +176,7 @@ public class ApiGroupController extends BaseApiController
                     ? Long.valueOf(body.get("addressId").toString()) : null;
 
             MallGroupOrder result = groupService.joinGroup(inviteCode, memberId, quantity, addressId);
-            notifyGroup("加入拼团", memberId, result);
+            notifyGroup("Group Joined", memberId, result);
             return AjaxResult.success("Joined group").put("data", result);
         }
         catch (RuntimeException e)

@@ -305,10 +305,10 @@ public class MallMemberServiceImpl implements IMallMemberService
         try
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("🎉 新会员注册\n昵称：").append(member.getNickName());
+            sb.append("🎉 New Member\nName: ").append(member.getNickName());
             if (hasReferrer && referrerName != null)
             {
-                sb.append("\n邀请人：").append(referrerName);
+                sb.append("\nInvited by: ").append(referrerName);
             }
             telegramNotifyService.notify(sb.toString());
         }

@@ -141,10 +141,10 @@ public class ApiOrderController extends BaseApiController
             {
                 MallMember buyer = memberService.selectMemberById(memberId);
                 String name = buyer != null ? buyer.getNickName() : ("#" + memberId);
-                telegramNotifyService.notify("🛒 新订单 " + order.getOrderNo()
-                        + "\n顾客：" + name
-                        + "\n金额：₱" + order.getTotalAmount()
-                        + "\n支付：" + paymentMethod);
+                telegramNotifyService.notify("🛒 New Order " + order.getOrderNo()
+                        + "\nCustomer: " + name
+                        + "\nAmount: ₱" + order.getTotalAmount()
+                        + "\nPayment: " + paymentMethod);
             }
             catch (Exception ignored) {}
 
