@@ -52,7 +52,7 @@ create table sys_user (
   salt 				varchar(20) 	default '' 				   comment '盐加密',
   status 			char(1) 		default '0' 			   comment '帐号状态（0正常 1停用）',
   del_flag			char(1) 		default '0' 			   comment '删除标志（0代表存在 2代表删除）',
-  login_ip          varchar(50)     default ''                 comment '最后登陆IP',
+  login_ip          varchar(150)    default ''                 comment '最后登陆IP',
   login_date        datetime                                   comment '最后登陆时间',
   create_by         varchar(64)     default ''                 comment '创建者',
   create_time 	    datetime                                   comment '创建时间',
