@@ -21,6 +21,10 @@ public class MallProduct extends BaseEntity
     @Excel(name = "商品名称")
     private String name;
 
+    /** 品牌名（叠在商品图片上展示，可空） */
+    @Excel(name = "品牌")
+    private String brandName;
+
     private String description;
 
     @Excel(name = "售价(PHP)")
@@ -75,6 +79,9 @@ public class MallProduct extends BaseEntity
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getBrandName() { return brandName; }
+    public void setBrandName(String brandName) { this.brandName = brandName; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

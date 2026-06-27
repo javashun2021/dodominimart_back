@@ -7,6 +7,7 @@
         <id     property="productId"       column="product_id"      />
         <result property="categoryId"      column="category_id"     />
         <result property="name"            column="name"            />
+        <result property="brandName"       column="brand_name"      />
         <result property="description"     column="description"     />
         <result property="price"           column="price"           />
         <result property="stock"           column="stock"           />
@@ -33,7 +34,7 @@
     </resultMap>
 
     <sql id="selectProductVo">
-        select p.product_id, p.category_id, p.name, p.description, p.price, p.stock,
+        select p.product_id, p.category_id, p.name, p.brand_name, p.description, p.price, p.stock,
                p.image_url, p.barcode, p.status, p.sort, p.del_flag, p.create_by, p.create_time,
                p.update_by, p.update_time,
                fs.sale_id       as flash_sale_id,
@@ -87,9 +88,9 @@
     </select>
 
     <insert id="insertProduct" parameterType="com.ruoyi.mall.domain.MallProduct" useGeneratedKeys="true" keyProperty="productId">
-        insert into mall_product(category_id, name, description, price, stock, image_url, barcode, status, sort,
+        insert into mall_product(category_id, name, brand_name, description, price, stock, image_url, barcode, status, sort,
                                  del_flag, create_by, create_time)
-        values(#{categoryId}, #{name}, #{description}, #{price}, #{stock}, #{imageUrl}, #{barcode}, #{status}, #{sort},
+        values(#{categoryId}, #{name}, #{brandName}, #{description}, #{price}, #{stock}, #{imageUrl}, #{barcode}, #{status}, #{sort},
                #{delFlag}, #{createBy}, #{createTime})
     </insert>
 
@@ -98,6 +99,7 @@
         <set>
             <if test="categoryId != null">category_id = #{categoryId},</if>
             <if test="name != null and name != ''">name = #{name},</if>
+            <if test="brandName != null">brand_name = #{brandName},</if>
             <if test="description != null">description = #{description},</if>
             <if test="price != null">price = #{price},</if>
             <if test="stock != null">stock = #{stock},</if>

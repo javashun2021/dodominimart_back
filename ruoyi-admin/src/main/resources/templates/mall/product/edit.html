@@ -13,6 +13,12 @@
             </div>
         </div>
         <div class="form-group">
+            <label class="col-sm-3 control-label">Brand：</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="text" name="brandName" th:value="${product.brandName}" placeholder="Optional, shown on product image">
+            </div>
+        </div>
+        <div class="form-group">
             <label class="col-sm-3 control-label">Category：</label>
             <div class="col-sm-8">
                 <select class="form-control" name="categoryId" required>
