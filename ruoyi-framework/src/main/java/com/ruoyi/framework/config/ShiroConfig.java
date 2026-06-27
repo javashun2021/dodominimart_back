@@ -310,6 +310,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/banners", "anon");
         filterChainDefinitionMap.put("/api/v1/sse/**", "anon"); // JWT validated in controller via query param
         filterChainDefinitionMap.put("/api/v1/app/**", "anon"); // App 错误上报：未登录/登录均可上报
+        filterChainDefinitionMap.put("/api/v1/beta/**", "anon"); // Android 内测申请/查状态/审批：公开下载页用
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
 
         Map<String, Filter> filters = new LinkedHashMap<>();

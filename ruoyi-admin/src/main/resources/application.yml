@@ -152,6 +152,11 @@ mall:
     bot-token: 8920720410:AAGMqVpcAivZk5WSp5-7BQkiJO4h_AuvDzk
     chat-id: "-5351153130"
     enabled: true
+  beta:
+    # Android 内测申请：审批链接签名盐（非密码，仅防止他人乱点审批）。可用环境变量 MALL_BETA_APPROVE_SECRET 覆盖。
+    approve-secret: dodo-beta-7Qk2pX
+    # 拼审批链接用的对外站点根
+    public-base-url: https://dodominimart.com
   google:
     # Google OAuth2 Client ID 列表（支持多个，用逗号分隔）
     # Android/Web 用 Web application 类型；iOS 用 iOS 类型
