@@ -16,7 +16,9 @@ import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallProduct;
 import com.ruoyi.mall.domain.MallPaymentRecord;
+import com.ruoyi.mall.domain.MallRefundRequest;
 import com.ruoyi.mall.mapper.MallAddressMapper;
+import com.ruoyi.mall.mapper.MallRefundRequestMapper;
 import com.ruoyi.mall.mapper.MallFlashSaleMapper;
 import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
@@ -25,6 +27,7 @@ import com.ruoyi.mall.mapper.MallProductMapper;
 import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.domain.CouponDiscountResult;
 import com.ruoyi.mall.service.IMallCouponService;
+import com.ruoyi.mall.service.IGCashService;
 import com.ruoyi.mall.service.IMallFlashSaleService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallPointsService;
@@ -56,6 +59,13 @@ public class MallOrderServiceImpl implements IMallOrderService
     private IMallPointsService pointsService;
     @Autowired
     private IMallCouponService couponService;
+    @Autowired
+    private IGCashService gcashService;
+    @Autowired
+    private MallRefundRequestMapper refundRequestMapper;
+
+    /** 完成后退款（售后）申请时限：3 天 */
+    private static final long REFUND_WINDOW_MS = 3L * 24 * 60 * 60 * 1000;
 
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
@@ -98,7 +108,7 @@ public class MallOrderServiceImpl implements IMallOrderService
 
     @Override
     @Transactional
-    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId)
+    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId, BigDecimal deliveryFee)
     {
         boolean isStore = "STORE".equalsIgnoreCase(paymentMethod);
 
@@ -222,6 +232,10 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setPointsUsed(actualPointsUsed);
         order.setMemberCouponId(memberCouponId);
         order.setCouponDiscount(couponDiscountAmt);
+        // 配送费随下单固化：到店单/免配送券为 0，否则取传入的配置配送费。
+        // 这样「应付 = totalAmount + deliveryFee」自洽，GCash 收款/验签/退款都按此口径。
+        order.setDeliveryFee((isStore || couponFreeDelivery || deliveryFee == null)
+                ? BigDecimal.ZERO : deliveryFee);
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
 
@@ -361,31 +375,67 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             throw new RuntimeException("Order not found");
         }
-        if (!"0".equals(order.getStatus()))
+        // 配送前可自助取消：待确认(0) / 已确认(1)。一旦配送中(2)/已完成(3)/已取消(4) 不可自助取消。
+        String st = order.getStatus();
+        if (!"0".equals(st) && !"1".equals(st))
         {
-            throw new RuntimeException("Only pending orders can be cancelled");
+            throw new RuntimeException("Order can no longer be cancelled");
         }
+        if ("REFUNDED".equalsIgnoreCase(order.getPaymentStatus()))
+        {
+            throw new RuntimeException("Order already refunded");
+        }
+
+        boolean online = "GCASH".equalsIgnoreCase(order.getPaymentMethod());
+        boolean paid   = "PAID".equalsIgnoreCase(order.getPaymentStatus());
+
+        // 已付的线上单：先走 PayMongo 退款，失败则中止（不改库不退分）
+        if (online && paid)
+        {
+            if (order.getPaymentNo() == null || order.getPaymentNo().isEmpty())
+            {
+                throw new RuntimeException("Missing payment reference; cannot refund");
+            }
+            BigDecimal amt = order.getPaidAmount() != null ? order.getPaidAmount()
+                    : order.getTotalAmount().add(order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO);
+            if (!gcashService.refund(order.getPaymentNo(), amt))
+            {
+                throw new RuntimeException("Refund failed; please try again later");
+            }
+        }
+
         order.setStatus("4");
-        order.setCancelReason(reason != null ? reason : "");
+        if (paid)
+        {
+            order.setPaymentStatus("REFUNDED");
+        }
+        order.setCancelReason(reason != null && !reason.isEmpty() ? reason : "Cancelled by customer");
         order.setUpdateTime(new Date());
         int rows = orderMapper.updateOrder(order);
+
+        // 回滚库存 + 退还下单抵扣的积分（与退款共用）
+        restoreStockAndPoints(order);
 
         // 推送：SSE（Web）+ FCM（Mobile）
         try
         {
+            boolean refunded = paid; // 付过钱的取消 = 已退款
+            String title = refunded ? "Order Cancelled & Refunded" : "Order Cancelled";
+            String body  = refunded
+                    ? "Your order #" + order.getOrderNo() + " has been cancelled and refunded"
+                    : "Your order #" + order.getOrderNo() + " has been cancelled";
             java.util.Map<String, Object> payload = new java.util.HashMap<>();
             payload.put("orderId", orderId);
             payload.put("orderNo", order.getOrderNo());
             payload.put("status", "4");
-            payload.put("title", "Order Cancelled");
-            payload.put("body",  "Your order #" + order.getOrderNo() + " has been cancelled");
+            payload.put("title", title);
+            payload.put("body",  body);
             sseService.push(memberId, "order_status", payload);
 
             com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(memberId);
             if (member != null && member.getFcmToken() != null)
             {
-                fcmService.sendToToken(member.getFcmToken(), "Order Cancelled",
-                        "Your order #" + order.getOrderNo() + " has been cancelled",
+                fcmService.sendToToken(member.getFcmToken(), title, body,
                         java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
             }
         }
@@ -395,6 +445,239 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
 
         return rows;
+    }
+
+    /** 回滚库存 + 退还下单时抵扣的积分（取消/退款共用）。 */
+    private void restoreStockAndPoints(MallOrder order)
+    {
+        List<MallOrderItem> items = orderItemMapper.selectItemsByOrderId(order.getOrderId());
+        if (items != null)
+        {
+            for (MallOrderItem it : items)
+            {
+                productMapper.restoreStock(it.getProductId(), it.getQuantity());
+            }
+        }
+        if (order.getPointsUsed() > 0)
+        {
+            pointsService.earn(order.getMemberId(), order.getPointsUsed(), 7, order.getOrderNo(),
+                    "Order refund – points returned for #" + order.getOrderNo());
+        }
+    }
+
+    @Override
+    @Transactional
+    public String refundOrder(Long orderId, String operator)
+    {
+        MallOrder order = orderMapper.selectOrderById(orderId);
+        if (order == null)
+        {
+            throw new RuntimeException("Order not found");
+        }
+        if ("REFUNDED".equalsIgnoreCase(order.getPaymentStatus()))
+        {
+            throw new RuntimeException("Order already refunded");
+        }
+
+        // 线上单(PayMongo，paymentMethod=GCASH) vs 现金单(COD / 到店 STORE)
+        boolean online = "GCASH".equalsIgnoreCase(order.getPaymentMethod());
+        boolean paid   = "PAID".equalsIgnoreCase(order.getPaymentStatus());
+
+        if (online)
+        {
+            if (!paid)
+            {
+                throw new RuntimeException("Online order is not paid; cancel it instead of refund");
+            }
+            if (order.getPaymentNo() == null || order.getPaymentNo().isEmpty())
+            {
+                throw new RuntimeException("Missing payment reference; cannot refund via PayMongo");
+            }
+            // 注：网关退款 HTTP 调用放在事务内（后台低频操作可接受）；失败则抛出、不改库不退分。
+            BigDecimal amt = order.getPaidAmount() != null ? order.getPaidAmount()
+                    : order.getTotalAmount().add(order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO);
+            boolean ok = gcashService.refund(order.getPaymentNo(), amt);
+            if (!ok)
+            {
+                throw new RuntimeException("PayMongo refund failed; please retry or refund in the PayMongo dashboard");
+            }
+        }
+        // 现金单：不调网关，仅在系统内标记（钱由店员线下退给顾客）
+
+        // 1) 订单：标记已退款 + 置为已取消
+        order.setPaymentStatus("REFUNDED");
+        order.setStatus("4");
+        order.setCancelReason("Refunded by " + (operator != null ? operator : "admin"));
+        order.setUpdateTime(new Date());
+        orderMapper.updateOrder(order);
+
+        // 2) 回滚库存 + 退还下单抵扣的积分
+        restoreStockAndPoints(order);
+
+        // 4) 支付流水置为 REFUNDED
+        MallPaymentRecord record = paymentRecordMapper.selectByOrderId(orderId);
+        if (record != null)
+        {
+            paymentRecordMapper.updateStatus(record.getRecordId(), "REFUNDED", null);
+        }
+
+        // 5) 推送顾客
+        try
+        {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("orderNo", order.getOrderNo());
+            payload.put("status", "4");
+            payload.put("title", "Order Refunded");
+            payload.put("body",  "Your order #" + order.getOrderNo() + " has been refunded");
+            sseService.push(order.getMemberId(), "order_status", payload);
+
+            com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(order.getMemberId());
+            if (member != null && member.getFcmToken() != null)
+            {
+                fcmService.sendToToken(member.getFcmToken(), "Order Refunded",
+                        "Your order #" + order.getOrderNo() + " has been refunded",
+                        java.util.Collections.singletonMap("orderId", String.valueOf(orderId)));
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after refundOrder: {}", e.getMessage());
+        }
+
+        return online
+                ? "Refund initiated via PayMongo; stock and points restored."
+                : "Order marked as refunded (cash refunded offline); stock and points restored.";
+    }
+
+    // ───────────────────────── 完成后退款申请（售后）─────────────────────────
+
+    @Override
+    @Transactional
+    public MallRefundRequest createRefundRequest(Long orderId, Long memberId, String reason, String images)
+    {
+        MallOrder order = orderMapper.selectOrderById(orderId);
+        if (order == null || !order.getMemberId().equals(memberId))
+        {
+            throw new RuntimeException("Order not found");
+        }
+        if (!"3".equals(order.getStatus()))
+        {
+            throw new RuntimeException("Only completed orders can request a refund");
+        }
+        if (!"PAID".equalsIgnoreCase(order.getPaymentStatus()))
+        {
+            throw new RuntimeException("This order has no online payment to refund");
+        }
+        if (reason == null || reason.trim().isEmpty())
+        {
+            throw new RuntimeException("Please enter a reason");
+        }
+        // 售后期：完成后 3 天内（用 update_time 近似完成时间）
+        Date completed = order.getUpdateTime() != null ? order.getUpdateTime() : order.getCreateTime();
+        if (completed != null && System.currentTimeMillis() - completed.getTime() > REFUND_WINDOW_MS)
+        {
+            throw new RuntimeException("Refund window has expired (3 days after completion)");
+        }
+        // 防重复：已有进行中(待审/已通过)的申请则拦截
+        MallRefundRequest latest = refundRequestMapper.selectLatestByOrderId(orderId);
+        if (latest != null && ("PENDING".equals(latest.getStatus()) || "APPROVED".equals(latest.getStatus())))
+        {
+            throw new RuntimeException("A refund request is already in progress for this order");
+        }
+
+        MallRefundRequest req = new MallRefundRequest();
+        req.setOrderId(orderId);
+        req.setMemberId(memberId);
+        req.setReason(reason.trim());
+        req.setImages(images);
+        req.setStatus("PENDING");
+        req.setCreateTime(new Date());
+        refundRequestMapper.insertRefundRequest(req);
+        return req;
+    }
+
+    @Override
+    public MallRefundRequest getLatestRefundRequest(Long orderId)
+    {
+        return refundRequestMapper.selectLatestByOrderId(orderId);
+    }
+
+    @Override
+    public List<MallRefundRequest> listRefundRequests(MallRefundRequest query)
+    {
+        return refundRequestMapper.selectList(query);
+    }
+
+    @Override
+    @Transactional
+    public void approveRefundRequest(Long requestId, String operator)
+    {
+        MallRefundRequest req = refundRequestMapper.selectById(requestId);
+        if (req == null)
+        {
+            throw new RuntimeException("Refund request not found");
+        }
+        if (!"PENDING".equals(req.getStatus()))
+        {
+            throw new RuntimeException("This request has already been handled");
+        }
+        // 真退：线上走 PayMongo / 现金标记，并回滚库存 + 退积分 + 推送顾客
+        refundOrder(req.getOrderId(), operator);
+
+        req.setStatus("APPROVED");
+        req.setHandleBy(operator);
+        req.setHandleTime(new Date());
+        req.setAdminRemark(null);
+        refundRequestMapper.updateHandle(req);
+    }
+
+    @Override
+    @Transactional
+    public void rejectRefundRequest(Long requestId, String operator, String remark)
+    {
+        MallRefundRequest req = refundRequestMapper.selectById(requestId);
+        if (req == null)
+        {
+            throw new RuntimeException("Refund request not found");
+        }
+        if (!"PENDING".equals(req.getStatus()))
+        {
+            throw new RuntimeException("This request has already been handled");
+        }
+        req.setStatus("REJECTED");
+        req.setHandleBy(operator);
+        req.setHandleTime(new Date());
+        req.setAdminRemark(remark != null ? remark : "");
+        refundRequestMapper.updateHandle(req);
+
+        // 推送顾客：退款申请被驳回
+        try
+        {
+            MallOrder order = orderMapper.selectOrderById(req.getOrderId());
+            if (order != null)
+            {
+                String body = "Your refund request for #" + order.getOrderNo() + " was declined"
+                        + (remark != null && !remark.isEmpty() ? ": " + remark : "");
+                java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                payload.put("orderId", order.getOrderId());
+                payload.put("orderNo", order.getOrderNo());
+                payload.put("title", "Refund Declined");
+                payload.put("body",  body);
+                sseService.push(order.getMemberId(), "refund_status", payload);
+
+                com.ruoyi.mall.domain.MallMember member = memberMapper.selectMemberById(order.getMemberId());
+                if (member != null && member.getFcmToken() != null)
+                {
+                    fcmService.sendToToken(member.getFcmToken(), "Refund Declined", body,
+                            java.util.Collections.singletonMap("orderId", String.valueOf(order.getOrderId())));
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("Push failed after rejectRefundRequest: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -413,6 +696,20 @@ public class MallOrderServiceImpl implements IMallOrderService
         if ("4".equals(order.getStatus()))
         {
             throw new RuntimeException("Order is cancelled, cannot mark as paid: " + orderNo);
+        }
+        // 金额校验：实付必须等于订单应付（按「分」整数比对，避免精度问题）。不符则拒绝置 PAID，留待人工核查。
+        if (amount != null)
+        {
+            // 应付 = 商品额 + 配送费
+            BigDecimal expected = order.getTotalAmount()
+                    .add(order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO);
+            long paidC = amount.movePointRight(2).setScale(0, java.math.RoundingMode.HALF_UP).longValueExact();
+            long expectedC = expected.movePointRight(2).setScale(0, java.math.RoundingMode.HALF_UP).longValueExact();
+            if (paidC != expectedC)
+            {
+                throw new RuntimeException("Amount mismatch for " + orderNo
+                        + ": paid=" + paidC + " expected=" + expectedC + " (centavos)");
+            }
         }
         order.setPaymentStatus("PAID");
         order.setPaymentNo(paymentNo);
@@ -578,7 +875,7 @@ public class MallOrderServiceImpl implements IMallOrderService
             String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId)
     {
         // 走到店分支：免地址、payment_method=STORE、order_source=IN_STORE、自动算 total
-        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId);
+        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId,BigDecimal.ZERO);
 
         BigDecimal total = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
         if (cashReceived == null || cashReceived.compareTo(total) < 0)

@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,6 +39,8 @@ public class GCashServiceImpl implements IGCashService
     private static final Logger log = LoggerFactory.getLogger(GCashServiceImpl.class);
 
     private static final String CHECKOUT_SESSIONS_URL = "https://api.paymongo.com/v1/checkout_sessions";
+    private static final String PAYMENTS_URL = "https://api.paymongo.com/v1/payments/";
+    private static final String REFUNDS_URL = "https://api.paymongo.com/v1/refunds";
 
     /** 关心的支付成功事件 */
     private static final String EVENT_CHECKOUT_PAID = "checkout_session.payment.paid";
@@ -208,15 +212,84 @@ public class GCashServiceImpl implements IGCashService
         return result;
     }
 
+    // ------------------------------------------------------------ verifyPayment
+
+    @Override
+    public Map<String, String> verifyPayment(String paymentId)
+    {
+        if (paymentId == null || paymentId.isEmpty())
+        {
+            return null;
+        }
+        try
+        {
+            HttpEntity<Void> request = new HttpEntity<>(buildHeaders());
+            ResponseEntity<String> resp = restTemplate.exchange(
+                    PAYMENTS_URL + paymentId, HttpMethod.GET, request, String.class);
+
+            JsonNode attr = objectMapper.readTree(resp.getBody()).path("data").path("attributes");
+            String gwStatus = attr.path("status").asText("");      // PayMongo: "paid" 才算成功
+            long amount = attr.path("amount").asLong(-1);          // 实付金额，单位「分」
+
+            Map<String, String> r = new HashMap<>();
+            r.put("status", "paid".equalsIgnoreCase(gwStatus) ? "PAID" : "FAILED");
+            r.put("amount", String.valueOf(amount));
+            r.put("paymentNo", paymentId);
+            return r;
+        }
+        catch (Exception e)
+        {
+            // 查不到 / 网络错 / 4xx：一律按「未确认」处理（fail closed），调用方不应置 PAID
+            log.error("PayMongo verifyPayment error for {}: {}", paymentId, e.getMessage());
+            return null;
+        }
+    }
+
     // ------------------------------------------------------------------- refund
 
     @Override
     public boolean refund(String paymentNo, BigDecimal amount)
     {
-        // 本轮不自动化退款：菲律宾退款先在 PayMongo 后台手动处理。
-        log.warn("PayMongo refund not implemented; refund manually in dashboard. paymentNo={}, amount={}",
-                paymentNo, amount);
-        return false;
+        // PayMongo 退款：POST /v1/refunds，传 payment_id(pay_xxx) + amount(分) + reason。
+        if (paymentNo == null || paymentNo.isEmpty() || amount == null)
+        {
+            log.warn("PayMongo refund missing paymentNo/amount");
+            return false;
+        }
+        try
+        {
+            long centavos = amount.movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact();
+
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put("amount", centavos);
+            attributes.put("payment_id", paymentNo);
+            attributes.put("reason", "requested_by_customer");
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("attributes", attributes);
+            Map<String, Object> body = new HashMap<>();
+            body.put("data", data);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildHeaders());
+            String json = restTemplate.postForObject(REFUNDS_URL, request, String.class);
+
+            JsonNode node = objectMapper.readTree(json).path("data");
+            String id = node.path("id").asText("");                          // re_xxx
+            String status = node.path("attributes").path("status").asText(""); // pending/succeeded
+            // GCash 等电子钱包退款多为异步：拿到退款单 id 且状态为 pending/succeeded 即视为已受理
+            boolean ok = !id.isEmpty()
+                    && ("succeeded".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status));
+            if (!ok)
+            {
+                log.error("PayMongo refund unexpected response: {}", json);
+            }
+            return ok;
+        }
+        catch (Exception e)
+        {
+            log.error("PayMongo refund error for paymentNo {}: {}", paymentNo, e.getMessage());
+            return false;
+        }
     }
 
     // ------------------------------------------------------------------ helpers

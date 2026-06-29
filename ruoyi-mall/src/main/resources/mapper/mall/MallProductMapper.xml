@@ -120,6 +120,12 @@
           and stock >= #{quantity}
     </update>
 
+    <update id="restoreStock">
+        update mall_product
+        set stock = stock + #{quantity}, update_time = now()
+        where product_id = #{productId}
+    </update>
+
     <update id="deleteProductById" parameterType="Long">
         update mall_product set del_flag = '2' where product_id = #{productId}
     </update>

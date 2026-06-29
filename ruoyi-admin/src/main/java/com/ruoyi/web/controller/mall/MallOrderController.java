@@ -199,4 +199,21 @@ public class MallOrderController extends BaseController
             return AjaxResult.error(e.getMessage());
         }
     }
+
+    /** 整单退款：线上(PayMongo)真退、现金单标记；回滚库存 + 退还所用积分 */
+    @RequiresPermissions("mall:order:edit")
+    @Log(title = "订单管理", businessType = BusinessType.UPDATE)
+    @PostMapping("/refund")
+    @ResponseBody
+    public AjaxResult refund(Long orderId)
+    {
+        try
+        {
+            return AjaxResult.success(orderService.refundOrder(orderId, ShiroUtils.getLoginName()));
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
 }

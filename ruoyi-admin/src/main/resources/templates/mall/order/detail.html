@@ -131,6 +131,9 @@
                 <span th:if="${order.status == '2'}">
                     <a class="btn btn-success" th:onclick="'changeStatus(' + ${order.orderId} + ',\'3\')'"><i class="fa fa-flag"></i> Mark Completed</a>
                 </span>
+                <span th:if="${order.paymentStatus == 'PAID'}">
+                    <a class="btn btn-warning" th:onclick="'refundOrder(' + ${order.orderId} + ')'"><i class="fa fa-undo"></i> Refund</a>
+                </span>
             </div>
 
         </div>
@@ -159,6 +162,30 @@
                     } else {
                         $.modal.alertWarning(res.msg);
                     }
+                }
+            });
+        });
+    }
+
+    function refundOrder(id) {
+        $.modal.confirm('Refund this order in full?<br>This refunds the customer (PayMongo / cash), restocks the items and returns any points used.', function() {
+            $.modal.loading('Processing refund, please wait...');
+            $.ajax({
+                url: prefix + '/refund',
+                type: 'POST',
+                data: {orderId: id},
+                success: function(res) {
+                    $.modal.closeLoading();
+                    if (res.code === 0) {
+                        $.modal.alertSuccess(res.msg || 'Refund successful');
+                        setTimeout(function() { location.reload(); }, 1500);
+                    } else {
+                        $.modal.alertError(res.msg);
+                    }
+                },
+                error: function() {
+                    $.modal.closeLoading();
+                    $.modal.alertError('Refund request failed. Please try again.');
                 }
             });
         });

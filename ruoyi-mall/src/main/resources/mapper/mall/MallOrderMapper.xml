@@ -71,10 +71,10 @@
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
                                payment_method, payment_status, order_source, points_used,
-                               member_coupon_id, coupon_discount, create_time)
+                               member_coupon_id, coupon_discount, delivery_fee, create_time)
         values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
                #{paymentMethod}, 'UNPAID', #{orderSource}, ifnull(#{pointsUsed}, 0),
-               #{memberCouponId}, ifnull(#{couponDiscount}, 0), #{createTime})
+               #{memberCouponId}, ifnull(#{couponDiscount}, 0), ifnull(#{deliveryFee}, 0), #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">

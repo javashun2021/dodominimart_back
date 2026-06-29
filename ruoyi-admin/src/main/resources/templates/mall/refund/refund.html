@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header">
+<style>
+    .info-table th { width:110px;background:#f9f9f9;font-weight:600; }
+    .info-table td, .info-table th { padding:8px 12px; }
+    .proof-img { max-height:120px;border:1px solid #ddd;border-radius:4px;margin:4px 6px 0 0;cursor:pointer; }
+    .reason-cell { max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+</style>
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="refund-form">
+                <div class="select-list">
+                    <ul>
+                        <li>Order No：<input type="text" name="orderNo" placeholder="Search by order no"/></li>
+                        <li>
+                            Status：
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="APPROVED">Approved</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()">
+                                <i class="fa fa-search"></i>&nbsp;Search
+                            </a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()">
+                                <i class="fa fa-refresh"></i>&nbsp;Reset
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document" style="width:600px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-undo"></i> Refund Request</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered info-table">
+                    <tr><th>Order No</th><td id="rv-orderNo"></td><th style="width:90px;">Amount</th><td>₱<span id="rv-amount"></span></td></tr>
+                    <tr><th>Customer</th><td id="rv-member"></td><th>Applied At</th><td id="rv-createTime"></td></tr>
+                    <tr><th>Reason</th><td colspan="3" id="rv-reason"></td></tr>
+                </table>
+
+                <div id="rv-proof-row" style="display:none;">
+                    <p style="font-weight:600;margin-bottom:2px;"><i class="fa fa-image"></i> Proof Photos</p>
+                    <div id="rv-proofs"></div>
+                </div>
+
+                <div id="rv-approved-info" class="alert alert-success" style="display:none;margin-top:14px;margin-bottom:0;">
+                    <i class="fa fa-check-circle"></i> <strong>Approved &amp; refunded</strong>
+                    <span style="color:#666;float:right;font-size:12px;">By：<span id="rv-handleBy1"></span>&nbsp;&nbsp;<span id="rv-handleTime1"></span></span>
+                </div>
+                <div id="rv-rejected-info" class="alert alert-danger" style="display:none;margin-top:14px;margin-bottom:0;">
+                    <i class="fa fa-times-circle"></i> <strong>Rejected</strong>
+                    <span style="color:#666;float:right;font-size:12px;">By：<span id="rv-handleBy2"></span>&nbsp;&nbsp;<span id="rv-handleTime2"></span></span>
+                    <br>Remark：<span id="rv-remark-text"></span>
+                </div>
+
+                <div id="rv-reject-box" style="display:none;margin-top:14px;">
+                    <label style="font-weight:600;"><i class="fa fa-comment"></i> Reject Reason <span class="text-danger">*</span></label>
+                    <textarea id="rv-reject-remark" class="form-control" rows="3" placeholder="Visible to the customer"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <span id="rv-action-btns">
+                    <button type="button" class="btn btn-danger"  onclick="showRejectBox()"><i class="fa fa-times"></i> Reject</button>
+                    <button type="button" class="btn btn-success" onclick="doApprove()"><i class="fa fa-check"></i> Approve &amp; Refund</button>
+                </span>
+                <span id="rv-reject-confirm-btns" style="display:none;">
+                    <button type="button" class="btn btn-default" onclick="cancelRejectBox()"><i class="fa fa-arrow-left"></i> Back</button>
+                    <button type="button" class="btn btn-danger" onclick="doReject()"><i class="fa fa-times"></i> Confirm Reject</button>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/refund";
+    var currentId;
+
+    var statusMap = {
+        'PENDING':  '<span class="badge" style="background:#f0ad4e;">Pending</span>',
+        'APPROVED': '<span class="badge badge-success">Approved</span>',
+        'REJECTED': '<span class="badge badge-danger">Rejected</span>'
+    };
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "Refund Request",
+            columns: [
+                {field: 'requestId',  title: 'ID', width: 60},
+                {field: 'orderNo',    title: 'Order No'},
+                {field: 'memberNick', title: 'Customer', formatter: function(v) { return v || '-'; }},
+                {field: 'amount',     title: 'Amount', formatter: function(v) { return v != null ? '₱' + v : '-'; }},
+                {field: 'reason',     title: 'Reason', formatter: function(v) {
+                    return '<div class="reason-cell" title="' + (v ? $('<div>').text(v).html() : '') + '">' + (v || '-') + '</div>';
+                }},
+                {field: 'status',     title: 'Status', align: 'center', formatter: function(v) { return statusMap[v] || v; }},
+                {field: 'createTime', title: 'Applied At', sortable: true},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    return '<a class="btn btn-info btn-xs" onclick=\'openReview(' + JSON.stringify(row) + ')\'><i class="fa fa-eye"></i> View</a>';
+                }}
+            ]
+        });
+    });
+
+    function openReview(row) {
+        currentId = row.requestId;
+        $('#rv-orderNo').text(row.orderNo || '-');
+        $('#rv-amount').text(row.amount != null ? row.amount : '-');
+        $('#rv-member').text((row.memberNick || '-') + ' (#' + row.memberId + ')');
+        $('#rv-createTime').text(row.createTime || '-');
+        $('#rv-reason').text(row.reason || '-');
+
+        var proofs = $('#rv-proofs').empty();
+        if (row.images) {
+            row.images.split(',').forEach(function(u) {
+                if (u) proofs.append('<img src="' + u + '" class="proof-img" onclick="window.open(this.src)"/>');
+            });
+            $('#rv-proof-row').show();
+        } else {
+            $('#rv-proof-row').hide();
+        }
+
+        $('#rv-approved-info').hide();
+        $('#rv-rejected-info').hide();
+        $('#rv-reject-box').hide();
+        $('#rv-reject-remark').val('');
+        $('#rv-action-btns').hide();
+        $('#rv-reject-confirm-btns').hide();
+
+        if (row.status === 'PENDING') {
+            $('#rv-action-btns').show();
+        } else if (row.status === 'APPROVED') {
+            $('#rv-handleBy1').text(row.handleBy || '-');
+            $('#rv-handleTime1').text(row.handleTime || '-');
+            $('#rv-approved-info').show();
+        } else if (row.status === 'REJECTED') {
+            $('#rv-handleBy2').text(row.handleBy || '-');
+            $('#rv-handleTime2').text(row.handleTime || '-');
+            $('#rv-remark-text').text(row.adminRemark || '');
+            $('#rv-rejected-info').show();
+        }
+        $('#reviewModal').modal('show');
+    }
+
+    function showRejectBox() {
+        $('#rv-reject-box').show();
+        $('#rv-action-btns').hide();
+        $('#rv-reject-confirm-btns').show();
+        $('#rv-reject-remark').focus();
+    }
+    function cancelRejectBox() {
+        $('#rv-reject-box').hide();
+        $('#rv-reject-remark').val('');
+        $('#rv-action-btns').show();
+        $('#rv-reject-confirm-btns').hide();
+    }
+
+    function doApprove() {
+        $.modal.confirm('Approve this refund? The customer will be refunded (PayMongo / cash), the items restocked and used points returned.', function() {
+            $.modal.loading('Processing refund...');
+            $.ajax({
+                url: prefix + '/approve/' + currentId,
+                type: 'POST',
+                success: function(res) {
+                    $.modal.closeLoading();
+                    if (res.code === 0) {
+                        $('#reviewModal').modal('hide');
+                        $.modal.alertSuccess(res.msg || 'Refund approved');
+                        $.table.refresh();
+                    } else {
+                        $.modal.alertError(res.msg);
+                    }
+                },
+                error: function() { $.modal.closeLoading(); $.modal.alertError('Request failed'); }
+            });
+        });
+    }
+
+    function doReject() {
+        var remark = $.trim($('#rv-reject-remark').val());
+        if (!remark) { $.modal.alertWarning('Please enter a reject reason'); return; }
+        $.modal.confirm('Reject this refund request?', function() {
+            $.ajax({
+                url: prefix + '/reject/' + currentId,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ remark: remark }),
+                success: function(res) {
+                    if (res.code === 0) {
+                        $('#reviewModal').modal('hide');
+                        $.modal.alertSuccess(res.msg || 'Rejected');
+                        $.table.refresh();
+                    } else {
+                        $.modal.alertWarning(res.msg);
+                    }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

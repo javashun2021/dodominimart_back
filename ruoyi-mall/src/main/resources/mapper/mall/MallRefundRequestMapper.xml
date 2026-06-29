@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallRefundRequestMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallRefundRequest" id="RefundRequestResult">
+        <id     property="requestId"   column="request_id"   />
+        <result property="orderId"     column="order_id"     />
+        <result property="memberId"    column="member_id"    />
+        <result property="reason"      column="reason"       />
+        <result property="images"      column="images"       />
+        <result property="status"      column="status"       />
+        <result property="adminRemark" column="admin_remark" />
+        <result property="handleBy"    column="handle_by"    />
+        <result property="handleTime"  column="handle_time"  />
+        <result property="createTime"  column="create_time"  />
+        <!-- 连表展示字段 -->
+        <result property="orderNo"     column="order_no"     />
+        <result property="amount"      column="total_amount" />
+        <result property="memberNick"  column="member_nick"  />
+    </resultMap>
+
+    <insert id="insertRefundRequest" parameterType="com.ruoyi.mall.domain.MallRefundRequest"
+            useGeneratedKeys="true" keyProperty="requestId">
+        insert into mall_refund_request(order_id, member_id, reason, images, status, create_time)
+        values(#{orderId}, #{memberId}, #{reason}, #{images}, #{status}, #{createTime})
+    </insert>
+
+    <select id="selectById" parameterType="Long" resultMap="RefundRequestResult">
+        select r.*, o.order_no, o.total_amount, m.nick_name as member_nick
+        from mall_refund_request r
+        left join mall_order  o on o.order_id  = r.order_id
+        left join mall_member m on m.member_id = r.member_id
+        where r.request_id = #{requestId}
+    </select>
+
+    <select id="selectLatestByOrderId" parameterType="Long" resultMap="RefundRequestResult">
+        select * from mall_refund_request
+        where order_id = #{orderId}
+        order by create_time desc, request_id desc
+        limit 1
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.mall.domain.MallRefundRequest" resultMap="RefundRequestResult">
+        select r.*, o.order_no, o.total_amount, m.nick_name as member_nick
+        from mall_refund_request r
+        left join mall_order  o on o.order_id  = r.order_id
+        left join mall_member m on m.member_id = r.member_id
+        <where>
+            <if test="status   != null and status != ''">AND r.status = #{status}</if>
+            <if test="orderNo  != null and orderNo != ''">AND o.order_no like concat('%', #{orderNo}, '%')</if>
+            <if test="memberId != null">AND r.member_id = #{memberId}</if>
+        </where>
+        order by r.create_time desc, r.request_id desc
+    </select>
+
+    <update id="updateHandle" parameterType="com.ruoyi.mall.domain.MallRefundRequest">
+        update mall_refund_request
+        set status = #{status},
+            admin_remark = #{adminRemark},
+            handle_by = #{handleBy},
+            handle_time = #{handleTime}
+        where request_id = #{requestId}
+    </update>
+
+</mapper>

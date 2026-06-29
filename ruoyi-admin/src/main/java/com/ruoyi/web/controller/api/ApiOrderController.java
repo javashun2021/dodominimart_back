@@ -20,6 +20,7 @@ import com.ruoyi.mall.domain.MallOrder;
 import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallRunnerRating;
 import com.ruoyi.mall.domain.MallRunnerApplication;
+import com.ruoyi.mall.domain.MallRefundRequest;
 import com.ruoyi.mall.service.IMallAddressService;
 import com.ruoyi.mall.service.IMallMemberService;
 import com.ruoyi.mall.service.IMallOrderService;
@@ -132,9 +133,21 @@ public class ApiOrderController extends BaseApiController
             try { memberCouponId = Long.parseLong(couponObj.toString()); } catch (NumberFormatException ignored) {}
         }
 
+        // 配送费（顾客侧）取系统参数 app.delivery.fee，下单时固化进订单；到店/免配送在 service 里归 0。
+        java.math.BigDecimal deliveryFee = java.math.BigDecimal.ZERO;
         try
         {
-            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod, pointsToUse, memberCouponId);
+            String df = configService.selectConfigByKey("app.delivery.fee");
+            if (df != null && !df.trim().isEmpty())
+            {
+                deliveryFee = new java.math.BigDecimal(df.trim());
+            }
+        }
+        catch (Exception ignored) {}
+
+        try
+        {
+            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod, pointsToUse, memberCouponId, deliveryFee);
 
             // Telegram 后台提醒：新订单
             try
@@ -209,6 +222,26 @@ public class ApiOrderController extends BaseApiController
             }
         }
         catch (Exception ignored) {}
+
+        // 退款申请（售后）状态 + 是否可申请（已完成 + 已付 + 3天内 + 无进行中申请）
+        try
+        {
+            MallRefundRequest rr = orderService.getLatestRefundRequest(id);
+            boolean activeReq = false;
+            if (rr != null)
+            {
+                order.setRefundStatus(rr.getStatus());
+                order.setRefundRemark(rr.getAdminRemark());
+                activeReq = "PENDING".equals(rr.getStatus()) || "APPROVED".equals(rr.getStatus());
+            }
+            boolean within = order.getUpdateTime() != null
+                    && System.currentTimeMillis() - order.getUpdateTime().getTime() <= 3L * 24 * 60 * 60 * 1000;
+            order.setCanRefund("3".equals(order.getStatus())
+                    && "PAID".equalsIgnoreCase(order.getPaymentStatus())
+                    && within && !activeReq);
+        }
+        catch (Exception ignored) {}
+
         return AjaxResult.success("ok").put("data", order);
     }
 
@@ -263,6 +296,55 @@ public class ApiOrderController extends BaseApiController
         {
             orderService.cancelOrder(id, memberId, reason);
             return AjaxResult.success("Order cancelled");
+        }
+        catch (RuntimeException e)
+        {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 完成后退款申请（售后）
+     * Body: { "reason": "...", "images": ["url1","url2"] }
+     */
+    @PostMapping("/{id}/refund-request")
+    public AjaxResult refundRequest(@PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body,
+            HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        String reason = (body != null && body.get("reason") != null) ? body.get("reason").toString() : "";
+        String images = null;
+        if (body != null && body.get("images") instanceof List)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (Object o : (List<?>) body.get("images"))
+            {
+                if (o != null && !o.toString().isEmpty())
+                {
+                    if (sb.length() > 0) sb.append(',');
+                    sb.append(o.toString());
+                }
+            }
+            images = sb.length() > 0 ? sb.toString() : null;
+        }
+        else if (body != null && body.get("images") != null)
+        {
+            String s = body.get("images").toString();
+            images = s.isEmpty() ? null : s;
+        }
+        try
+        {
+            MallRefundRequest req = orderService.createRefundRequest(id, memberId, reason, images);
+            try
+            {
+                MallOrder order = orderService.selectOrderById(id);
+                telegramNotifyService.notify("💸 New Refund Request\n"
+                        + "Order: " + (order != null ? order.getOrderNo() : id) + "\n"
+                        + "Reason: " + reason);
+            }
+            catch (Exception ignored) {}
+            return AjaxResult.success("Refund request submitted").put("status", req.getStatus());
         }
         catch (RuntimeException e)
         {

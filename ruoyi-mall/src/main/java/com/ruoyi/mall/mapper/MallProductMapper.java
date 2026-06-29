@@ -17,6 +17,10 @@ public interface MallProductMapper
     int deductStock(@org.apache.ibatis.annotations.Param("productId") Long productId,
                     @org.apache.ibatis.annotations.Param("quantity")  int quantity);
 
+    /** 退款回补库存：stock = stock + quantity（取消/退款时把下单扣掉的库存加回） */
+    int restoreStock(@org.apache.ibatis.annotations.Param("productId") Long productId,
+                     @org.apache.ibatis.annotations.Param("quantity")  int quantity);
+
     int deleteProductById(Long productId);
 
     int deleteProductByIds(Long[] productIds);

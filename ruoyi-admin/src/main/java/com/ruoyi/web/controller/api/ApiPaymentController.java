@@ -74,14 +74,18 @@ public class ApiPaymentController extends BaseApiController
             return AjaxResult.error("Order already paid");
         }
 
+        // 应付 = 商品额(totalAmount) + 配送费(下单已固化在订单上)
+        BigDecimal deliveryFee = order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO;
+        BigDecimal payable = order.getTotalAmount().add(deliveryFee);
+
         String paymentUrl = gcashService.createPayment(order.getOrderId(),
-                order.getTotalAmount(), order.getOrderNo());
+                payable, order.getOrderNo());
 
         // 记录支付流水
         MallPaymentRecord record = new MallPaymentRecord();
         record.setOrderId(order.getOrderId());
         record.setMemberId(memberId);
-        record.setAmount(order.getTotalAmount());
+        record.setAmount(payable);
         record.setStatus("PENDING");
         record.setCreateTime(new Date());
         record.setUpdateTime(new Date());
@@ -90,7 +94,7 @@ public class ApiPaymentController extends BaseApiController
         return AjaxResult.success("ok")
                 .put("paymentUrl", paymentUrl)
                 .put("orderId", order.getOrderId())
-                .put("amount", order.getTotalAmount());
+                .put("amount", payable);
     }
 
     /**
@@ -125,20 +129,44 @@ public class ApiPaymentController extends BaseApiController
         String status     = parsed.get("status");
         String paymentNo  = parsed.get("paymentNo");
 
-        if ("SUCCESS".equals(status))
+        if (!"SUCCESS".equals(status))
         {
-            try
-            {
-                orderService.markOrderPaid(orderNo, paymentNo, null);
-            }
-            catch (Exception e)
-            {
-                log.error("markOrderPaid failed for orderNo={}: {}", orderNo, e.getMessage());
-            }
+            log.info("PayMongo payment not success for orderNo={}", orderNo);
+            return "OK";
         }
-        else
+
+        // 不信任 webhook 报文：反查 PayMongo 拿「权威」状态 + 实付金额
+        Map<String, String> verified = gcashService.verifyPayment(paymentNo);
+        if (verified == null || !"PAID".equals(verified.get("status")))
         {
-            log.info("GCash payment failed for orderNo={}", orderNo);
+            log.warn("PayMongo verifyPayment not paid, refuse to mark. orderNo={}, paymentNo={}", orderNo, paymentNo);
+            return "OK";
+        }
+
+        BigDecimal paidAmount;
+        try
+        {
+            long centavos = Long.parseLong(verified.get("amount"));
+            if (centavos < 0)
+            {
+                throw new NumberFormatException("negative amount");
+            }
+            paidAmount = new BigDecimal(centavos).movePointLeft(2); // 分 -> 元
+        }
+        catch (Exception e)
+        {
+            log.error("PayMongo verify amount invalid for orderNo={}: {}", orderNo, verified.get("amount"));
+            return "OK";
+        }
+
+        try
+        {
+            // markOrderPaid 内部再做金额比对（paidAmount != 订单应付则抛错不置 PAID）
+            orderService.markOrderPaid(orderNo, verified.get("paymentNo"), paidAmount);
+        }
+        catch (Exception e)
+        {
+            log.error("markOrderPaid failed for orderNo={}: {}", orderNo, e.getMessage());
         }
         return "OK";
     }

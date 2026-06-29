@@ -23,7 +23,7 @@ public interface IMallOrderService
      * @param pointsToUse    本单使用积分数（0 = 不使用），100分=₱10
      * @param memberCouponId 本单使用的优惠券实例 ID，null = 不使用
      */
-    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId);
+    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId, java.math.BigDecimal deliveryFee);
 
     /** 变更订单状态（Admin 使用） */
     int updateOrderStatus(Long orderId, String status, String updateBy);
@@ -33,6 +33,29 @@ public interface IMallOrderService
 
     /** 标记订单支付成功（GCash 回调时调用） */
     void markOrderPaid(String orderNo, String paymentNo, BigDecimal amount);
+
+    /**
+     * 后台整单退款：线上(PayMongo)走 API 真退、现金单(COD/到店)仅标记；
+     * 同时回滚库存 + 退还下单时抵扣的积分，并置订单为已退款/已取消。
+     * @return 结果提示文案
+     */
+    String refundOrder(Long orderId, String operator);
+
+    // ── 完成后退款申请（售后）──
+    /** 顾客对已完成订单发起退款申请（理由必填，images 可选，逗号分隔 URL） */
+    com.ruoyi.mall.domain.MallRefundRequest createRefundRequest(Long orderId, Long memberId, String reason, String images);
+
+    /** 取某订单最新一条退款申请（app 详情展示 / 防重复） */
+    com.ruoyi.mall.domain.MallRefundRequest getLatestRefundRequest(Long orderId);
+
+    /** 后台退款申请列表 */
+    java.util.List<com.ruoyi.mall.domain.MallRefundRequest> listRefundRequests(com.ruoyi.mall.domain.MallRefundRequest query);
+
+    /** 后台通过退款申请 → 触发真退款 */
+    void approveRefundRequest(Long requestId, String operator);
+
+    /** 后台驳回退款申请（remark 给顾客看） */
+    void rejectRefundRequest(Long requestId, String operator, String remark);
 
     /**
      * 发放订单完成奖励：顾客 1分/₱1 + 被邀请人首单完成给邀请人 200 积分。

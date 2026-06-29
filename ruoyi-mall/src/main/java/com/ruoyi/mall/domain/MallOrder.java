@@ -125,6 +125,23 @@ public class MallOrder implements Serializable
     public Date getUpdateTime() { return updateTime; }
     public void setUpdateTime(Date updateTime) { this.updateTime = updateTime; }
 
+    // —— 退款申请（售后）展示用，非本表列，仅在订单详情接口里临时填充 ——
+    /** 最新退款申请状态：PENDING / APPROVED / REJECTED；无申请则 null */
+    private String refundStatus;
+    /** 审核备注（驳回原因等） */
+    private String refundRemark;
+    /** 是否可发起退款申请（已完成 + 已付 + 3天内 + 无进行中申请） */
+    private Boolean canRefund;
+
+    public String getRefundStatus() { return refundStatus; }
+    public void setRefundStatus(String refundStatus) { this.refundStatus = refundStatus; }
+
+    public String getRefundRemark() { return refundRemark; }
+    public void setRefundRemark(String refundRemark) { this.refundRemark = refundRemark; }
+
+    public Boolean getCanRefund() { return canRefund; }
+    public void setCanRefund(Boolean canRefund) { this.canRefund = canRefund; }
+
     public Long   getRunnerMemberId()        { return runnerMemberId; }
     public void   setRunnerMemberId(Long v)  { this.runnerMemberId = v; }
 

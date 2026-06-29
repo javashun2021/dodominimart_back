@@ -21,9 +21,16 @@ public interface IGCashService
 
     /**
      * 从回调数据中提取订单号和状态
-     * @return map 含 orderNo、status（SUCCESS/FAILED）
+     * @return map 含 orderNo、status（SUCCESS/FAILED）、paymentNo
      */
     Map<String, String> parseCallback(String rawBody);
+
+    /**
+     * 向支付网关反查该支付的「权威」状态与金额（不信任 webhook 报文本身）。
+     * @param paymentId 网关支付号（PayMongo 的 pay_xxx）
+     * @return map：status=PAID/FAILED、amount=实付金额(分)、paymentNo=权威支付号；查不到返回 null
+     */
+    Map<String, String> verifyPayment(String paymentId);
 
     /**
      * 发起退款
