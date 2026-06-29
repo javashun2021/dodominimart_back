@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.base.AjaxResult;
+import com.ruoyi.framework.mail.MailService;
 import com.ruoyi.mall.domain.MallBetaTester;
 import com.ruoyi.mall.mapper.MallBetaTesterMapper;
 import com.ruoyi.mall.service.TelegramNotifyService;
@@ -35,6 +36,9 @@ public class ApiBetaController
 
     @Autowired
     private TelegramNotifyService telegram;
+
+    @Autowired
+    private MailService mailService;
 
     /** 审批链接签名盐，可用环境变量 MALL_BETA_APPROVE_SECRET 覆盖 */
     @Value("${mall.beta.approve-secret:dodo-beta-7Qk2pX}")
@@ -118,21 +122,44 @@ public class ApiBetaController
                     "No application found for <b>" + esc(email) + "</b>.");
         }
 
+        boolean justApproved = false;
         if (!MallBetaTester.STATUS_APPROVED.equals(t.getStatus()))
         {
             MallBetaTester upd = new MallBetaTester();
             upd.setEmail(email);
             upd.setApproveTime(new Date());
             betaMapper.approveByEmail(upd);
+            justApproved = true;
+        }
+
+        // 仅在「本次刚审批通过」时给会员发一封 Google Play 内测邀请邮件（与 Batch Invite 同一封）。
+        // 重复点审批链接不会重复发邮件；邮件失败不影响审批结果（已落库）。
+        boolean mailSent = false;
+        if (justApproved)
+        {
+            try
+            {
+                mailService.sendTesterInvitation(email);
+                mailSent = true;
+            }
+            catch (Exception ex)
+            {
+                // 吞掉异常：审批已成功，仅邮件没发出去
+            }
 
             telegram.notify("✅ Added as tester\n"
                     + "Email: " + email + "\n"
+                    + (mailSent ? "Invitation email sent ✉️\n" : "⚠️ Invitation email FAILED to send\n")
                     + "This member can now download on Google Play.");
         }
 
         return page("Approved ✓", "#1a9d52",
                 "<b>" + esc(email) + "</b> has been approved as a tester.<br>"
-                        + "They can now download the app on Google Play.");
+                        + (justApproved
+                            ? (mailSent
+                                ? "An invitation email has been sent to them."
+                                : "Note: the invitation email could not be sent — please invite manually.")
+                            : "They can now download the app on Google Play."));
     }
 
     // --------------------------------------------------------------- helpers
