@@ -171,8 +171,8 @@ mall:
     # 下面 ${ENV:默认值} 写法：设了环境变量则用环境变量，否则用冒号后的默认值。
     # 现在默认值放的是「测试」key（test 模式不涉及真钱）。
     # ⚠️ 上线换 sk_live 时，不要把 live key 写死在这里提交——改回环境变量或外置 config/。
-    secret-key: ${PAYMONGO_SECRET_KEY:sk_live_BkeZ6vffyVxXceC7U3iKQ97d}        # sk_test/sk_live（HTTP Basic 用户名）
-    webhook-secret: ${PAYMONGO_WEBHOOK_SECRET:whsk_BNN5qZj1fpUZEYG5SQPU3hjT}  # whsk_xxx（注册 webhook 时拿到，用于验签）
+    secret-key: ${PAYMONGO_SECRET_KEY}        # sk_test/sk_live（HTTP Basic 用户名）
+    webhook-secret: ${PAYMONGO_WEBHOOK_SECRET}  # whsk_xxx（注册 webhook 时拿到，用于验签）
     live: ${PAYMONGO_LIVE:false}                 # true=比对签名头里的 li, false=比对 te
     # 浏览器付完后的回跳落地页（真正置 PAID 靠 webhook，这两个页只是落地）
     success-url: ${PAYMONGO_SUCCESS_URL:https://dodominimart.com/pay-success.html}
