@@ -1,7 +1,12 @@
 package com.ruoyi.mall.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,149 +16,270 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ruoyi.mall.service.IGCashService;
 
 /**
- * GCash for Business 支付服务
+ * 在线支付服务 —— 走 PayMongo（菲律宾），承载 App 里「GCash」在线支付项。
  *
- * 文档参考：https://developers.gcash.com.ph
- * 需在 application.yml 配置 mall.gcash.* 相关参数
+ * 说明：菲律宾没有面向普通商户的 GCash 直连 API，PayMongo 才是真实通道；
+ * 这里用 PayMongo 的 Checkout Session 模型：创建会话拿 checkout_url 让用户去付，
+ * 付完 PayMongo 发带签名的 webhook 到 /api/v1/payment/callback。
+ *
+ * 接口名仍叫 IGCashService 只为最小化改动（控制器零改动）；实质是 PayMongo。
+ * 文档：https://developers.paymongo.com
+ * 配置见 application.yml 的 mall.paymongo.*
  */
 @Service
 public class GCashServiceImpl implements IGCashService
 {
     private static final Logger log = LoggerFactory.getLogger(GCashServiceImpl.class);
 
-    @Value("${mall.gcash.api-base-url:https://api.gcash.com/}")
-    private String apiBaseUrl;
+    private static final String CHECKOUT_SESSIONS_URL = "https://api.paymongo.com/v1/checkout_sessions";
 
-    @Value("${mall.gcash.api-key:}")
-    private String apiKey;
+    /** 关心的支付成功事件 */
+    private static final String EVENT_CHECKOUT_PAID = "checkout_session.payment.paid";
+    private static final String EVENT_PAYMENT_PAID  = "payment.paid";
 
-    @Value("${mall.gcash.api-secret:}")
-    private String apiSecret;
+    @Value("${mall.paymongo.secret-key:}")
+    private String secretKey;
 
-    @Value("${mall.gcash.merchant-id:}")
-    private String merchantId;
+    @Value("${mall.paymongo.webhook-secret:}")
+    private String webhookSecret;
 
-    @Value("${mall.gcash.callback-url:}")
-    private String callbackUrl;
+    /** true=生产(比对签名头里的 li)，false=测试(比对 te) */
+    @Value("${mall.paymongo.live:false}")
+    private boolean live;
+
+    @Value("${mall.paymongo.success-url:https://dodominimart.com/pay-success.html}")
+    private String successUrl;
+
+    @Value("${mall.paymongo.cancel-url:https://dodominimart.com/pay-cancel.html}")
+    private String cancelUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // ------------------------------------------------------------ createPayment
 
     @Override
     public String createPayment(Long orderId, BigDecimal amount, String orderNo)
     {
         try
         {
-            HttpHeaders headers = buildHeaders();
+            // PayMongo 金额单位是「分」(centavos) 的整数：₱100.00 -> 10000
+            long centavos = amount.movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact();
+
+            Map<String, Object> lineItem = new HashMap<>();
+            lineItem.put("currency", "PHP");
+            lineItem.put("amount", centavos);
+            lineItem.put("name", "Order " + orderNo);
+            lineItem.put("quantity", 1);
+
+            List<Object> lineItems = new ArrayList<>();
+            lineItems.add(lineItem);
+
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put("line_items", lineItems);
+            attributes.put("payment_method_types", new String[] { "gcash" });
+            attributes.put("reference_number", orderNo);
+            attributes.put("description", "DodoMiniMart Order " + orderNo);
+            attributes.put("success_url", appendOrder(successUrl, orderNo));
+            attributes.put("cancel_url", appendOrder(cancelUrl, orderNo));
+            attributes.put("send_email_receipt", false);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("attributes", attributes);
             Map<String, Object> body = new HashMap<>();
-            body.put("merchantId", merchantId);
-            body.put("referenceId", orderNo);
-            body.put("amount", amount);
-            body.put("currency", "PHP");
-            body.put("redirectUrl", callbackUrl);
-            body.put("webhookUrl", callbackUrl);
+            body.put("data", data);
 
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.postForObject(
-                    apiBaseUrl + "v1/payments/create", request, Map.class);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, buildHeaders());
+            String json = restTemplate.postForObject(CHECKOUT_SESSIONS_URL, request, String.class);
 
-            if (response != null && response.containsKey("paymentUrl"))
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode urlNode = root.path("data").path("attributes").path("checkout_url");
+            if (urlNode.isMissingNode() || urlNode.asText().isEmpty())
             {
-                return (String) response.get("paymentUrl");
+                log.error("PayMongo createPayment unexpected response: {}", json);
+                throw new RuntimeException("Failed to create PayMongo checkout session");
             }
-            log.error("GCash createPayment unexpected response: {}", response);
-            throw new RuntimeException("Failed to create GCash payment");
+            return urlNode.asText();
         }
         catch (Exception e)
         {
-            log.error("GCash createPayment error for order {}: {}", orderId, e.getMessage());
-            throw new RuntimeException("GCash payment unavailable: " + e.getMessage());
+            log.error("PayMongo createPayment error for order {}: {}", orderId, e.getMessage());
+            throw new RuntimeException("Online payment unavailable: " + e.getMessage());
         }
     }
+
+    // ----------------------------------------------------------- verifyCallback
 
     @Override
     public boolean verifyCallback(Map<String, String> headers, String rawBody)
     {
-        // GCash 回调签名验证：HMAC-SHA256(rawBody, apiSecret)
-        // 实际签名算法以 GCash 官方文档为准
-        String signature = headers.get("X-GCash-Signature");
-        if (signature == null || signature.isEmpty())
+        // PayMongo 验签：头 Paymongo-Signature: t=<ts>,te=<test签名>,li=<live签名>
+        // 期望签名 = HMAC_SHA256(key=webhookSecret, msg = "<ts>.<rawBody>") 的 hex
+        String sigHeader = headerIgnoreCase(headers, "Paymongo-Signature");
+        if (sigHeader == null || sigHeader.isEmpty())
         {
+            log.warn("PayMongo callback missing Paymongo-Signature header");
             return false;
         }
-        try
+        if (webhookSecret == null || webhookSecret.isEmpty())
         {
-            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
-            mac.init(new javax.crypto.spec.SecretKeySpec(apiSecret.getBytes(), "HmacSHA256"));
-            byte[] hash = mac.doFinal(rawBody.getBytes());
-            StringBuilder hex = new StringBuilder();
-            for (byte b : hash) { hex.append(String.format("%02x", b)); }
-            return hex.toString().equals(signature);
-        }
-        catch (Exception e)
-        {
-            log.error("GCash signature verification error", e);
+            log.error("PayMongo webhook-secret not configured (mall.paymongo.webhook-secret)");
             return false;
         }
+
+        String t = null, te = null, li = null;
+        for (String part : sigHeader.split(","))
+        {
+            String[] kv = part.trim().split("=", 2);
+            if (kv.length != 2) continue;
+            switch (kv[0].trim())
+            {
+                case "t":  t  = kv[1].trim(); break;
+                case "te": te = kv[1].trim(); break;
+                case "li": li = kv[1].trim(); break;
+                default: break;
+            }
+        }
+
+        String provided = live ? li : te;
+        if (t == null || provided == null)
+        {
+            log.warn("PayMongo signature header malformed: {}", sigHeader);
+            return false;
+        }
+
+        String expected = hmacSha256Hex(webhookSecret, t + "." + rawBody);
+        boolean ok = expected != null && constantTimeEquals(expected, provided);
+        if (!ok)
+        {
+            log.warn("PayMongo signature mismatch (live={})", live);
+        }
+        return ok;
     }
 
+    // ------------------------------------------------------------ parseCallback
+
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, String> parseCallback(String rawBody)
     {
         Map<String, String> result = new HashMap<>();
+        result.put("status", "FAILED");
         try
         {
-            Map<String, Object> data = objectMapper.readValue(rawBody, Map.class);
-            result.put("orderNo", String.valueOf(data.getOrDefault("referenceId", "")));
-            Object status = data.get("status");
-            result.put("status", "SUCCESS".equalsIgnoreCase(String.valueOf(status)) ? "SUCCESS" : "FAILED");
-            result.put("paymentNo", String.valueOf(data.getOrDefault("transactionId", "")));
+            JsonNode root = objectMapper.readTree(rawBody);
+            // 事件信封：data.attributes.type = 事件名；data.attributes.data = 资源对象
+            JsonNode eventAttr = root.path("data").path("attributes");
+            String type = eventAttr.path("type").asText("");
+
+            JsonNode resourceAttr = eventAttr.path("data").path("attributes");
+
+            // orderNo 来自我们传的 reference_number
+            String orderNo = resourceAttr.path("reference_number").asText("");
+            result.put("orderNo", orderNo);
+
+            // paymentNo 取 payments[0].id（pay_xxx）
+            JsonNode payments = resourceAttr.path("payments");
+            String paymentNo = "";
+            if (payments.isArray() && payments.size() > 0)
+            {
+                paymentNo = payments.get(0).path("id").asText("");
+            }
+            // payment.paid 事件的资源本身就是 payment，其 id 在 data.attributes.data.id
+            if (paymentNo.isEmpty())
+            {
+                paymentNo = eventAttr.path("data").path("id").asText("");
+            }
+            result.put("paymentNo", paymentNo);
+
+            if (EVENT_CHECKOUT_PAID.equals(type) || EVENT_PAYMENT_PAID.equals(type))
+            {
+                result.put("status", "SUCCESS");
+            }
         }
         catch (Exception e)
         {
-            log.error("GCash parseCallback error: {}", e.getMessage());
-            result.put("status", "FAILED");
+            log.error("PayMongo parseCallback error: {}", e.getMessage());
         }
         return result;
     }
 
+    // ------------------------------------------------------------------- refund
+
     @Override
     public boolean refund(String paymentNo, BigDecimal amount)
     {
-        try
-        {
-            HttpHeaders headers = buildHeaders();
-            Map<String, Object> body = new HashMap<>();
-            body.put("transactionId", paymentNo);
-            body.put("amount", amount);
-            body.put("reason", "Order cancelled");
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.postForObject(
-                    apiBaseUrl + "v1/refunds", request, Map.class);
-
-            return response != null && "SUCCESS".equals(response.get("status"));
-        }
-        catch (Exception e)
-        {
-            log.error("GCash refund error for paymentNo {}: {}", paymentNo, e.getMessage());
-            return false;
-        }
+        // 本轮不自动化退款：菲律宾退款先在 PayMongo 后台手动处理。
+        log.warn("PayMongo refund not implemented; refund manually in dashboard. paymentNo={}, amount={}",
+                paymentNo, amount);
+        return false;
     }
+
+    // ------------------------------------------------------------------ helpers
 
     private HttpHeaders buildHeaders()
     {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-GCash-Api-Key", apiKey);
-        headers.set("X-GCash-Merchant-Id", merchantId);
+        // HTTP Basic：用户名=secretKey，密码空 -> base64("sk_xxx:")
+        String token = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
+        headers.set("Authorization", "Basic " + token);
         return headers;
+    }
+
+    private static String appendOrder(String url, String orderNo)
+    {
+        if (url == null || url.isEmpty()) return url;
+        String sep = url.contains("?") ? "&" : "?";
+        return url + sep + "order=" + orderNo;
+    }
+
+    private static String headerIgnoreCase(Map<String, String> headers, String key)
+    {
+        if (headers == null) return null;
+        String v = headers.get(key);
+        if (v != null) return v;
+        for (Map.Entry<String, String> e : headers.entrySet())
+        {
+            if (e.getKey() != null && e.getKey().equalsIgnoreCase(key))
+            {
+                return e.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static String hmacSha256Hex(String secret, String message)
+    {
+        try
+        {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] hash = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(hash.length * 2);
+            for (byte b : hash) { hex.append(String.format("%02x", b)); }
+            return hex.toString();
+        }
+        catch (Exception e)
+        {
+            log.error("PayMongo HMAC error", e);
+            return null;
+        }
+    }
+
+    /** 常量时间比较，避免计时攻击 */
+    private static boolean constantTimeEquals(String a, String b)
+    {
+        if (a == null || b == null || a.length() != b.length()) return false;
+        int diff = 0;
+        for (int i = 0; i < a.length(); i++)
+        {
+            diff |= a.charAt(i) ^ b.charAt(i);
+        }
+        return diff == 0;
     }
 }
