@@ -74,7 +74,8 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         {
             return java.util.Collections.emptyList();
         }
-        return enrichOrders(orderMapper.selectAvailableForRunner());
+        // 模型C：骑手已绑定门店则只看本店可接单；未绑定(null)看全部，兼容存量/单店
+        return enrichOrders(orderMapper.selectAvailableForRunner(app.getStoreId()));
     }
 
     @Override
@@ -92,6 +93,15 @@ public class MallRunnerServiceImpl implements IMallRunnerService
             throw new RuntimeException("Order already taken by another runner");
         if (memberId.equals(order.getMemberId()))
             throw new RuntimeException("Cannot deliver your own order");
+
+        // 模型C 跨店防护：骑手已绑定门店时，只能接本店订单（防止直接猜 orderId 抢别店的单）
+        MallRunnerApplication runnerApp = appMapper.selectByMemberId(memberId);
+        if (runnerApp != null && runnerApp.getStoreId() != null
+                && order.getStoreId() != null
+                && !runnerApp.getStoreId().equals(order.getStoreId()))
+        {
+            throw new RuntimeException("This order belongs to another store");
+        }
 
         order.setRunnerMemberId(memberId);
         order.setRunnerAcceptedTime(new Date());
@@ -284,7 +294,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     }
 
     @Override
-    public void approveApplication(Long appId, String reviewer)
+    public void approveApplication(Long appId, String reviewer, Long storeId)
     {
         MallRunnerApplication app = new MallRunnerApplication();
         app.setAppId(appId);
@@ -293,6 +303,11 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         app.setReviewTime(new Date());
         app.setReviewer(reviewer);
         appMapper.updateStatus(app);
+        // 指派归属门店（模型C）：空则不绑定门店（兼容单店/存量骑手，可接全部）
+        if (storeId != null)
+        {
+            appMapper.updateStore(appId, storeId);
+        }
     }
 
     @Override

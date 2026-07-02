@@ -108,7 +108,7 @@ public class MallOrderServiceImpl implements IMallOrderService
 
     @Override
     @Transactional
-    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId, BigDecimal deliveryFee)
+    public MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId, BigDecimal deliveryFee, Long storeId)
     {
         boolean isStore = "STORE".equalsIgnoreCase(paymentMethod);
 
@@ -236,6 +236,8 @@ public class MallOrderServiceImpl implements IMallOrderService
         // 这样「应付 = totalAmount + deliveryFee」自洽，GCash 收款/验签/退款都按此口径。
         order.setDeliveryFee((isStore || couponFreeDelivery || deliveryFee == null)
                 ? BigDecimal.ZERO : deliveryFee);
+        // 归属门店（模型C）：下单固化，决定骑手抢单池/发货网点
+        order.setStoreId(storeId);
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
 
@@ -875,7 +877,8 @@ public class MallOrderServiceImpl implements IMallOrderService
             String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId)
     {
         // 走到店分支：免地址、payment_method=STORE、order_source=IN_STORE、自动算 total
-        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId,BigDecimal.ZERO);
+        // TODO 多店：POS 到店单门店归属待收银员绑定门店后传入；到店单不进骑手池，此处暂传 null。
+        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId, BigDecimal.ZERO, null);
 
         BigDecimal total = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
         if (cashReceived == null || cashReceived.compareTo(total) < 0)

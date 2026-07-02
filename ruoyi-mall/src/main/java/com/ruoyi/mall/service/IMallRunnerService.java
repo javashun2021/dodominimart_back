@@ -48,7 +48,8 @@ public interface IMallRunnerService
 
     List<MallRunnerApplication> listApplications(MallRunnerApplication query);
 
-    void approveApplication(Long appId, String reviewer);
+    /** 审核通过，并指派归属门店（storeId 可空，空则不绑定门店=可接全部门店订单） */
+    void approveApplication(Long appId, String reviewer, Long storeId);
 
     void rejectApplication(Long appId, String reviewer, String rejectReason);
 

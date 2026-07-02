@@ -65,6 +65,11 @@ public class MallOrder implements Serializable
     /** POS 开单收银员 memberId */
     private Long cashierId;
 
+    /** 归属门店ID（模型C：下单时固化，决定骑手抢单池/发货网点） */
+    private Long storeId;
+    /** 非DB：门店名称（列表/详情展示用） */
+    private String storeName;
+
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
     /** 非DB：接单 runner 的手机号（详情接口填充） */
@@ -186,4 +191,10 @@ public class MallOrder implements Serializable
 
     public Long getCashierId()         { return cashierId; }
     public void setCashierId(Long v)   { this.cashierId = v; }
+
+    public Long   getStoreId()         { return storeId; }
+    public void   setStoreId(Long v)   { this.storeId = v; }
+
+    public String getStoreName()         { return storeName; }
+    public void   setStoreName(String v) { this.storeName = v; }
 }

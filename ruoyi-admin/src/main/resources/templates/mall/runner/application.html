@@ -97,6 +97,14 @@
                     <br>Reject Reason：<span id="rv-reject-reason-text"></span>
                 </div>
 
+                <div id="rv-store-box" style="display:none;margin-top:14px;">
+                    <label style="font-weight:600;"><i class="fa fa-map-marker"></i> Assign Store（骑手归属门店）</label>
+                    <select id="rv-store" class="form-control">
+                        <option value="">— No store (can accept all stores' orders) —</option>
+                    </select>
+                    <span class="help-block" style="margin-bottom:0;">决定该骑手抢单池：选定后只能接该门店订单；留空=可接全部门店订单。</span>
+                </div>
+
                 <div id="rv-reject-box" style="display:none;margin-top:14px;">
                     <label style="font-weight:600;"><i class="fa fa-comment"></i> Reject Reason <span class="text-danger">*</span></label>
                     <textarea id="rv-reject-reason" class="form-control" rows="3"
@@ -137,7 +145,27 @@
         '2': '<span class="badge badge-danger">Rejected</span>'
     };
 
+    var storeOptions = '';
+
+    function loadStores() {
+        $.ajax({
+            url: prefix + '/stores',
+            type: 'GET',
+            success: function(res) {
+                if (res.code === 0 && res.data) {
+                    var opts = '<option value="">— No store (can accept all stores\' orders) —</option>';
+                    $.each(res.data, function(i, s) {
+                        opts += '<option value="' + s.storeId + '">' + s.name + '</option>';
+                    });
+                    storeOptions = opts;
+                    $('#rv-store').html(opts);
+                }
+            }
+        });
+    }
+
     $(function() {
+        loadStores();
         $.table.init({
             url: prefix + "/list",
             modalName: "Runner Application",
@@ -156,6 +184,7 @@
                 {field: 'status',    title: 'Status', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }
                 },
+                {field: 'storeName', title: 'Store', formatter: function(v) { return v || '<span style="color:#ccc;">All</span>'; }},
                 {field: 'reviewer',  title: 'Reviewer', formatter: function(v) { return v || '-'; }},
                 {title: 'Action', align: 'center', formatter: function(v, row) {
                     return '<a class="btn btn-info btn-xs" onclick=\'openReview(' + JSON.stringify(row) + ')\'>'
@@ -190,9 +219,12 @@
         $('#rv-reject-reason').val('');
         $('#rv-action-btns').show();
         $('#rv-reject-confirm-btns').hide();
+        $('#rv-store-box').hide();
+        $('#rv-store').val('');
 
         if (row.status === '0') {
-            // Pending: show action buttons
+            // Pending: show action buttons + store assignment
+            $('#rv-store-box').show();
         } else if (row.status === '1') {
             $('#rv-reviewer2').text(row.reviewer || '-');
             $('#rv-reviewTime2').text(row.reviewTime || '-');
@@ -211,6 +243,7 @@
 
     function showRejectBox() {
         $('#rv-reject-box').show();
+        $('#rv-store-box').hide();
         $('#rv-action-btns').hide();
         $('#rv-reject-confirm-btns').show();
         $('#rv-reject-reason').focus();
@@ -218,16 +251,20 @@
 
     function cancelRejectBox() {
         $('#rv-reject-box').hide();
+        $('#rv-store-box').show();
         $('#rv-reject-reason').val('');
         $('#rv-action-btns').show();
         $('#rv-reject-confirm-btns').hide();
     }
 
     function doApprove() {
+        var storeId = $('#rv-store').val();
         $.modal.confirm('Approve this runner application? The member will be able to accept orders immediately.', function() {
             $.ajax({
                 url: prefix + '/approve/' + currentAppId,
                 type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ storeId: storeId || null }),
                 success: function(res) {
                     if (res.code === 0) {
                         $('#reviewModal').modal('hide');

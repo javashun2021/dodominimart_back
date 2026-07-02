@@ -35,6 +35,9 @@ public class MallProduct extends BaseEntity
 
     private String imageUrl;
 
+    /** 附加图（封面之外的图），逗号分隔的 URL；App 详情页图廊 = [封面] + images */
+    private String images;
+
     /** 库内条码/SKU（Code128，标签打印 + POS 扫码用） */
     @Excel(name = "条码")
     private String barcode;
@@ -94,6 +97,9 @@ public class MallProduct extends BaseEntity
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getImages() { return images; }
+    public void setImages(String images) { this.images = images; }
 
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }

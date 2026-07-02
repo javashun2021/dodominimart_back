@@ -32,6 +32,7 @@
         <result property="cashReceived"       column="cash_received"        />
         <result property="changeDue"          column="change_due"           />
         <result property="cashierId"          column="cashier_id"           />
+        <result property="storeId"            column="store_id"             />
     </resultMap>
 
     <sql id="selectOrderVo">
@@ -40,7 +41,7 @@
                cancel_reason, order_source, create_time, update_by, update_time,
                runner_member_id, runner_accepted_time, delivery_fee, runner_fee_settled,
                points_used, member_coupon_id, coupon_discount,
-               tender_type, cash_received, change_due, cashier_id
+               tender_type, cash_received, change_due, cashier_id, store_id
         from mall_order
     </sql>
 
@@ -71,10 +72,10 @@
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
                                payment_method, payment_status, order_source, points_used,
-                               member_coupon_id, coupon_discount, delivery_fee, create_time)
+                               member_coupon_id, coupon_discount, delivery_fee, store_id, create_time)
         values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
                #{paymentMethod}, 'UNPAID', #{orderSource}, ifnull(#{pointsUsed}, 0),
-               #{memberCouponId}, ifnull(#{couponDiscount}, 0), ifnull(#{deliveryFee}, 0), #{createTime})
+               #{memberCouponId}, ifnull(#{couponDiscount}, 0), ifnull(#{deliveryFee}, 0), #{storeId}, #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">
@@ -102,9 +103,11 @@
         where order_id = #{orderId}
     </update>
 
-    <select id="selectAvailableForRunner" resultMap="MallOrderResult">
+    <select id="selectAvailableForRunner" parameterType="Long" resultMap="MallOrderResult">
         <include refid="selectOrderVo"/>
         where status = '1' and runner_member_id is null
+        <!-- 骑手已绑定门店则只看本店的单；未绑定(null)则看全部，兼容存量骑手 -->
+        <if test="storeId != null">and store_id = #{storeId}</if>
         order by create_time asc
     </select>
 

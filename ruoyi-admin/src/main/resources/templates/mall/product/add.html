@@ -51,6 +51,19 @@
                 <div id="imgPreview" style="margin-top:8px;display:none">
                     <img id="previewImg" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">
                 </div>
+                <span class="help-block" style="margin-bottom:0;">封面图，用于列表/购物车缩略图</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label">More Images：</label>
+            <div class="col-sm-8">
+                <input type="hidden" id="images" name="images" value="">
+                <span class="input-group-btn">
+                    <label class="btn btn-default" for="uploadMore"><i class="fa fa-plus"></i> Add images</label>
+                    <input type="file" id="uploadMore" accept="image/*" multiple style="display:none" onchange="uploadMore(this)">
+                </span>
+                <div id="morePreview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px"></div>
+                <span class="help-block" style="margin-bottom:0;">附加图，App 详情页可左右滑动查看（可多张，可删除）</span>
             </div>
         </div>
         <div class="form-group">
@@ -108,6 +121,43 @@
                 }
             }
         });
+    }
+
+    // ── 多图（附加图）────────────────────────────────────────────────
+    var moreImages = [];
+    function renderMore() {
+        $('#images').val(moreImages.join(','));
+        var html = '';
+        for (var i = 0; i < moreImages.length; i++) {
+            html += '<div style="position:relative;display:inline-block">'
+                  + '<img src="' + moreImages[i] + '" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">'
+                  + '<a onclick="removeMore(' + i + ')" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;cursor:pointer;font-size:12px">&times;</a>'
+                  + '</div>';
+        }
+        $('#morePreview').html(html);
+    }
+    function removeMore(i) {
+        moreImages.splice(i, 1);
+        renderMore();
+    }
+    function uploadMore(input) {
+        if (!input.files || !input.files.length) return;
+        var files = Array.prototype.slice.call(input.files);
+        var done = 0;
+        files.forEach(function(f) {
+            var fd = new FormData();
+            fd.append('file', f);
+            $.ajax({
+                url: ctx + 'common/upload', type: 'POST', data: fd,
+                processData: false, contentType: false,
+                success: function(res) {
+                    if (res.code === 0) { moreImages.push(res.path); }
+                    else { $.modal.alertWarning(res.msg); }
+                },
+                complete: function() { if (++done === files.length) renderMore(); }
+            });
+        });
+        input.value = '';
     }
 </script>
 </body>

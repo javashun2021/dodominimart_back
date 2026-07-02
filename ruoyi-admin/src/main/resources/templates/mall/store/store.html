@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="store-form">
+                <div class="select-list">
+                    <ul>
+                        <li>Store Name：<input type="text" name="name"/></li>
+                        <li>Status：
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="0">Open</option>
+                                <option value="1">Closed</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="mall:store:add">
+                <i class="fa fa-plus"></i> Add
+            </a>
+            <a class="btn btn-primary btn-edit disabled" onclick="$.operate.edit()" shiro:hasPermission="mall:store:edit">
+                <i class="fa fa-edit"></i> Edit
+            </a>
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:store:remove">
+                <i class="fa fa-remove"></i> Delete
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var editFlag   = [[${@permission.hasPermi('mall:store:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('mall:store:remove')}]];
+    var prefix = ctx + "mall/store";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            modalName: "Store",
+            sortName: "sort",
+            columns: [
+                {checkbox: true},
+                {field: 'storeId',       title: 'ID'},
+                {field: 'name',          title: 'Store Name'},
+                {field: 'address',       title: 'Address'},
+                {field: 'phone',         title: 'Phone'},
+                {field: 'businessHours', title: 'Hours'},
+                {field: 'serviceRadiusKm', title: 'Radius(km)', align: 'center'},
+                {field: 'sort',          title: 'Sort', sortable: true},
+                {field: 'status',        title: 'Status', align: 'center',
+                    formatter: function(v) { return v === '0' ? '<span class="badge badge-primary">Open</span>' : '<span class="badge badge-default">Closed</span>'; }
+                },
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    var a = [];
+                    a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.storeId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
+                    a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.storeId + '\')"><i class="fa fa-remove"></i>Delete</a>');
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

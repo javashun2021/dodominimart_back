@@ -16,28 +16,33 @@
         <result property="reviewTime"   column="review_time"   />
         <result property="reviewer"     column="reviewer"      />
         <result property="isOnline"     column="is_online"     />
+        <result property="storeId"      column="store_id"      />
         <result property="nickName"     column="nick_name"     />
         <result property="avatarUrl"    column="avatar_url"    />
+        <result property="storeName"    column="store_name"    />
     </resultMap>
 
     <select id="selectByMemberId" parameterType="Long" resultMap="AppResult">
-        select a.*, m.nick_name, m.avatar_url
+        select a.*, m.nick_name, m.avatar_url, s.name as store_name
         from mall_runner_application a
         left join mall_member m on m.member_id = a.member_id
+        left join mall_store s on s.store_id = a.store_id
         where a.member_id = #{memberId}
     </select>
 
     <select id="selectById" parameterType="Long" resultMap="AppResult">
-        select a.*, m.nick_name, m.avatar_url
+        select a.*, m.nick_name, m.avatar_url, s.name as store_name
         from mall_runner_application a
         left join mall_member m on m.member_id = a.member_id
+        left join mall_store s on s.store_id = a.store_id
         where a.app_id = #{appId}
     </select>
 
     <select id="selectList" parameterType="com.ruoyi.mall.domain.MallRunnerApplication" resultMap="AppResult">
-        select a.*, m.nick_name, m.avatar_url
+        select a.*, m.nick_name, m.avatar_url, s.name as store_name
         from mall_runner_application a
         left join mall_member m on m.member_id = a.member_id
+        left join mall_store s on s.store_id = a.store_id
         <where>
             <if test="status != null and status != ''">AND a.status = #{status}</if>
             <if test="realName != null and realName != ''">AND a.real_name like concat('%', #{realName}, '%')</if>
@@ -71,6 +76,10 @@
 
     <update id="updateOnlineStatus">
         update mall_runner_application set is_online = #{isOnline} where member_id = #{memberId}
+    </update>
+
+    <update id="updateStore">
+        update mall_runner_application set store_id = #{storeId} where app_id = #{appId}
     </update>
 
 </mapper>

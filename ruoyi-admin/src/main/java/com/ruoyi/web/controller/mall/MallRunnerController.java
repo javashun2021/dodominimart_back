@@ -19,6 +19,7 @@ import com.ruoyi.framework.util.ShiroUtils;
 import com.ruoyi.framework.web.base.BaseController;
 import com.ruoyi.mall.domain.MallRunnerApplication;
 import com.ruoyi.mall.service.IMallRunnerService;
+import com.ruoyi.mall.service.IMallStoreService;
 
 /**
  * 跑腿管理后台
@@ -32,6 +33,9 @@ public class MallRunnerController extends BaseController
 
     @Autowired
     private IMallRunnerService runnerService;
+
+    @Autowired
+    private IMallStoreService storeService;
 
     @RequiresPermissions("mall:runner:view")
     @GetMapping
@@ -56,10 +60,25 @@ public class MallRunnerController extends BaseController
     @Log(title = "跑腿申请审核", businessType = BusinessType.UPDATE)
     @PostMapping("/approve/{appId}")
     @ResponseBody
-    public AjaxResult approve(@PathVariable Long appId)
+    public AjaxResult approve(@PathVariable Long appId,
+            @RequestBody(required = false) Map<String, Object> body)
     {
-        runnerService.approveApplication(appId, ShiroUtils.getLoginName());
+        Long storeId = null;
+        if (body != null && body.get("storeId") != null)
+        {
+            try { storeId = Long.parseLong(body.get("storeId").toString()); } catch (NumberFormatException ignored) {}
+        }
+        runnerService.approveApplication(appId, ShiroUtils.getLoginName(), storeId);
         return AjaxResult.success();
+    }
+
+    /** 门店下拉（审核时指派归属门店用），返回营业中的门店 */
+    @RequiresPermissions("mall:runner:review")
+    @GetMapping("/stores")
+    @ResponseBody
+    public AjaxResult stores()
+    {
+        return AjaxResult.success().put("data", storeService.listActiveStores());
     }
 
     /** 审核拒绝 */

@@ -25,6 +25,8 @@ import com.ruoyi.mall.service.IMallAddressService;
 import com.ruoyi.mall.service.IMallMemberService;
 import com.ruoyi.mall.service.IMallOrderService;
 import com.ruoyi.mall.service.IMallRunnerService;
+import com.ruoyi.mall.service.IMallStoreService;
+import com.ruoyi.mall.domain.MallStore;
 import com.ruoyi.system.service.ISysConfigService;
 
 /**
@@ -52,6 +54,9 @@ public class ApiOrderController extends BaseApiController
 
     @Autowired
     private IMallMemberService memberService;
+
+    @Autowired
+    private IMallStoreService storeService;
 
     @Autowired
     private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
@@ -145,16 +150,35 @@ public class ApiOrderController extends BaseApiController
         }
         catch (Exception ignored) {}
 
+        // 归属门店（模型C）：App 结账带 storeId。校验为营业中门店，缺失/非法则回退到默认门店，
+        // 保证配送单一定有 store_id（否则骑手抢单池按店过滤会漏单）。到店单不参与配送，不强制。
+        Long storeId = null;
+        Object storeObj = body.get("storeId");
+        if (storeObj != null)
+        {
+            try { storeId = Long.parseLong(storeObj.toString()); } catch (NumberFormatException ignored) {}
+        }
+        MallStore store = (storeId != null) ? storeService.selectStoreById(storeId) : null;
+        boolean storeUsable = store != null && "0".equals(store.getStatus()) && !"2".equals(store.getDelFlag());
+        if (!isStore && !storeUsable)
+        {
+            store = storeService.selectNearestStore(null, null); // 兜底：排序最前的营业门店
+            storeUsable = store != null;
+        }
+        storeId = storeUsable ? store.getStoreId() : null;
+
         try
         {
-            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod, pointsToUse, memberCouponId, deliveryFee);
+            MallOrder order = orderService.createOrder(memberId, addressId, items, remark, paymentMethod, pointsToUse, memberCouponId, deliveryFee, storeId);
 
             // Telegram 后台提醒：新订单
             try
             {
                 MallMember buyer = memberService.selectMemberById(memberId);
                 String name = buyer != null ? buyer.getNickName() : ("#" + memberId);
+                String storeName = (store != null) ? store.getName() : "-";
                 telegramNotifyService.notify("🛒 New Order " + order.getOrderNo()
+                        + "\nStore: " + storeName
                         + "\nCustomer: " + name
                         + "\nAmount: ₱" + order.getTotalAmount()
                         + "\nPayment: " + paymentMethod);

@@ -22,8 +22,9 @@ public interface IMallOrderService
      * @param paymentMethod  "COD" / "GCASH" / "STORE"（到店线下支付），null 时默认 COD
      * @param pointsToUse    本单使用积分数（0 = 不使用），100分=₱10
      * @param memberCouponId 本单使用的优惠券实例 ID，null = 不使用
+     * @param storeId        归属门店 ID（模型C，下单固化，决定骑手抢单池）；null = 不指定
      */
-    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId, java.math.BigDecimal deliveryFee);
+    MallOrder createOrder(Long memberId, Long addressId, List<MallOrderItem> items, String remark, String paymentMethod, int pointsToUse, Long memberCouponId, java.math.BigDecimal deliveryFee, Long storeId);
 
     /** 变更订单状态（Admin 使用） */
     int updateOrderStatus(Long orderId, String status, String updateBy);
