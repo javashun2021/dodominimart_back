@@ -147,4 +147,19 @@ public class MallMarketServiceImpl implements IMallMarketService {
     public void rejectPost(Long postId, String note) {
         marketMapper.rejectPost(postId, note);
     }
+
+    @Override
+    public List<MallMarketPost> listAdminPosts(MallMarketPost query) {
+        return marketMapper.selectAdminPostList(query);
+    }
+
+    @Override
+    public List<MallMarketComment> listAdminComments(MallMarketComment query) {
+        return marketMapper.selectAdminCommentList(query);
+    }
+
+    @Override
+    public List<MallMarketReport> listAdminReports(MallMarketReport query) {
+        return marketMapper.selectAdminReportList(query);
+    }
 }

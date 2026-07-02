@@ -39,7 +39,7 @@ public class ApiMarketController extends BaseApiController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword) {
         List<MallMarketPost> posts = marketService.listPosts(category, keyword);
-        return AjaxResult.success(posts);
+        return AjaxResult.success().put("data", posts);
     }
 
     /** 帖子详情 + 评论（公开） */
@@ -51,7 +51,7 @@ public class ApiMarketController extends BaseApiController {
         Map<String, Object> data = new HashMap<>();
         data.put("post", post);
         data.put("comments", comments);
-        return AjaxResult.success(data);
+        return AjaxResult.success().put("data", data);
     }
 
     /** 发帖 */
@@ -64,7 +64,7 @@ public class ApiMarketController extends BaseApiController {
             return AjaxResult.error("Your account has been suspended. Please contact support.");
         }
         MallMarketPost created = marketService.createPost(post, memberId);
-        return AjaxResult.success(created);
+        return AjaxResult.success().put("data", created);
     }
 
     /** 标记已售 */
@@ -91,7 +91,7 @@ public class ApiMarketController extends BaseApiController {
         Long memberId = getCurrentMemberId(request);
         if (memberId == null) return AjaxResult.error("Please login first");
         List<MallMarketPost> posts = marketService.listMyPosts(memberId);
-        return AjaxResult.success(posts);
+        return AjaxResult.success().put("data", posts);
     }
 
     /** 发评论 */
@@ -108,7 +108,7 @@ public class ApiMarketController extends BaseApiController {
         String content = body.get("content");
         if (content == null || content.trim().isEmpty()) return AjaxResult.error("Content is required");
         MallMarketComment comment = marketService.addComment(postId, memberId, content.trim());
-        return AjaxResult.success(comment);
+        return AjaxResult.success().put("data", comment);
     }
 
     /** 举报帖子 */

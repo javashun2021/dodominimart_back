@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="post-form">
+                <div class="select-list">
+                    <ul>
+                        <li>Title: <input type="text" name="title"/></li>
+                        <li>
+                            Review:
+                            <select name="reviewStatus">
+                                <option value="">All</option>
+                                <option value="0">Pending</option>
+                                <option value="1">Approved</option>
+                                <option value="2">Rejected</option>
+                            </select>
+                        </li>
+                        <li>
+                            Status:
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="0">Active</option>
+                                <option value="1">Sold</option>
+                                <option value="2">Removed</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i> Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i> Reset</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/market/post";
+
+    var reviewMap = {
+        '0': '<span class="badge" style="background:#f0ad4e">Pending</span>',
+        '1': '<span class="badge badge-success">Approved</span>',
+        '2': '<span class="badge badge-danger">Rejected</span>'
+    };
+    var statusMap = {
+        '0': '<span class="badge badge-primary">Active</span>',
+        '1': '<span class="badge badge-default">Sold</span>',
+        '2': '<span class="badge badge-default">Removed</span>'
+    };
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "Post",
+            columns: [
+                {checkbox: true},
+                {field: 'postId',        title: 'ID', width: 60},
+                {field: 'memberNickname',title: 'Seller'},
+                {field: 'title',         title: 'Title'},
+                {field: 'category',      title: 'Category'},
+                {field: 'price',         title: 'Price', formatter: function(v){ return v != null ? '₱'+v : 'Free'; }},
+                {field: 'reviewStatus',  title: 'Review', align: 'center',
+                    formatter: function(v){ return reviewMap[v] || v; }},
+                {field: 'status',        title: 'Status', align: 'center',
+                    formatter: function(v){ return statusMap[v] || v; }},
+                {field: 'viewCount',     title: 'Views', width: 70},
+                {field: 'commentCount',  title: 'Comments', width: 80},
+                {field: 'createTime',    title: 'Posted At'},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    var a = [];
+                    if (row.reviewStatus === '0') {
+                        a.push('<a class="btn btn-success btn-xs" onclick="approvePost(' + row.postId + ')"><i class="fa fa-check"></i> Approve</a> ');
+                        a.push('<a class="btn btn-danger btn-xs" onclick="rejectPost(' + row.postId + ')"><i class="fa fa-times"></i> Reject</a> ');
+                    }
+                    if (row.reviewStatus === '1' && row.status !== '2') {
+                        a.push('<a class="btn btn-warning btn-xs" onclick="moderatePost(' + row.postId + ')"><i class="fa fa-ban"></i> Take Down</a>');
+                    }
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+
+    function approvePost(postId) {
+        $.modal.confirm('Approve this post?', function() {
+            $.ajax({
+                url: prefix + '/approve', type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({postId: postId}),
+                success: function(r) {
+                    if (r.code === 0) { $.table.refresh(); $.modal.msgSuccess('Approved'); }
+                    else { $.modal.alertWarning(r.msg); }
+                }
+            });
+        });
+    }
+
+    function rejectPost(postId) {
+        var note = prompt('Rejection reason (optional):', 'Does not meet community guidelines');
+        if (note === null) return;
+        $.ajax({
+            url: prefix + '/reject', type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({postId: postId, note: note}),
+            success: function(r) {
+                if (r.code === 0) { $.table.refresh(); $.modal.msgSuccess('Rejected'); }
+                else { $.modal.alertWarning(r.msg); }
+            }
+        });
+    }
+
+    function moderatePost(postId) {
+        $.modal.confirm('Take down this post?', function() {
+            $.ajax({
+                url: prefix + '/moderate', type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({postId: postId}),
+                success: function(r) {
+                    if (r.code === 0) { $.table.refresh(); $.modal.msgSuccess('Taken down'); }
+                    else { $.modal.alertWarning(r.msg); }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

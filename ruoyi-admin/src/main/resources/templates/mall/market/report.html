@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="report-form">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            Type:
+                            <select name="targetType">
+                                <option value="">All</option>
+                                <option value="post">Post</option>
+                                <option value="comment">Comment</option>
+                            </select>
+                        </li>
+                        <li>
+                            Status:
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="0">Pending</option>
+                                <option value="1">Handled</option>
+                                <option value="2">Ignored</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i> Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i> Reset</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var prefix = ctx + "mall/market/report";
+
+    var statusMap = {
+        '0': '<span class="badge" style="background:#f0ad4e">Pending</span>',
+        '1': '<span class="badge badge-success">Handled</span>',
+        '2': '<span class="badge badge-default">Ignored</span>'
+    };
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "Report",
+            columns: [
+                {checkbox: true},
+                {field: 'reportId',        title: 'ID', width: 60},
+                {field: 'targetType',      title: 'Type', width: 80,
+                    formatter: function(v){ return v === 'post' ? '<span class="badge badge-primary">Post</span>' : '<span class="badge badge-info">Comment</span>'; }},
+                {field: 'targetTitle',     title: 'Target Content'},
+                {field: 'reporterNickname',title: 'Reporter'},
+                {field: 'reason',          title: 'Reason'},
+                {field: 'detail',          title: 'Detail'},
+                {field: 'status',          title: 'Status', align: 'center',
+                    formatter: function(v){ return statusMap[v] || v; }},
+                {field: 'handledBy',       title: 'Handled By'},
+                {field: 'createTime',      title: 'Reported At'},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    if (row.status === '0') {
+                        return '<a class="btn btn-success btn-xs" onclick="handleReport(' + row.reportId + ',\'1\')"><i class="fa fa-check"></i> Handle</a> '
+                             + '<a class="btn btn-default btn-xs" onclick="handleReport(' + row.reportId + ',\'2\')"><i class="fa fa-times"></i> Ignore</a>';
+                    }
+                    return '<span class="text-muted">' + (statusMap[row.status] || row.status) + '</span>';
+                }}
+            ]
+        });
+    });
+
+    function handleReport(reportId, status) {
+        var msg = status === '1' ? 'Mark as handled?' : 'Ignore this report?';
+        $.modal.confirm(msg, function() {
+            $.ajax({
+                url: prefix + '/handle', type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({reportId: reportId, status: status}),
+                success: function(r) {
+                    if (r.code === 0) { $.table.refresh(); $.modal.msgSuccess('Done'); }
+                    else { $.modal.alertWarning(r.msg); }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

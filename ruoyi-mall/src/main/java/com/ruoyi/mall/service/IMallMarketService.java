@@ -31,4 +31,8 @@ public interface IMallMarketService {
     void unbanMember(Long memberId);
     void approvePost(Long postId);
     void rejectPost(Long postId, String note);
+
+    List<MallMarketPost>    listAdminPosts(MallMarketPost query);
+    List<MallMarketComment> listAdminComments(MallMarketComment query);
+    List<MallMarketReport>  listAdminReports(MallMarketReport query);
 }

@@ -64,4 +64,8 @@ public interface MallMarketMapper {
                      @Param("status") String status,
                      @Param("handledBy") String handledBy,
                      @Param("handledNote") String handledNote);
+
+    List<MallMarketPost>    selectAdminPostList(MallMarketPost query);
+    List<MallMarketComment> selectAdminCommentList(MallMarketComment query);
+    List<MallMarketReport>  selectAdminReportList(MallMarketReport query);
 }

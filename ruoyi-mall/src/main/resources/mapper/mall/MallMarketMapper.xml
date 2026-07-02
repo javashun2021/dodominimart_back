@@ -225,4 +225,56 @@
         WHERE report_id = #{reportId}
     </update>
 
+    <!-- ── Admin list queries ──────────────────────────────────────────────── -->
+
+    <select id="selectAdminPostList" resultMap="PostResult">
+        SELECT p.*, m.nick_name AS member_nickname
+        FROM mall_market_post p
+        LEFT JOIN mall_member m ON m.member_id = p.member_id
+        WHERE p.del_flag = '0'
+        <if test="title != null and title != ''">
+            AND p.title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="reviewStatus != null and reviewStatus != ''">
+            AND p.review_status = #{reviewStatus}
+        </if>
+        <if test="status != null and status != ''">
+            AND p.status = #{status}
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+
+    <select id="selectAdminCommentList" resultMap="CommentResult">
+        SELECT c.*, m.nick_name AS member_nickname
+        FROM mall_market_comment c
+        LEFT JOIN mall_member m ON m.member_id = c.member_id
+        WHERE 1=1
+        <if test="content != null and content != ''">
+            AND c.content LIKE CONCAT('%', #{content}, '%')
+        </if>
+        <if test="delFlag != null and delFlag != ''">
+            AND c.del_flag = #{delFlag}
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <select id="selectAdminReportList" resultMap="ReportResult">
+        SELECT r.*,
+               m.nick_name AS reporter_nickname,
+               CASE r.target_type
+                 WHEN 'post'    THEN (SELECT title   FROM mall_market_post    WHERE post_id    = r.target_id)
+                 WHEN 'comment' THEN (SELECT content FROM mall_market_comment WHERE comment_id = r.target_id)
+               END AS target_title
+        FROM mall_market_report r
+        LEFT JOIN mall_member m ON m.member_id = r.reporter_id
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND r.status = #{status}
+        </if>
+        <if test="targetType != null and targetType != ''">
+            AND r.target_type = #{targetType}
+        </if>
+        ORDER BY r.status ASC, r.create_time DESC
+    </select>
+
 </mapper>
