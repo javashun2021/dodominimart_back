@@ -13,16 +13,17 @@
         <result property="originalPrice" column="original_price" />
         <result property="quantity"      column="quantity"       />
         <result property="subtotal"      column="subtotal"       />
+        <result property="spec"          column="spec"           />
     </resultMap>
 
     <select id="selectItemsByOrderId" parameterType="Long" resultMap="MallOrderItemResult">
-        select item_id, order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal
+        select item_id, order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal, spec
         from mall_order_item
         where order_id = #{orderId}
     </select>
 
     <select id="selectItemsByOrderIds" resultMap="MallOrderItemResult">
-        select item_id, order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal
+        select item_id, order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal, spec
         from mall_order_item
         where order_id in
         <foreach collection="orderIds" item="id" open="(" separator="," close=")">
@@ -31,16 +32,16 @@
     </select>
 
     <insert id="insertOrderItem" parameterType="com.ruoyi.mall.domain.MallOrderItem" useGeneratedKeys="true" keyProperty="itemId">
-        insert into mall_order_item(order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal)
-        values(#{orderId}, #{productId}, #{productName}, #{productImage}, #{price}, #{originalPrice}, #{quantity}, #{subtotal})
+        insert into mall_order_item(order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal, spec)
+        values(#{orderId}, #{productId}, #{productName}, #{productImage}, #{price}, #{originalPrice}, #{quantity}, #{subtotal}, #{spec})
     </insert>
 
     <insert id="insertOrderItemBatch" parameterType="java.util.List">
-        insert into mall_order_item(order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal)
+        insert into mall_order_item(order_id, product_id, product_name, product_image, price, original_price, quantity, subtotal, spec)
         values
         <foreach collection="list" item="item" separator=",">
             (#{item.orderId}, #{item.productId}, #{item.productName}, #{item.productImage},
-             #{item.price}, #{item.originalPrice}, #{item.quantity}, #{item.subtotal})
+             #{item.price}, #{item.originalPrice}, #{item.quantity}, #{item.subtotal}, #{item.spec})
         </foreach>
     </insert>
 

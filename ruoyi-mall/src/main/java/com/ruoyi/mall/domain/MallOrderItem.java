@@ -23,6 +23,8 @@ public class MallOrderItem implements Serializable
     private BigDecimal originalPrice;
     private Integer quantity;
     private BigDecimal subtotal;
+    /** 下单所选属性值快照，如「苹果味」（可空） */
+    private String spec;
 
     public Long getItemId() { return itemId; }
     public void setItemId(Long itemId) { this.itemId = itemId; }
@@ -50,4 +52,7 @@ public class MallOrderItem implements Serializable
 
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+
+    public String getSpec() { return spec; }
+    public void setSpec(String spec) { this.spec = spec; }
 }

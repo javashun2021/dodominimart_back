@@ -121,6 +121,12 @@ public class ApiOrderController extends BaseApiController
             MallOrderItem item = new MallOrderItem();
             item.setProductId(Long.valueOf(productIdObj.toString()));
             item.setQuantity(qty);
+            // 单层属性所选值快照（如「苹果味」），无属性商品为空
+            Object specObj = raw.get("spec");
+            if (specObj != null && !specObj.toString().trim().isEmpty())
+            {
+                item.setSpec(specObj.toString().trim());
+            }
             items.add(item);
         }
 

@@ -116,7 +116,11 @@
         </thead>
         <tbody>
             <tr th:each="item : ${order.items}">
-                <td th:text="${item.productName}"></td>
+                <td>
+                    <span th:text="${item.productName}"></span>
+                    <span th:if="${item.spec != null and item.spec != ''}"
+                          th:text="'(' + ${item.spec} + ')'"></span>
+                </td>
                 <td class="num" th:text="'₱' + ${item.price}"></td>
                 <td class="num" th:text="${item.quantity}"></td>
                 <td class="num" th:text="'₱' + ${item.subtotal}"></td>

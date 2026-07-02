@@ -77,7 +77,12 @@
                                      th:src="${item.productImage}" height="50" style="border-radius:4px">
                                 <span th:unless="${item.productImage != null and item.productImage != ''}">-</span>
                             </td>
-                            <td th:text="${item.productName}"></td>
+                            <td>
+                                <span th:text="${item.productName}"></span>
+                                <span th:if="${item.spec != null and item.spec != ''}"
+                                      class="label label-info" style="margin-left:4px"
+                                      th:text="${item.spec}"></span>
+                            </td>
                             <td>
                                 <span th:if="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}"
                                       style="color:#999;text-decoration:line-through"

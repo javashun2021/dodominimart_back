@@ -38,6 +38,13 @@ public class MallProduct extends BaseEntity
     /** 附加图（封面之外的图），逗号分隔的 URL；App 详情页图廊 = [封面] + images */
     private String images;
 
+    /** 单层属性名，如「口味」（空=无属性） */
+    @Excel(name = "属性名")
+    private String specName;
+
+    /** 属性选项，逗号分隔，如「苹果味,水蜜桃味,原味」 */
+    private String specOptions;
+
     /** 库内条码/SKU（Code128，标签打印 + POS 扫码用） */
     @Excel(name = "条码")
     private String barcode;
@@ -100,6 +107,12 @@ public class MallProduct extends BaseEntity
 
     public String getImages() { return images; }
     public void setImages(String images) { this.images = images; }
+
+    public String getSpecName() { return specName; }
+    public void setSpecName(String specName) { this.specName = specName; }
+
+    public String getSpecOptions() { return specOptions; }
+    public void setSpecOptions(String specOptions) { this.specOptions = specOptions; }
 
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }
