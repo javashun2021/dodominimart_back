@@ -48,6 +48,10 @@ public class ApiConfigController
         // 搜索热词（逗号分隔）
         data.put("searchHotwords", val("mall.search.hotwords", ""));
 
+        // 市场联系方式（逗号分隔的 key，如 phone,whatsapp,telegram,viber,wechat）
+        data.put("marketContactMethods",
+            val("mall.market.contact.methods", "phone,whatsapp,messenger,telegram"));
+
         // 预计配送时长（分钟）
         data.put("deliveryMinutes", val("app.delivery.minutes", "30"));
 

@@ -68,4 +68,12 @@ public interface MallMarketMapper {
     List<MallMarketPost>    selectAdminPostList(MallMarketPost query);
     List<MallMarketComment> selectAdminCommentList(MallMarketComment query);
     List<MallMarketReport>  selectAdminReportList(MallMarketReport query);
+
+    // ── 收藏 ──────────────────────────────────────────────────────────────────
+    int insertFavorite(@Param("memberId") Long memberId, @Param("postId") Long postId);
+    int deleteFavorite(@Param("memberId") Long memberId, @Param("postId") Long postId);
+    int isFavorited(@Param("memberId") Long memberId, @Param("postId") Long postId);
+    List<Long> selectFavoritePostIds(@Param("memberId") Long memberId);
+    /** 收藏列表；帖子已删除/下架的记录也返回，deleted=1 供前端标识 */
+    List<MallMarketPost> selectMyFavorites(@Param("memberId") Long memberId);
 }

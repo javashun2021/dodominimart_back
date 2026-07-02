@@ -310,6 +310,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/banners", "anon");
         filterChainDefinitionMap.put("/api/v1/stores", "anon");    // 门店列表/就近选店：登录前也需展示
         filterChainDefinitionMap.put("/api/v1/stores/**", "anon");
+        filterChainDefinitionMap.put("/api/v1/market/categories", "anon"); // 市场分类（公开）
         filterChainDefinitionMap.put("/api/v1/market/posts", "anon");   // 市场帖子列表（公开浏览）
         filterChainDefinitionMap.put("/api/v1/market/posts/*", "anon"); // 帖子详情+评论（公开浏览）
         filterChainDefinitionMap.put("/api/v1/sse/**", "anon"); // JWT validated in controller via query param

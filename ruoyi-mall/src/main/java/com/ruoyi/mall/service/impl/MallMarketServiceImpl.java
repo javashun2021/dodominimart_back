@@ -162,4 +162,25 @@ public class MallMarketServiceImpl implements IMallMarketService {
     public List<MallMarketReport> listAdminReports(MallMarketReport query) {
         return marketMapper.selectAdminReportList(query);
     }
+
+    @Override
+    public boolean toggleFavorite(Long memberId, Long postId) {
+        if (marketMapper.isFavorited(memberId, postId) > 0) {
+            marketMapper.deleteFavorite(memberId, postId);
+            return false;
+        } else {
+            marketMapper.insertFavorite(memberId, postId);
+            return true;
+        }
+    }
+
+    @Override
+    public List<Long> favoritePostIds(Long memberId) {
+        return marketMapper.selectFavoritePostIds(memberId);
+    }
+
+    @Override
+    public List<MallMarketPost> myFavorites(Long memberId) {
+        return marketMapper.selectMyFavorites(memberId);
+    }
 }

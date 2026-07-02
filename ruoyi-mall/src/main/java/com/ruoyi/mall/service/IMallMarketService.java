@@ -35,4 +35,10 @@ public interface IMallMarketService {
     List<MallMarketPost>    listAdminPosts(MallMarketPost query);
     List<MallMarketComment> listAdminComments(MallMarketComment query);
     List<MallMarketReport>  listAdminReports(MallMarketReport query);
+
+    // ── 收藏 ──────────────────────────────────────────────────────────────────
+    /** 切换收藏，返回收藏后的状态（true=已收藏） */
+    boolean toggleFavorite(Long memberId, Long postId);
+    List<Long> favoritePostIds(Long memberId);
+    List<MallMarketPost> myFavorites(Long memberId);
 }

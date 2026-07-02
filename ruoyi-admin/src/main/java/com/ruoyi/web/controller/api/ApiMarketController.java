@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import com.ruoyi.common.base.AjaxResult;
 import com.ruoyi.mall.domain.MallMarketComment;
@@ -32,6 +33,17 @@ public class ApiMarketController extends BaseApiController {
     private IMallMarketService marketService;
     @Autowired
     private IMallMemberService memberService;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /** 分类列表（公开） */
+    @GetMapping("/categories")
+    public AjaxResult listCategories() {
+        List<String> names = jdbcTemplate.queryForList(
+            "SELECT name FROM mall_market_category WHERE status=1 ORDER BY sort ASC",
+            String.class);
+        return AjaxResult.success().put("data", names);
+    }
 
     /** 帖子列表（公开，只显示已批准） */
     @GetMapping("/posts")
@@ -92,6 +104,31 @@ public class ApiMarketController extends BaseApiController {
         if (memberId == null) return AjaxResult.error("Please login first");
         List<MallMarketPost> posts = marketService.listMyPosts(memberId);
         return AjaxResult.success().put("data", posts);
+    }
+
+    /** 切换收藏 */
+    @PostMapping("/posts/{id}/favorite")
+    public AjaxResult toggleFavorite(@PathVariable("id") Long postId, HttpServletRequest request) {
+        Long memberId = getCurrentMemberId(request);
+        if (memberId == null) return AjaxResult.error("Please login first");
+        boolean now = marketService.toggleFavorite(memberId, postId);
+        return AjaxResult.success().put("favorited", now);
+    }
+
+    /** 我收藏的 postId 列表 */
+    @GetMapping("/favorite-ids")
+    public AjaxResult favoriteIds(HttpServletRequest request) {
+        Long memberId = getCurrentMemberId(request);
+        if (memberId == null) return AjaxResult.error("Please login first");
+        return AjaxResult.success().put("data", marketService.favoritePostIds(memberId));
+    }
+
+    /** 我的收藏列表（含已删除标识） */
+    @GetMapping("/my-favorites")
+    public AjaxResult myFavorites(HttpServletRequest request) {
+        Long memberId = getCurrentMemberId(request);
+        if (memberId == null) return AjaxResult.error("Please login first");
+        return AjaxResult.success().put("data", marketService.myFavorites(memberId));
     }
 
     /** 发评论 */

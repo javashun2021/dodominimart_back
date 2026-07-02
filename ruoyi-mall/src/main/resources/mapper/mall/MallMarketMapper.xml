@@ -16,6 +16,10 @@
         <result property="whatsapp"      column="whatsapp"/>
         <result property="messenger"     column="messenger"/>
         <result property="telegram"      column="telegram"/>
+        <result property="viber"         column="viber"/>
+        <result property="wechat"        column="wechat"/>
+        <result property="line"          column="line"/>
+        <result property="instagram"     column="instagram"/>
         <result property="viewCount"     column="view_count"/>
         <result property="commentCount"  column="comment_count"/>
         <result property="delFlag"        column="del_flag"/>
@@ -23,10 +27,15 @@
         <result property="reportCount"    column="report_count"/>
         <result property="reviewStatus"   column="review_status"/>
         <result property="reviewNote"     column="review_note"/>
+        <result property="priceType"       column="price_type"/>
+        <result property="locationLabel"  column="location_label"/>
+        <result property="latitude"       column="latitude"/>
+        <result property="longitude"      column="longitude"/>
         <result property="createTime"    column="create_time"/>
         <result property="updateTime"    column="update_time"/>
         <result property="memberNickname" column="member_nickname"/>
         <result property="memberAvatar"   column="member_avatar"/>
+        <result property="deleted"        column="deleted"/>
     </resultMap>
 
     <resultMap id="ReportResult" type="com.ruoyi.mall.domain.MallMarketReport">
@@ -58,7 +67,7 @@
 
     <!-- 公开列表：只显示已批准 -->
     <select id="selectPostList" resultMap="PostResult">
-        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar_url AS member_avatar
         FROM mall_market_post p
         LEFT JOIN mall_member m ON m.member_id = p.member_id
         WHERE p.del_flag = '0' AND p.status != '2'
@@ -76,7 +85,7 @@
 
     <!-- 我的发帖：显示全部状态（含待审/已拒绝） -->
     <select id="selectMyPosts" resultMap="PostResult">
-        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar_url AS member_avatar
         FROM mall_market_post p
         LEFT JOIN mall_member m ON m.member_id = p.member_id
         WHERE p.del_flag = '0' AND p.member_id = #{memberId}
@@ -85,7 +94,7 @@
 
     <!-- 管理员待审帖子 -->
     <select id="selectPendingPosts" resultMap="PostResult">
-        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar_url AS member_avatar
         FROM mall_market_post p
         LEFT JOIN mall_member m ON m.member_id = p.member_id
         WHERE p.del_flag = '0' AND p.review_status = '0'
@@ -93,7 +102,7 @@
     </select>
 
     <select id="selectPostById" resultMap="PostResult">
-        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar_url AS member_avatar
         FROM mall_market_post p
         LEFT JOIN mall_member m ON m.member_id = p.member_id
         WHERE p.post_id = #{postId} AND p.del_flag = '0' AND p.moderated = 0
@@ -101,13 +110,18 @@
 
     <insert id="insertPost" useGeneratedKeys="true" keyProperty="postId">
         INSERT INTO mall_market_post
-          (member_id, title, description, price, images, category, status,
-           phone, whatsapp, messenger, telegram, view_count, comment_count,
-           del_flag, create_time)
+          (member_id, title, description, price, price_type, images, category, status,
+           phone, whatsapp, messenger, telegram, viber, wechat, line, instagram,
+           location_label, latitude, longitude,
+           view_count, comment_count, del_flag, create_time)
         VALUES
-          (#{memberId}, #{title}, #{description}, #{price}, #{images}, #{category}, '0',
-           #{phone}, #{whatsapp}, #{messenger}, #{telegram}, 0, 0,
-           '0', NOW())
+          (#{memberId}, #{title}, #{description}, #{price},
+           COALESCE(#{priceType}, 'fixed'),
+           #{images}, #{category}, '0',
+           #{phone}, #{whatsapp}, #{messenger}, #{telegram},
+           #{viber}, #{wechat}, #{line}, #{instagram},
+           #{locationLabel}, #{latitude}, #{longitude},
+           0, 0, '0', NOW())
     </insert>
 
     <update id="updatePost">
@@ -148,7 +162,7 @@
     </update>
 
     <select id="selectCommentsByPostId" resultMap="CommentResult">
-        SELECT c.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        SELECT c.*, m.nick_name AS member_nickname, m.avatar_url AS member_avatar
         FROM mall_market_comment c
         LEFT JOIN mall_member m ON m.member_id = c.member_id
         WHERE c.post_id = #{postId} AND c.del_flag = '0'
@@ -161,7 +175,7 @@
     </insert>
 
     <select id="selectCommentById" resultMap="CommentResult">
-        SELECT c.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        SELECT c.*, m.nick_name AS member_nickname, m.avatar_url AS member_avatar
         FROM mall_market_comment c
         LEFT JOIN mall_member m ON m.member_id = c.member_id
         WHERE c.comment_id = #{commentId}
@@ -275,6 +289,40 @@
             AND r.target_type = #{targetType}
         </if>
         ORDER BY r.status ASC, r.create_time DESC
+    </select>
+
+    <!-- ── 收藏 ─────────────────────────────────────────────────────────── -->
+
+    <insert id="insertFavorite">
+        INSERT IGNORE INTO mall_market_favorite (member_id, post_id, create_time)
+        VALUES (#{memberId}, #{postId}, NOW())
+    </insert>
+
+    <delete id="deleteFavorite">
+        DELETE FROM mall_market_favorite WHERE member_id = #{memberId} AND post_id = #{postId}
+    </delete>
+
+    <select id="isFavorited" resultType="int">
+        SELECT COUNT(1) FROM mall_market_favorite
+        WHERE member_id = #{memberId} AND post_id = #{postId}
+    </select>
+
+    <select id="selectFavoritePostIds" resultType="Long">
+        SELECT post_id FROM mall_market_favorite WHERE member_id = #{memberId}
+    </select>
+
+    <!-- 收藏列表：帖子已删/下架也返回，deleted=1 供前端标识 -->
+    <select id="selectMyFavorites" resultMap="PostResult">
+        SELECT p.*,
+               m.nick_name AS member_nickname,
+               m.avatar_url AS member_avatar,
+               CASE WHEN p.del_flag != '0' OR p.moderated = 1 OR p.review_status = '2'
+                    THEN 1 ELSE 0 END AS deleted
+        FROM mall_market_favorite f
+        JOIN mall_market_post p ON p.post_id = f.post_id
+        LEFT JOIN mall_member m ON m.member_id = p.member_id
+        WHERE f.member_id = #{memberId}
+        ORDER BY f.create_time DESC
     </select>
 
 </mapper>
