@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header">
+<style>
+  .status-0 { background:#f0ad4e }
+  .status-1 { background:#5cb85c }
+  .status-2 { background:#aaa }
+  .action-btns .btn { margin-right:4px }
+</style>
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="ibox-content">
+        <h4>Market Content Reports</h4>
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Target</th>
+              <th>Reporter</th>
+              <th>Reason</th>
+              <th>Detail</th>
+              <th>Status</th>
+              <th>Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${reports}">
+              <td th:text="${r.reportId}"></td>
+              <td>
+                <span th:if="${r.targetType == 'post'}" class="badge badge-primary">Post</span>
+                <span th:if="${r.targetType == 'comment'}" class="badge badge-default">Comment</span>
+              </td>
+              <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  th:text="${r.targetTitle}"></td>
+              <td th:text="${r.reporterNickname}"></td>
+              <td th:text="${r.reason}"></td>
+              <td th:text="${r.detail ?: '-'}"></td>
+              <td>
+                <span class="badge"
+                  th:classappend="'status-' + ${r.status}"
+                  th:text="${r.status == '0' ? 'Pending' : r.status == '1' ? 'Handled' : 'Ignored'}">
+                </span>
+              </td>
+              <td th:text="${#dates.format(r.createTime,'MM-dd HH:mm')}"></td>
+              <td class="action-btns">
+                <span th:if="${r.targetType == 'post'}">
+                  <button class="btn btn-xs btn-warning"
+                    th:onclick="'moderatePost(' + ${r.targetId} + ',' + ${r.reportId} + ')'">
+                    Remove Post
+                  </button>
+                </span>
+                <span th:if="${r.targetType == 'comment'}">
+                  <button class="btn btn-xs btn-warning"
+                    th:onclick="'moderateComment(' + ${r.targetId} + ',' + ${r.reportId} + ')'">
+                    Remove Comment
+                  </button>
+                </span>
+                <button class="btn btn-xs btn-danger"
+                  th:onclick="'banMember(' + ${r.reportId} + ')'">
+                  Ban User
+                </button>
+                <button class="btn btn-xs btn-default"
+                  th:if="${r.status == '0'}"
+                  th:onclick="'ignoreReport(' + ${r.reportId} + ')'">
+                  Ignore
+                </button>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(reports)}">
+              <td colspan="9" class="text-center text-muted">No reports</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+  var ctx = /*[[${#httpServletRequest.contextPath}]]*/ '';
+  var prefix = ctx + '/mall/market';
+
+  function moderatePost(postId, reportId) {
+    $.modal.confirm('Remove this post?', function() {
+      $.ajax({ url: prefix + '/post/moderate', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({postId: postId}),
+        success: function(r) {
+          if (r.code === 0) { markHandled(reportId); location.reload(); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function moderateComment(commentId, reportId) {
+    $.modal.confirm('Remove this comment?', function() {
+      $.ajax({ url: prefix + '/comment/moderate', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({commentId: commentId}),
+        success: function(r) {
+          if (r.code === 0) { markHandled(reportId); location.reload(); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function banMember(reportId) {
+    var memberId = prompt('Enter member ID to ban:');
+    if (!memberId) return;
+    $.modal.confirm('Ban member #' + memberId + '?', function() {
+      $.ajax({ url: prefix + '/member/ban', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({memberId: memberId}),
+        success: function(r) {
+          if (r.code === 0) { markHandled(reportId); $.modal.alertSuccess('Member banned'); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function ignoreReport(reportId) {
+    $.ajax({ url: prefix + '/report/handle', type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({reportId: reportId, status: '2', note: 'Ignored'}),
+      success: function(r) {
+        if (r.code === 0) location.reload();
+        else $.modal.alertWarning(r.msg);
+      }
+    });
+  }
+
+  function markHandled(reportId) {
+    $.ajax({ url: prefix + '/report/handle', type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({reportId: reportId, status: '1', note: 'Content removed'})
+    });
+  }
+</script>
+</body>
+</html>

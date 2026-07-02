@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header">
+<style>
+  .post-img { width:60px; height:60px; object-fit:cover; border-radius:6px; }
+  .badge-pending  { background:#f0ad4e }
+  .badge-approved { background:#5cb85c }
+  .badge-rejected { background:#d9534f }
+  .badge-handled  { background:#5cb85c }
+  .badge-ignored  { background:#aaa }
+  .section-title { border-left:4px solid #1ab394; padding-left:10px; margin:20px 0 12px; font-size:16px; font-weight:bold; }
+</style>
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight">
+  <div class="row">
+    <div class="col-sm-12">
+
+      <!-- ── 待审帖子 ───────────────────────────────────────────── -->
+      <div class="ibox-content">
+        <div class="section-title">
+          Pending Posts
+          <span class="badge" style="background:#f0ad4e;margin-left:8px"
+                th:text="${#lists.size(pendingPosts)}">0</span>
+        </div>
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Title</th>
+              <th>Seller</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Posted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="p : ${pendingPosts}">
+              <td>
+                <img th:if="${p.images != null and p.images != ''}"
+                     th:src="${#strings.arraySplit(p.images,',')[0]}"
+                     class="post-img" onerror="this.style.display='none'">
+                <span th:unless="${p.images != null and p.images != ''}">-</span>
+              </td>
+              <td th:text="${p.title}"></td>
+              <td th:text="${p.memberNickname}"></td>
+              <td th:text="${p.category ?: '-'}"></td>
+              <td th:text="${p.price != null ? '₱' + p.price : 'Free'}"></td>
+              <td th:text="${#dates.format(p.createTime,'MM-dd HH:mm')}"></td>
+              <td>
+                <button class="btn btn-xs btn-success"
+                  th:onclick="'approvePost(' + ${p.postId} + ')'">✓ Approve</button>
+                <button class="btn btn-xs btn-danger"
+                  th:onclick="'rejectPost(' + ${p.postId} + ')'">✗ Reject</button>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(pendingPosts)}">
+              <td colspan="7" class="text-center text-muted">No pending posts</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── 举报列表 ───────────────────────────────────────────── -->
+      <div class="ibox-content" style="margin-top:20px">
+        <div class="section-title">Content Reports</div>
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Content</th>
+              <th>Reporter</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${reports}">
+              <td th:text="${r.reportId}"></td>
+              <td>
+                <span th:if="${r.targetType == 'post'}"  class="badge badge-primary">Post</span>
+                <span th:if="${r.targetType == 'comment'}" class="badge badge-default">Comment</span>
+              </td>
+              <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  th:text="${r.targetTitle}"></td>
+              <td th:text="${r.reporterNickname}"></td>
+              <td th:text="${r.reason}"></td>
+              <td>
+                <span class="badge"
+                  th:classappend="${r.status == '0' ? 'badge-pending' : r.status == '1' ? 'badge-handled' : 'badge-ignored'}"
+                  th:text="${r.status == '0' ? 'Pending' : r.status == '1' ? 'Handled' : 'Ignored'}">
+                </span>
+              </td>
+              <td th:text="${#dates.format(r.createTime,'MM-dd HH:mm')}"></td>
+              <td>
+                <span th:if="${r.targetType == 'post'}">
+                  <button class="btn btn-xs btn-warning"
+                    th:onclick="'moderatePost(' + ${r.targetId} + ',' + ${r.reportId} + ')'">
+                    Remove Post
+                  </button>
+                </span>
+                <span th:if="${r.targetType == 'comment'}">
+                  <button class="btn btn-xs btn-warning"
+                    th:onclick="'moderateComment(' + ${r.targetId} + ',' + ${r.reportId} + ')'">
+                    Remove Comment
+                  </button>
+                </span>
+                <button class="btn btn-xs btn-danger"
+                  th:onclick="'promptBan(' + ${r.reportId} + ')'">Ban User</button>
+                <button class="btn btn-xs btn-default" th:if="${r.status == '0'}"
+                  th:onclick="'ignoreReport(' + ${r.reportId} + ')'">Ignore</button>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(reports)}">
+              <td colspan="8" class="text-center text-muted">No reports</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+  var prefix = /*[[${#httpServletRequest.contextPath}]]*/ '' + '/mall/market';
+
+  function approvePost(postId) {
+    $.modal.confirm('Approve this post? It will become publicly visible.', function() {
+      $.ajax({ url: prefix + '/post/approve', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({postId: postId}),
+        success: function(r) {
+          if (r.code === 0) { $.modal.alertSuccess('Approved'); setTimeout(function(){ location.reload(); }, 1000); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function rejectPost(postId) {
+    var note = prompt('Rejection reason (will be shown to the user):',
+                      'Does not meet community guidelines');
+    if (note === null) return;
+    $.ajax({ url: prefix + '/post/reject', type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({postId: postId, note: note}),
+      success: function(r) {
+        if (r.code === 0) { $.modal.alertSuccess('Post rejected'); setTimeout(function(){ location.reload(); }, 1000); }
+        else $.modal.alertWarning(r.msg);
+      }
+    });
+  }
+
+  function moderatePost(postId, reportId) {
+    $.modal.confirm('Remove this post from the marketplace?', function() {
+      $.ajax({ url: prefix + '/post/moderate', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({postId: postId}),
+        success: function(r) {
+          if (r.code === 0) { markHandled(reportId); location.reload(); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function moderateComment(commentId, reportId) {
+    $.modal.confirm('Remove this comment?', function() {
+      $.ajax({ url: prefix + '/comment/moderate', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({commentId: commentId}),
+        success: function(r) {
+          if (r.code === 0) { markHandled(reportId); location.reload(); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function promptBan(reportId) {
+    var memberId = prompt('Enter member ID to ban:');
+    if (!memberId) return;
+    $.modal.confirm('Ban member #' + memberId + '?', function() {
+      $.ajax({ url: prefix + '/member/ban', type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({memberId: memberId}),
+        success: function(r) {
+          if (r.code === 0) { markHandled(reportId); $.modal.alertSuccess('Member banned'); }
+          else $.modal.alertWarning(r.msg);
+        }
+      });
+    });
+  }
+
+  function ignoreReport(reportId) {
+    $.ajax({ url: prefix + '/report/handle', type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({reportId: reportId, status: '2', note: 'Ignored'}),
+      success: function(r) { if (r.code === 0) location.reload(); }
+    });
+  }
+
+  function markHandled(reportId) {
+    $.ajax({ url: prefix + '/report/handle', type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({reportId: reportId, status: '1', note: 'Content removed'})
+    });
+  }
+</script>
+</body>
+</html>

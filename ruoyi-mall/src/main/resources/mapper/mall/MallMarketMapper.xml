@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallMarketMapper">
+
+    <resultMap id="PostResult" type="com.ruoyi.mall.domain.MallMarketPost">
+        <id     property="postId"        column="post_id"/>
+        <result property="memberId"      column="member_id"/>
+        <result property="title"         column="title"/>
+        <result property="description"   column="description"/>
+        <result property="price"         column="price"/>
+        <result property="images"        column="images"/>
+        <result property="category"      column="category"/>
+        <result property="status"        column="status"/>
+        <result property="phone"         column="phone"/>
+        <result property="whatsapp"      column="whatsapp"/>
+        <result property="messenger"     column="messenger"/>
+        <result property="telegram"      column="telegram"/>
+        <result property="viewCount"     column="view_count"/>
+        <result property="commentCount"  column="comment_count"/>
+        <result property="delFlag"        column="del_flag"/>
+        <result property="moderated"      column="moderated"/>
+        <result property="reportCount"    column="report_count"/>
+        <result property="reviewStatus"   column="review_status"/>
+        <result property="reviewNote"     column="review_note"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateTime"    column="update_time"/>
+        <result property="memberNickname" column="member_nickname"/>
+        <result property="memberAvatar"   column="member_avatar"/>
+    </resultMap>
+
+    <resultMap id="ReportResult" type="com.ruoyi.mall.domain.MallMarketReport">
+        <id     property="reportId"         column="report_id"/>
+        <result property="targetType"       column="target_type"/>
+        <result property="targetId"         column="target_id"/>
+        <result property="reporterId"       column="reporter_id"/>
+        <result property="reason"           column="reason"/>
+        <result property="detail"           column="detail"/>
+        <result property="status"           column="status"/>
+        <result property="handledBy"        column="handled_by"/>
+        <result property="handledNote"      column="handled_note"/>
+        <result property="createTime"       column="create_time"/>
+        <result property="handleTime"       column="handle_time"/>
+        <result property="reporterNickname" column="reporter_nickname"/>
+        <result property="targetTitle"      column="target_title"/>
+    </resultMap>
+
+    <resultMap id="CommentResult" type="com.ruoyi.mall.domain.MallMarketComment">
+        <id     property="commentId"      column="comment_id"/>
+        <result property="postId"         column="post_id"/>
+        <result property="memberId"       column="member_id"/>
+        <result property="content"        column="content"/>
+        <result property="delFlag"        column="del_flag"/>
+        <result property="createTime"     column="create_time"/>
+        <result property="memberNickname" column="member_nickname"/>
+        <result property="memberAvatar"   column="member_avatar"/>
+    </resultMap>
+
+    <!-- 公开列表：只显示已批准 -->
+    <select id="selectPostList" resultMap="PostResult">
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        FROM mall_market_post p
+        LEFT JOIN mall_member m ON m.member_id = p.member_id
+        WHERE p.del_flag = '0' AND p.status != '2'
+          AND p.moderated = 0 AND p.review_status = '1'
+          AND m.status != '1'
+        <if test="category != null and category != ''">
+            AND p.category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.title LIKE CONCAT('%', #{keyword}, '%')
+              OR p.description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+
+    <!-- 我的发帖：显示全部状态（含待审/已拒绝） -->
+    <select id="selectMyPosts" resultMap="PostResult">
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        FROM mall_market_post p
+        LEFT JOIN mall_member m ON m.member_id = p.member_id
+        WHERE p.del_flag = '0' AND p.member_id = #{memberId}
+        ORDER BY p.create_time DESC
+    </select>
+
+    <!-- 管理员待审帖子 -->
+    <select id="selectPendingPosts" resultMap="PostResult">
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        FROM mall_market_post p
+        LEFT JOIN mall_member m ON m.member_id = p.member_id
+        WHERE p.del_flag = '0' AND p.review_status = '0'
+        ORDER BY p.create_time ASC
+    </select>
+
+    <select id="selectPostById" resultMap="PostResult">
+        SELECT p.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        FROM mall_market_post p
+        LEFT JOIN mall_member m ON m.member_id = p.member_id
+        WHERE p.post_id = #{postId} AND p.del_flag = '0' AND p.moderated = 0
+    </select>
+
+    <insert id="insertPost" useGeneratedKeys="true" keyProperty="postId">
+        INSERT INTO mall_market_post
+          (member_id, title, description, price, images, category, status,
+           phone, whatsapp, messenger, telegram, view_count, comment_count,
+           del_flag, create_time)
+        VALUES
+          (#{memberId}, #{title}, #{description}, #{price}, #{images}, #{category}, '0',
+           #{phone}, #{whatsapp}, #{messenger}, #{telegram}, 0, 0,
+           '0', NOW())
+    </insert>
+
+    <update id="updatePost">
+        UPDATE mall_market_post
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="whatsapp != null">whatsapp = #{whatsapp},</if>
+            <if test="messenger != null">messenger = #{messenger},</if>
+            <if test="telegram != null">telegram = #{telegram},</if>
+            update_time = NOW()
+        </set>
+        WHERE post_id = #{postId} AND member_id = #{memberId}
+    </update>
+
+    <update id="deletePost">
+        UPDATE mall_market_post SET del_flag = '2', update_time = NOW()
+        WHERE post_id = #{postId} AND member_id = #{memberId}
+    </update>
+
+    <update id="incrementViewCount">
+        UPDATE mall_market_post SET view_count = view_count + 1 WHERE post_id = #{postId}
+    </update>
+
+    <update id="incrementCommentCount">
+        UPDATE mall_market_post SET comment_count = comment_count + 1 WHERE post_id = #{postId}
+    </update>
+
+    <update id="decrementCommentCount">
+        UPDATE mall_market_post
+        SET comment_count = GREATEST(comment_count - 1, 0)
+        WHERE post_id = #{postId}
+    </update>
+
+    <select id="selectCommentsByPostId" resultMap="CommentResult">
+        SELECT c.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        FROM mall_market_comment c
+        LEFT JOIN mall_member m ON m.member_id = c.member_id
+        WHERE c.post_id = #{postId} AND c.del_flag = '0'
+        ORDER BY c.create_time ASC
+    </select>
+
+    <insert id="insertComment" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO mall_market_comment (post_id, member_id, content, del_flag, create_time)
+        VALUES (#{postId}, #{memberId}, #{content}, '0', NOW())
+    </insert>
+
+    <select id="selectCommentById" resultMap="CommentResult">
+        SELECT c.*, m.nick_name AS member_nickname, m.avatar AS member_avatar
+        FROM mall_market_comment c
+        LEFT JOIN mall_member m ON m.member_id = c.member_id
+        WHERE c.comment_id = #{commentId}
+    </select>
+
+    <update id="deleteComment">
+        UPDATE mall_market_comment SET del_flag = '1'
+        WHERE comment_id = #{commentId} AND member_id = #{memberId}
+    </update>
+
+    <!-- ── 审核 ──────────────────────────────────────────────────────────── -->
+
+    <insert id="insertReport" useGeneratedKeys="true" keyProperty="reportId">
+        INSERT INTO mall_market_report
+          (target_type, target_id, reporter_id, reason, detail, status, create_time)
+        VALUES
+          (#{targetType}, #{targetId}, #{reporterId}, #{reason}, #{detail}, '0', NOW())
+    </insert>
+
+    <update id="incrementReportCount">
+        UPDATE mall_market_post SET report_count = report_count + 1 WHERE post_id = #{postId}
+    </update>
+
+    <update id="moderatePost">
+        UPDATE mall_market_post SET moderated = 1, update_time = NOW() WHERE post_id = #{postId}
+    </update>
+
+    <update id="approvePost">
+        UPDATE mall_market_post SET review_status = '1', update_time = NOW() WHERE post_id = #{postId}
+    </update>
+
+    <update id="rejectPost">
+        UPDATE mall_market_post SET review_status = '2', review_note = #{note}, update_time = NOW()
+        WHERE post_id = #{postId}
+    </update>
+
+    <update id="moderateComment">
+        UPDATE mall_market_comment SET moderated = 1 WHERE comment_id = #{commentId}
+    </update>
+
+    <update id="updateMemberStatus">
+        UPDATE mall_member SET status = #{status} WHERE member_id = #{memberId}
+    </update>
+
+    <select id="selectPendingReports" resultMap="ReportResult">
+        SELECT r.*,
+               m.nick_name AS reporter_nickname,
+               CASE r.target_type
+                 WHEN 'post'    THEN (SELECT title  FROM mall_market_post    WHERE post_id    = r.target_id)
+                 WHEN 'comment' THEN (SELECT content FROM mall_market_comment WHERE comment_id = r.target_id)
+               END AS target_title
+        FROM mall_market_report r
+        LEFT JOIN mall_member m ON m.member_id = r.reporter_id
+        ORDER BY r.status ASC, r.create_time DESC
+    </select>
+
+    <update id="handleReport">
+        UPDATE mall_market_report
+        SET status = #{status}, handled_by = #{handledBy},
+            handled_note = #{handledNote}, handle_time = NOW()
+        WHERE report_id = #{reportId}
+    </update>
+
+</mapper>
