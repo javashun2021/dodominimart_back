@@ -84,19 +84,19 @@ UPDATE mall_order              SET store_id = @seed_store_id WHERE store_id IS N
 UPDATE mall_runner_application SET store_id = @seed_store_id WHERE store_id IS NULL;
 
 -- ── 5. 后台菜单（门店管理）────────────────────────────────────────────────────
--- 以现有「商品分类」菜单(perms='mall:category:view')为模板复制 parent_id/target 等，
--- 尽量不假设 sys_menu 列结构。执行后授予所有「能看商品分类」的角色。
-INSERT INTO sys_menu (menu_name, parent_id, order_num, url, target, menu_type, visible, is_refresh, perms, icon, create_by, create_time)
-SELECT 'Stores', parent_id, 8, '/mall/store', target, 'C', visible, is_refresh, 'mall:store:view', 'fa fa-map-marker', 'admin', now()
+-- 以现有「商品分类」菜单(perms='mall:category:view')为模板复制 parent_id 等。
+-- 执行后授予所有「能看商品分类」的角色。
+INSERT INTO sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time)
+SELECT 'Stores', parent_id, 8, '/mall/store', 'C', visible, 'mall:store:view', 'fa fa-map-marker', 'admin', now()
 FROM sys_menu WHERE perms = 'mall:category:view' LIMIT 1;
 
 SET @store_menu_id := LAST_INSERT_ID();
 
-INSERT INTO sys_menu (menu_name, parent_id, order_num, url, target, menu_type, visible, is_refresh, perms, icon, create_by, create_time) VALUES
-('Store Query',  @store_menu_id, 1, '#', '', 'F', '0', '1', 'mall:store:list',   '#', 'admin', now()),
-('Store Add',    @store_menu_id, 2, '#', '', 'F', '0', '1', 'mall:store:add',    '#', 'admin', now()),
-('Store Edit',   @store_menu_id, 3, '#', '', 'F', '0', '1', 'mall:store:edit',   '#', 'admin', now()),
-('Store Remove', @store_menu_id, 4, '#', '', 'F', '0', '1', 'mall:store:remove', '#', 'admin', now());
+INSERT INTO sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time) VALUES
+('Store Query',  @store_menu_id, 1, '#', 'F', '0', 'mall:store:list',   '#', 'admin', now()),
+('Store Add',    @store_menu_id, 2, '#', 'F', '0', 'mall:store:add',    '#', 'admin', now()),
+('Store Edit',   @store_menu_id, 3, '#', 'F', '0', 'mall:store:edit',   '#', 'admin', now()),
+('Store Remove', @store_menu_id, 4, '#', 'F', '0', 'mall:store:remove', '#', 'admin', now());
 
 -- 把新菜单授予所有已拥有「商品分类查看」权限的角色
 INSERT INTO sys_role_menu (role_id, menu_id)

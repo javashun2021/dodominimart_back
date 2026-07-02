@@ -54,7 +54,7 @@
                 <div id="imgPreview" th:style="${product.imageUrl != null and product.imageUrl != ''} ? 'margin-top:8px' : 'margin-top:8px;display:none'">
                     <img id="previewImg" th:src="${product.imageUrl}" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">
                 </div>
-                <span class="help-block" style="margin-bottom:0;">封面图，用于列表/购物车缩略图</span>
+                <span class="help-block" style="margin-bottom:0;">Cover image — used as thumbnail in product list and cart</span>
             </div>
         </div>
         <div class="form-group">
@@ -63,23 +63,23 @@
                 <input type="hidden" id="images" name="images" th:value="${product.images}">
                 <span class="input-group-btn">
                     <label class="btn btn-default" for="uploadMore"><i class="fa fa-plus"></i> Add images</label>
-                    <input type="file" id="uploadMore" accept="image/*" multiple style="display:none" onchange="uploadMore(this)">
+                    <input type="file" id="uploadMore" accept="image/*" multiple style="display:none">
                 </span>
                 <div id="morePreview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px"></div>
-                <span class="help-block" style="margin-bottom:0;">附加图，App 详情页可左右滑动查看（可多张，可删除）</span>
+                <span class="help-block" style="margin-bottom:0;">Additional images — swipeable gallery on product detail page (multiple allowed, tap × to remove)</span>
             </div>
         </div>
         <div class="form-group">
             <label class="col-sm-3 control-label">Attribute Name：</label>
             <div class="col-sm-8">
-                <input class="form-control" type="text" name="specName" th:value="${product.specName}" placeholder="如 口味 / Flavor（留空=无属性）">
+                <input class="form-control" type="text" name="specName" th:value="${product.specName}" placeholder="e.g. Flavor (leave blank if no variants)">
             </div>
         </div>
         <div class="form-group">
             <label class="col-sm-3 control-label">Options：</label>
             <div class="col-sm-8">
-                <input class="form-control" type="text" name="specOptions" th:value="${product.specOptions}" placeholder="逗号分隔，如 苹果味,水蜜桃味,原味">
-                <span class="help-block" style="margin-bottom:0;">顾客下单时选一个（各选项共用价格与库存）</span>
+                <input class="form-control" type="text" name="specOptions" th:value="${product.specOptions}" placeholder="Comma-separated, e.g. Apple,Peach,Original">
+                <span class="help-block" style="margin-bottom:0;">Customer picks one option per order (all options share the same price and stock)</span>
             </div>
         </div>
         <div class="form-group">
@@ -139,49 +139,59 @@
         });
     }
 
-    // ── 多图（附加图）────────────────────────────────────────────────
     var moreImages = [];
-    (function initMore() {
-        var raw = $('#images').val();
-        if (raw) {
-            moreImages = raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-        }
-        renderMore();
-    })();
+    var moreUrls   = [];
+
     function renderMore() {
         $('#images').val(moreImages.join(','));
         var html = '';
-        for (var i = 0; i < moreImages.length; i++) {
+        for (var i = 0; i < moreUrls.length; i++) {
             html += '<div style="position:relative;display:inline-block">'
-                  + '<img src="' + moreImages[i] + '" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">'
-                  + '<a onclick="removeMore(' + i + ')" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;cursor:pointer;font-size:12px">&times;</a>'
+                  + '<img src="' + moreUrls[i] + '" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">'
+                  + '<a data-idx="' + i + '" class="del-more-img" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;cursor:pointer;font-size:12px">&times;</a>'
                   + '</div>';
         }
         $('#morePreview').html(html);
     }
-    function removeMore(i) {
-        moreImages.splice(i, 1);
-        renderMore();
-    }
-    function uploadMore(input) {
-        if (!input.files || !input.files.length) return;
-        var files = Array.prototype.slice.call(input.files);
-        var done = 0;
-        files.forEach(function(f) {
-            var fd = new FormData();
-            fd.append('file', f);
-            $.ajax({
-                url: ctx + 'common/upload', type: 'POST', data: fd,
-                processData: false, contentType: false,
-                success: function(res) {
-                    if (res.code === 0) { moreImages.push(res.path); }
-                    else { $.modal.alertWarning(res.msg); }
-                },
-                complete: function() { if (++done === files.length) renderMore(); }
+
+    $(function() {
+        var raw = $('#images').val() || '';
+        if (raw) {
+            moreImages = raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+            moreUrls   = moreImages.map(function(p){ return window.location.origin + p; });
+            renderMore();
+        }
+        $('#uploadMore').on('change', function() {
+            var input = this;
+            if (!input.files || !input.files.length) return;
+            var files = Array.prototype.slice.call(input.files);
+            var done = 0;
+            files.forEach(function(f) {
+                var fd = new FormData();
+                fd.append('file', f);
+                $.ajax({
+                    url: ctx + 'common/upload', type: 'POST', data: fd,
+                    processData: false, contentType: false,
+                    success: function(res) {
+                        if (res.code === 0) {
+                            moreImages.push(res.path);
+                            moreUrls.push(res.url);
+                        } else {
+                            $.modal.alertWarning(res.msg);
+                        }
+                    },
+                    complete: function() { if (++done === files.length) renderMore(); }
+                });
             });
+            input.value = '';
         });
-        input.value = '';
-    }
+        $('#morePreview').on('click', '.del-more-img', function() {
+            var idx = parseInt($(this).data('idx'), 10);
+            moreImages.splice(idx, 1);
+            moreUrls.splice(idx, 1);
+            renderMore();
+        });
+    });
 </script>
 </body>
 </html>
