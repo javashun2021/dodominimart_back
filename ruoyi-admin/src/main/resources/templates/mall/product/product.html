@@ -65,6 +65,17 @@
         window.open(prefix + '/label?ids=' + ids.join(',') + '&copies=' + copies);
     }
 
+    // 一键切换首页精选：点星星 → 确认 → POST → 自动刷新列表
+    function toggleFeatured(id, cur) {
+        var next = cur == 1 ? 0 : 1;
+        var tip = next == 1
+            ? 'Feature this product in the app home page?'
+            : 'Remove this product from the home Featured section?';
+        $.modal.confirm(tip, function() {
+            $.operate.post(prefix + "/changeFeatured", { productId: id, isFeatured: next });
+        });
+    }
+
     $(function() {
         $.table.init({
             url: prefix + "/list",
@@ -86,6 +97,15 @@
                         return v === '0'
                             ? '<span class="badge badge-primary">Active</span>'
                             : '<span class="badge badge-default">Inactive</span>';
+                    }
+                },
+                {field: 'isFeatured', title: 'Featured', align: 'center',
+                    formatter: function(v, row) {
+                        var on = (v == 1);
+                        return '<a class="btn btn-xs ' + (on ? 'btn-warning' : 'btn-default') + ' ' + editFlag + '"'
+                             + ' onclick="toggleFeatured(\'' + row.productId + '\',' + (on ? 1 : 0) + ')">'
+                             + '<i class="fa ' + (on ? 'fa-star' : 'fa-star-o') + '"></i> '
+                             + (on ? 'Featured' : 'Normal') + '</a>';
                     }
                 },
                 {field: 'createTime', title: 'Created At'},

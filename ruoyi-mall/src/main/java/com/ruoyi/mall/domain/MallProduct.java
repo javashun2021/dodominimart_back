@@ -55,6 +55,10 @@ public class MallProduct extends BaseEntity
 
     private Integer sort;
 
+    /** 首页精选（0否 1是），App 首页 Featured 板块只展示 is_featured=1 的商品 */
+    @Excel(name = "首页精选", readConverterExp = "0=否,1=是")
+    private Integer isFeatured;
+
     /** 删除标志（0存在 2删除） */
     private String delFlag;
 
@@ -122,6 +126,9 @@ public class MallProduct extends BaseEntity
 
     public Integer getSort() { return sort; }
     public void setSort(Integer sort) { this.sort = sort; }
+
+    public Integer getIsFeatured() { return isFeatured; }
+    public void setIsFeatured(Integer isFeatured) { this.isFeatured = isFeatured; }
 
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }

@@ -111,6 +111,20 @@ public class MallProductController extends BaseController
         return toAjax(productService.deleteProductByIds(ids));
     }
 
+    /** 一键切换「首页精选」——App 首页 Featured 板块只展示 is_featured=1 的商品 */
+    @RequiresPermissions("mall:product:edit")
+    @Log(title = "商品管理", businessType = BusinessType.UPDATE)
+    @PostMapping("/changeFeatured")
+    @ResponseBody
+    public AjaxResult changeFeatured(Long productId, Integer isFeatured)
+    {
+        MallProduct product = new MallProduct();
+        product.setProductId(productId);
+        product.setIsFeatured(isFeatured != null && isFeatured == 1 ? 1 : 0);
+        product.setUpdateBy(ShiroUtils.getLoginName());
+        return toAjax(productService.updateProduct(product));
+    }
+
     /**
      * 商品标签打印页（方式A：浏览器/PDF 打印不干胶标签）。
      * 每张标签：店名(DODOMINIMART) + 商品名 + ₱价格 + Code128 条码图 + 条码数字。
