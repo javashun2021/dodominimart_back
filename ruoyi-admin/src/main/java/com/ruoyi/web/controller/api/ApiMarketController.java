@@ -35,6 +35,8 @@ public class ApiMarketController extends BaseApiController {
     private IMallMemberService memberService;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
 
     /** 分类列表（公开） */
     @GetMapping("/categories")
@@ -76,6 +78,24 @@ public class ApiMarketController extends BaseApiController {
             return AjaxResult.error("Your account has been suspended. Please contact support.");
         }
         MallMarketPost created = marketService.createPost(post, memberId);
+        // 新帖需人工审核：推一条纸飞机提醒到管理群（异步，失败不影响发帖）
+        String who = (member != null && member.getNickName() != null)
+                ? member.getNickName() : ("member#" + memberId);
+        String priceText;
+        if ("free".equals(created.getPriceType())) {
+            priceText = "Free";
+        } else if ("negotiable".equals(created.getPriceType())) {
+            priceText = "Negotiable";
+        } else {
+            priceText = "₱" + (created.getPrice() != null ? created.getPrice().toPlainString() : "0");
+        }
+        telegramNotifyService.notify(
+                "🆕 New Marketplace listing — pending review\n"
+                + "Title: " + created.getTitle() + "\n"
+                + "By: " + who + " (#" + memberId + ")\n"
+                + "Category: " + (created.getCategory() != null ? created.getCategory() : "-") + "\n"
+                + "Price: " + priceText + "\n"
+                + "Please review & approve in the admin panel.");
         return AjaxResult.success().put("data", created);
     }
 
