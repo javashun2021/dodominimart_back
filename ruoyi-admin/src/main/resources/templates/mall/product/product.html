@@ -11,6 +11,13 @@
                     <ul>
                         <li>Product Name：<input type="text" name="name"/></li>
                         <li>
+                            Category：
+                            <select name="categoryId" th:with="list=${categories}">
+                                <option value="">All</option>
+                                <option th:each="c : ${list}" th:value="${c.categoryId}" th:text="${c.name}"></option>
+                            </select>
+                        </li>
+                        <li>
                             Status：
                             <select name="status">
                                 <option value="">All</option>

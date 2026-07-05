@@ -50,8 +50,9 @@ public class MallProductController extends BaseController
 
     @RequiresPermissions("mall:product:view")
     @GetMapping
-    public String product()
+    public String product(ModelMap mmap)
     {
+        mmap.put("categories", categoryService.selectCategoryList(new MallCategory()));
         return prefix + "/product";
     }
 

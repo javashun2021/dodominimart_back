@@ -200,7 +200,7 @@
     </update>
 
     <update id="moderatePost">
-        UPDATE mall_market_post SET moderated = 1, update_time = NOW() WHERE post_id = #{postId}
+        UPDATE mall_market_post SET moderated = 1, status = '2', update_time = NOW() WHERE post_id = #{postId}
     </update>
 
     <update id="approvePost">

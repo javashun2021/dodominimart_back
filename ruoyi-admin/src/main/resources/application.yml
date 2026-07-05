@@ -163,6 +163,10 @@ mall:
     #clientId: 600271771039-p4bmnq6r0np6bignuiqempniupeb7oqt.apps.googleusercontent.com
     # Android/Web 用 Web application 类型；iOS 用 iOS 类型
     clientIds: 600271771039-arouc217r401svt1q2grf409lbj70860.apps.googleusercontent.com,600271771039-p4bmnq6r0np6bignuiqempniupeb7oqt.apps.googleusercontent.com
+    # Google Places API 服务端 key（App 地址搜索走后端代理 /api/v1/places/**，key 不暴露给客户端）。
+    # ⚠️ 建议用「无 HTTP referer/应用限制、仅限 Places API」的服务端专用 key，并用环境变量覆盖，不要写死提交。
+    # 留空则地址搜索接口返回空列表（不报错）。
+    places-key: ${MALL_GOOGLE_PLACES_KEY:AIzaSyDJPEC93tmebGE7Gxf1tuI53_CrR52ie0E}
   mail:
     from: minimartdodo@gmail.com          # 发件人地址（替换为真实 Gmail 地址）
     from-name: DodoMiniMart             # 发件人显示名称
