@@ -156,6 +156,24 @@ public class ApiMemberController extends BaseApiController
         return AjaxResult.success("Profile updated");
     }
 
+    /**
+     * 注销账号（真删除）
+     * DELETE /api/v1/member/account
+     * 删除会员本人及其个人数据（地址等）。Apple/Play 上架要求提供可用的账号删除功能。
+     */
+    @DeleteMapping("/account")
+    public AjaxResult deleteAccount(HttpServletRequest request)
+    {
+        Long memberId = getCurrentMemberId(request);
+        MallMember member = memberService.selectMemberById(memberId);
+        if (member == null)
+        {
+            return AjaxResult.error("Member not found");
+        }
+        memberService.deleteAccount(memberId);
+        return AjaxResult.success("Account deleted");
+    }
+
     // ── 地址管理 ──────────────────────────────────────────
 
     /** 地址列表 */

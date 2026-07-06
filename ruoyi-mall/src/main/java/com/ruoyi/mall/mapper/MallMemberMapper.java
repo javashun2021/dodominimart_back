@@ -25,6 +25,9 @@ public interface MallMemberMapper
 
     int updateMember(MallMember member);
 
+    /** 硬删除会员（账号注销，Apple/Play 合规要求真删除） */
+    int deleteMemberById(Long memberId);
+
     /** 后台设置会员角色：customer/cashier/admin */
     int updateRole(@Param("memberId") Long memberId, @Param("role") String role);
 

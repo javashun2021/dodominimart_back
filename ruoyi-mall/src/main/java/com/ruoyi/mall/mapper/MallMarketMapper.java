@@ -9,7 +9,8 @@ import com.ruoyi.mall.domain.MallMarketReport;
 public interface MallMarketMapper {
 
     List<MallMarketPost> selectPostList(@Param("category") String category,
-                                        @Param("keyword") String keyword);
+                                        @Param("keyword") String keyword,
+                                        @Param("viewerId") Long viewerId);
 
     List<MallMarketPost> selectMyPosts(@Param("memberId") Long memberId);
 
@@ -27,7 +28,8 @@ public interface MallMarketMapper {
 
     int decrementCommentCount(@Param("postId") Long postId);
 
-    List<MallMarketComment> selectCommentsByPostId(@Param("postId") Long postId);
+    List<MallMarketComment> selectCommentsByPostId(@Param("postId") Long postId,
+                                                   @Param("viewerId") Long viewerId);
 
     int insertComment(MallMarketComment comment);
 
@@ -76,4 +78,11 @@ public interface MallMarketMapper {
     List<Long> selectFavoritePostIds(@Param("memberId") Long memberId);
     /** 收藏列表；帖子已删除/下架的记录也返回，deleted=1 供前端标识 */
     List<MallMarketPost> selectMyFavorites(@Param("memberId") Long memberId);
+
+    // ── 拉黑 ──────────────────────────────────────────────────────────────────
+    int insertBlock(@Param("blockerId") Long blockerId, @Param("blockedId") Long blockedId);
+    int deleteBlock(@Param("blockerId") Long blockerId, @Param("blockedId") Long blockedId);
+    List<Long> selectBlockedIds(@Param("blockerId") Long blockerId);
+    /** 我拉黑的用户列表（含昵称/头像），供「已拉黑」管理页展示 */
+    List<java.util.Map<String, Object>> selectBlockedMembers(@Param("blockerId") Long blockerId);
 }

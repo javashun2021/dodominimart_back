@@ -48,6 +48,10 @@
         delete from mall_address where address_id = #{addressId}
     </delete>
 
+    <delete id="deleteAddressByMemberId" parameterType="Long">
+        delete from mall_address where member_id = #{memberId}
+    </delete>
+
     <update id="clearDefaultByMemberId" parameterType="Long">
         update mall_address set is_default = '0' where member_id = #{memberId}
     </update>

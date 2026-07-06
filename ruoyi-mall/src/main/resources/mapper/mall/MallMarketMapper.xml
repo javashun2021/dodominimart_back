@@ -80,6 +80,10 @@
             AND (p.title LIKE CONCAT('%', #{keyword}, '%')
               OR p.description LIKE CONCAT('%', #{keyword}, '%'))
         </if>
+        <if test="viewerId != null">
+            AND p.member_id NOT IN
+                (SELECT blocked_id FROM mall_market_block WHERE blocker_id = #{viewerId})
+        </if>
         ORDER BY p.create_time DESC
     </select>
 
@@ -166,6 +170,10 @@
         FROM mall_market_comment c
         LEFT JOIN mall_member m ON m.member_id = c.member_id
         WHERE c.post_id = #{postId} AND c.del_flag = '0'
+        <if test="viewerId != null">
+            AND c.member_id NOT IN
+                (SELECT blocked_id FROM mall_market_block WHERE blocker_id = #{viewerId})
+        </if>
         ORDER BY c.create_time ASC
     </select>
 
@@ -323,6 +331,32 @@
         LEFT JOIN mall_member m ON m.member_id = p.member_id
         WHERE f.member_id = #{memberId}
         ORDER BY f.create_time DESC
+    </select>
+
+    <!-- ── 拉黑 ─────────────────────────────────────────────────────────── -->
+
+    <insert id="insertBlock">
+        INSERT IGNORE INTO mall_market_block (blocker_id, blocked_id, create_time)
+        VALUES (#{blockerId}, #{blockedId}, NOW())
+    </insert>
+
+    <delete id="deleteBlock">
+        DELETE FROM mall_market_block
+        WHERE blocker_id = #{blockerId} AND blocked_id = #{blockedId}
+    </delete>
+
+    <select id="selectBlockedIds" resultType="Long">
+        SELECT blocked_id FROM mall_market_block WHERE blocker_id = #{blockerId}
+    </select>
+
+    <select id="selectBlockedMembers" resultType="java.util.Map">
+        SELECT b.blocked_id  AS memberId,
+               m.nick_name   AS memberNickname,
+               m.avatar_url  AS memberAvatar
+        FROM mall_market_block b
+        LEFT JOIN mall_member m ON m.member_id = b.blocked_id
+        WHERE b.blocker_id = #{blockerId}
+        ORDER BY b.create_time DESC
     </select>
 
 </mapper>

@@ -47,21 +47,24 @@ public class ApiMarketController extends BaseApiController {
         return AjaxResult.success().put("data", names);
     }
 
-    /** 帖子列表（公开，只显示已批准） */
+    /** 帖子列表（公开，只显示已批准；登录用户会过滤掉其拉黑的用户） */
     @GetMapping("/posts")
     public AjaxResult listPosts(
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String keyword) {
-        List<MallMarketPost> posts = marketService.listPosts(category, keyword);
+            @RequestParam(required = false) String keyword,
+            HttpServletRequest request) {
+        Long viewerId = getCurrentMemberIdOrNull(request); // 未登录为 null，不过滤
+        List<MallMarketPost> posts = marketService.listPosts(category, keyword, viewerId);
         return AjaxResult.success().put("data", posts);
     }
 
-    /** 帖子详情 + 评论（公开） */
+    /** 帖子详情 + 评论（公开；登录用户会过滤掉其拉黑用户的评论） */
     @GetMapping("/posts/{id}")
-    public AjaxResult getPost(@PathVariable("id") Long postId) {
+    public AjaxResult getPost(@PathVariable("id") Long postId, HttpServletRequest request) {
         MallMarketPost post = marketService.getPost(postId);
         if (post == null) return AjaxResult.error("Post not found");
-        List<MallMarketComment> comments = marketService.listComments(postId);
+        Long viewerId = getCurrentMemberIdOrNull(request);
+        List<MallMarketComment> comments = marketService.listComments(postId, viewerId);
         Map<String, Object> data = new HashMap<>();
         data.put("post", post);
         data.put("comments", comments);
@@ -201,5 +204,34 @@ public class ApiMarketController extends BaseApiController {
         if (memberId == null) return AjaxResult.error("Please login first");
         marketService.deleteComment(commentId, memberId);
         return AjaxResult.success();
+    }
+
+    // ── 拉黑用户（Apple/Play 1.2 UGC 合规）────────────────────────────────────
+
+    /** 拉黑某用户：之后在列表/评论里不再看到其内容 */
+    @PostMapping("/users/{memberId}/block")
+    public AjaxResult blockUser(@PathVariable("memberId") Long blockedId, HttpServletRequest request) {
+        Long me = getCurrentMemberId(request);
+        if (me == null) return AjaxResult.error("Please login first");
+        if (me.equals(blockedId)) return AjaxResult.error("You cannot block yourself");
+        marketService.blockUser(me, blockedId);
+        return AjaxResult.success("User blocked");
+    }
+
+    /** 取消拉黑 */
+    @DeleteMapping("/users/{memberId}/block")
+    public AjaxResult unblockUser(@PathVariable("memberId") Long blockedId, HttpServletRequest request) {
+        Long me = getCurrentMemberId(request);
+        if (me == null) return AjaxResult.error("Please login first");
+        marketService.unblockUser(me, blockedId);
+        return AjaxResult.success("User unblocked");
+    }
+
+    /** 我拉黑的用户列表 */
+    @GetMapping("/blocked-users")
+    public AjaxResult blockedUsers(HttpServletRequest request) {
+        Long me = getCurrentMemberId(request);
+        if (me == null) return AjaxResult.error("Please login first");
+        return AjaxResult.success().put("data", marketService.listBlockedMembers(me));
     }
 }

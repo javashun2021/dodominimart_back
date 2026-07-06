@@ -15,6 +15,9 @@ public interface MallAddressMapper
 
     int deleteAddressById(Long addressId);
 
+    /** 删除某会员的全部地址（账号注销时清理个人数据） */
+    int deleteAddressByMemberId(Long memberId);
+
     int clearDefaultByMemberId(Long memberId);
 
     MallAddress selectDefaultAddressByMemberId(Long memberId);

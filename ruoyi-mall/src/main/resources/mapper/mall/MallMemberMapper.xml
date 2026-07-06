@@ -86,6 +86,10 @@
         where member_id = #{memberId}
     </update>
 
+    <delete id="deleteMemberById" parameterType="Long">
+        delete from mall_member where member_id = #{memberId}
+    </delete>
+
     <update id="updatePassword">
         update mall_member set password_hash = #{passwordHash}, update_time = now()
         where member_id = #{memberId}

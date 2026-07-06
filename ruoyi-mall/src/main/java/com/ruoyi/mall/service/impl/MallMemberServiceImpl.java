@@ -31,6 +31,9 @@ public class MallMemberServiceImpl implements IMallMemberService
     private MallVerifyCodeMapper verifyCodeMapper;
 
     @Autowired
+    private com.ruoyi.mall.mapper.MallAddressMapper addressMapper;
+
+    @Autowired
     private IMallPointsService pointsService;
 
     @Autowired
@@ -247,6 +250,16 @@ public class MallMemberServiceImpl implements IMallMemberService
             }
         }
         memberMapper.updatePassword(memberId, BCRYPT.encode(newPassword));
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteAccount(Long memberId)
+    {
+        // 先清理个人数据（收货地址含手机号/详细地址等 PII），再硬删除会员本人。
+        // 历史订单为财务记录，保留但其 member_id 成为悬挂引用（无外键约束，安全）。
+        addressMapper.deleteAddressByMemberId(memberId);
+        memberMapper.deleteMemberById(memberId);
     }
 
     // ── private helpers ──────────────────────────────────────────────────────

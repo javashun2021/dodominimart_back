@@ -18,6 +18,20 @@ public abstract class BaseApiController
 
     protected Long getCurrentMemberId(HttpServletRequest request)
     {
+        Long memberId = getCurrentMemberIdOrNull(request);
+        if (memberId == null)
+        {
+            throw new RuntimeException("Not authenticated");
+        }
+        return memberId;
+    }
+
+    /**
+     * 取当前登录会员 id；未登录/无有效 token 时返回 null（不抛异常）。
+     * 供「公开但登录后有额外行为」的接口使用（如市场列表：登录用户过滤拉黑名单）。
+     */
+    protected Long getCurrentMemberIdOrNull(HttpServletRequest request)
+    {
         // 正常路径：JwtAuthFilter 已解析并写入 attribute
         Object memberId = request.getAttribute(JwtAuthFilter.ATTR_MEMBER_ID);
         if (memberId != null)
@@ -34,7 +48,7 @@ public abstract class BaseApiController
                 return jwtUtils.getMemberIdFromToken(token);
             }
         }
-        throw new RuntimeException("Not authenticated");
+        return null;
     }
 
     private static final int MAX_PAGE_SIZE = 200;

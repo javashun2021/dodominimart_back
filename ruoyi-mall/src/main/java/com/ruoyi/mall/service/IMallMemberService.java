@@ -45,4 +45,10 @@ public interface IMallMemberService
      * 若已有密码，则必须校验 oldPassword 正确。
      */
     void setPassword(Long memberId, String oldPassword, String newPassword);
+
+    /**
+     * 注销账号：真删除会员及其个人数据（地址等）。
+     * Apple/Play 上架要求提供可用的账号删除功能，且必须真实删除。
+     */
+    void deleteAccount(Long memberId);
 }

@@ -16,8 +16,8 @@ public class MallMarketServiceImpl implements IMallMarketService {
     private MallMarketMapper marketMapper;
 
     @Override
-    public List<MallMarketPost> listPosts(String category, String keyword) {
-        return marketMapper.selectPostList(category, keyword);
+    public List<MallMarketPost> listPosts(String category, String keyword, Long viewerId) {
+        return marketMapper.selectPostList(category, keyword, viewerId);
     }
 
     @Override
@@ -61,8 +61,26 @@ public class MallMarketServiceImpl implements IMallMarketService {
     }
 
     @Override
-    public List<MallMarketComment> listComments(Long postId) {
-        return marketMapper.selectCommentsByPostId(postId);
+    public List<MallMarketComment> listComments(Long postId, Long viewerId) {
+        return marketMapper.selectCommentsByPostId(postId, viewerId);
+    }
+
+    @Override
+    public void blockUser(Long blockerId, Long blockedId) {
+        if (blockerId == null || blockedId == null || blockerId.equals(blockedId)) {
+            return; // 不能拉黑自己
+        }
+        marketMapper.insertBlock(blockerId, blockedId);
+    }
+
+    @Override
+    public void unblockUser(Long blockerId, Long blockedId) {
+        marketMapper.deleteBlock(blockerId, blockedId);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> listBlockedMembers(Long blockerId) {
+        return marketMapper.selectBlockedMembers(blockerId);
     }
 
     @Override
