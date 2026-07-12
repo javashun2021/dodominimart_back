@@ -37,6 +37,8 @@ public class ApiMarketController extends BaseApiController {
     private JdbcTemplate jdbcTemplate;
     @Autowired
     private com.ruoyi.mall.service.TelegramNotifyService telegramNotifyService;
+    @Autowired
+    private com.ruoyi.web.service.MarketAiService marketAiService;
 
     /** 分类列表（公开） */
     @GetMapping("/categories")
@@ -69,6 +71,25 @@ public class ApiMarketController extends BaseApiController {
         data.put("post", post);
         data.put("comments", comments);
         return AjaxResult.success().put("data", data);
+    }
+
+    /** AI 优化帖子草稿：结合图片+已填信息，返回优化后的标题/描述/分类/建议价格区间/tips（供预览套用） */
+    @PostMapping("/optimize")
+    public AjaxResult optimize(@RequestBody MallMarketPost draft, HttpServletRequest request) {
+        Long memberId = getCurrentMemberId(request);
+        if (memberId == null) return AjaxResult.error("Please login first");
+        MallMember member = memberService.selectMemberById(memberId);
+        if (member != null && "1".equals(member.getStatus())) {
+            return AjaxResult.error("Your account has been suspended. Please contact support.");
+        }
+        if (!marketAiService.isConfigured()) return AjaxResult.error("AI service is not available");
+        try {
+            return AjaxResult.success().put("data",
+                    marketAiService.optimize(draft.getTitle(), draft.getDescription(),
+                            draft.getPrice(), draft.getPriceType(), draft.getCategory(), draft.getImages()));
+        } catch (Exception e) {
+            return AjaxResult.error("Failed to generate suggestions, please try again");
+        }
     }
 
     /** 发帖 */
