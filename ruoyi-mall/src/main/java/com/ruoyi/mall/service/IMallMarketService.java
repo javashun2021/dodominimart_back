@@ -41,6 +41,12 @@ public interface IMallMarketService {
     List<MallMarketComment> listAdminComments(MallMarketComment query);
     List<MallMarketReport>  listAdminReports(MallMarketReport query);
 
+    // ── 外部同步（每日导入） ──────────────────────────────────────────────────
+    /** 该外部帖是否已导入（去重） */
+    boolean isExternalImported(String source, String externalId);
+    /** 导入一条外部帖（自动审核通过，member_id/source/external_id 由 post 带入） */
+    void importExternalPost(MallMarketPost post);
+
     // ── 收藏 ──────────────────────────────────────────────────────────────────
     /** 切换收藏，返回收藏后的状态（true=已收藏） */
     boolean toggleFavorite(Long memberId, Long postId);

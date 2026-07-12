@@ -182,6 +182,16 @@ public class MallMarketServiceImpl implements IMallMarketService {
     }
 
     @Override
+    public boolean isExternalImported(String source, String externalId) {
+        return marketMapper.countByExternalId(source, externalId) > 0;
+    }
+
+    @Override
+    public void importExternalPost(MallMarketPost post) {
+        marketMapper.insertImportedPost(post);
+    }
+
+    @Override
     public boolean toggleFavorite(Long memberId, Long postId) {
         if (marketMapper.isFavorited(memberId, postId) > 0) {
             marketMapper.deleteFavorite(memberId, postId);

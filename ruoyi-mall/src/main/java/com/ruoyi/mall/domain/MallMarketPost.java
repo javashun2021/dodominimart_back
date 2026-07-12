@@ -52,6 +52,11 @@ public class MallMarketPost {
     private Double latitude;
     private Double longitude;
 
+    /** 外部同步来源标记（如 ext），普通用户发帖为空 */
+    private String source;
+    /** 外部来源唯一 ID，用于每日同步去重，普通用户发帖为空 */
+    private String externalId;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
@@ -153,6 +158,12 @@ public class MallMarketPost {
 
     public Double getLongitude() { return longitude; }
     public void setLongitude(Double longitude) { this.longitude = longitude; }
+
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
+
+    public String getExternalId() { return externalId; }
+    public void setExternalId(String externalId) { this.externalId = externalId; }
 
     public Date getCreateTime() { return createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }

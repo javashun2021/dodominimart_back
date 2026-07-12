@@ -18,6 +18,13 @@ public interface MallMarketMapper {
 
     int insertPost(MallMarketPost post);
 
+    // ── 外部同步（每日导入去重） ──────────────────────────────────────────────
+    /** 按来源+外部ID计数，用于同步去重 */
+    int countByExternalId(@Param("source") String source, @Param("externalId") String externalId);
+
+    /** 导入外部帖：直接置 review_status='1'（自动审核通过），带 source/external_id */
+    int insertImportedPost(MallMarketPost post);
+
     int updatePost(MallMarketPost post);
 
     int deletePost(@Param("postId") Long postId, @Param("memberId") Long memberId);

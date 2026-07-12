@@ -31,6 +31,8 @@
         <result property="locationLabel"  column="location_label"/>
         <result property="latitude"       column="latitude"/>
         <result property="longitude"      column="longitude"/>
+        <result property="source"         column="source"/>
+        <result property="externalId"     column="external_id"/>
         <result property="createTime"    column="create_time"/>
         <result property="updateTime"    column="update_time"/>
         <result property="memberNickname" column="member_nickname"/>
@@ -126,6 +128,29 @@
            #{viber}, #{wechat}, #{line}, #{instagram},
            #{locationLabel}, #{latitude}, #{longitude},
            0, 0, '0', NOW())
+    </insert>
+
+    <select id="countByExternalId" resultType="int">
+        SELECT COUNT(*) FROM mall_market_post
+        WHERE source = #{source} AND external_id = #{externalId}
+    </select>
+
+    <insert id="insertImportedPost" useGeneratedKeys="true" keyProperty="postId">
+        INSERT INTO mall_market_post
+          (member_id, title, description, price, price_type, images, category, status,
+           phone, whatsapp, messenger, telegram, viber, wechat, line, instagram,
+           location_label, latitude, longitude,
+           source, external_id, review_status,
+           view_count, comment_count, moderated, del_flag, create_time)
+        VALUES
+          (#{memberId}, #{title}, #{description}, #{price},
+           COALESCE(#{priceType}, 'fixed'),
+           #{images}, #{category}, '0',
+           #{phone}, #{whatsapp}, #{messenger}, #{telegram},
+           #{viber}, #{wechat}, #{line}, #{instagram},
+           #{locationLabel}, #{latitude}, #{longitude},
+           #{source}, #{externalId}, '1',
+           0, 0, 0, '0', NOW())
     </insert>
 
     <update id="updatePost">
@@ -352,7 +377,8 @@
     <select id="selectBlockedMembers" resultType="java.util.Map">
         SELECT b.blocked_id  AS memberId,
                m.nick_name   AS memberNickname,
-               m.avatar_url  AS memberAvatar
+               m.avatar_url  AS memberAvatar,
+               b.create_time AS createTime
         FROM mall_market_block b
         LEFT JOIN mall_member m ON m.member_id = b.blocked_id
         WHERE b.blocker_id = #{blockerId}
