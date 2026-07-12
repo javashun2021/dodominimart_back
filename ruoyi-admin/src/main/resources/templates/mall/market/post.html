@@ -71,6 +71,12 @@
                     formatter: function(v){ return reviewMap[v] || v; }},
                 {field: 'status',        title: 'Status', align: 'center',
                     formatter: function(v){ return statusMap[v] || v; }},
+                {field: 'sourceContact', title: 'Contact (internal)',
+                    formatter: function(v){
+                        if (!v) return '-';
+                        var d = document.createElement('div'); d.textContent = v;   // 转义防 XSS
+                        return '<span style="color:#d9534f">' + d.innerHTML + '</span>';
+                    }},
                 {field: 'viewCount',     title: 'Views', width: 70},
                 {field: 'commentCount',  title: 'Comments', width: 80},
                 {field: 'createTime',    title: 'Posted At'},

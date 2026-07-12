@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -99,6 +100,9 @@ public class MarketSyncService
         long memberId = parseLong(cfg("mall.market.sync.member-id", "1001"), 1001L);
         String phone = cfg("mall.market.sync.contact-phone", "");
         int maxPages = (int) parseLong(cfg("mall.market.sync.max-pages", "50"), 50L);
+        // 加价比例：0 或未配 = 不加价；0.1 = +10%。最终价 = 原价 × (1 + markup)
+        double markup = parseDouble(cfg("mall.market.sync.price-markup", "0"), 0d);
+        if (markup < 0) markup = 0d;
 
         int synced = 0, dup = 0, failed = 0;
         for (int page = 1; page <= maxPages; page++)
@@ -120,9 +124,15 @@ public class MarketSyncService
             }
             if (fresh.isEmpty()) continue;
 
-            // 2) 清洗正文
+            // 2) 清洗正文：删除内联联系方式（同时留存以供后台内部查看）
             List<String> bodies = new ArrayList<>();
-            for (JsonNode it : fresh) bodies.add(stripContacts(it.path("con").asText("")));
+            List<String> contacts = new ArrayList<>();
+            for (JsonNode it : fresh)
+            {
+                CleanResult cr = cleanAndExtract(it.path("con").asText(""));
+                bodies.add(cr.cleaned);
+                contacts.add(cr.contacts);
+            }
 
             // 3) 批量翻译（失败则跳过整页新帖，靠 external_id 下次重试）
             List<ListingResult> tr;
@@ -154,7 +164,7 @@ public class MarketSyncService
                     p.setCategory(normalizeCategory(r.category));
                     p.setImages(joinImages(it.path("imglist")));
 
-                    BigDecimal price = parsePrice(it.path("diycon"));
+                    BigDecimal price = parsePrice(it.path("diycon"), markup);
                     if (price != null)
                     {
                         p.setPrice(price);
@@ -166,6 +176,8 @@ public class MarketSyncService
                         p.setPriceType("negotiable");
                     }
                     p.setPhone(phone);
+                    // 原始联系方式留后台内部查看（对外接口不返回）
+                    p.setSourceContact(cut(contacts.get(i), 500));
 
                     marketService.importExternalPost(p);
                     synced++;
@@ -203,9 +215,10 @@ public class MarketSyncService
     /**
      * 从 diycon 数组里取「价格」项的 value 解析。diycon 形如
      * [{name:"价格",value:"不限"},{name:"新旧程度",...},{name:"交易方式",...}]。
-     * 有数字 → ×1.10 加价显示；「不限」等无数字 → null（→ 面议）。
+     * 有数字 → × (1 + markup) 加价显示；「不限」等无数字 → null（→ 面议）。
+     * @param markup 加价比例（0=不加价，0.1=+10%）
      */
-    private BigDecimal parsePrice(JsonNode diycon)
+    private BigDecimal parsePrice(JsonNode diycon, double markup)
     {
         if (diycon == null || !diycon.isArray()) return null;
         for (JsonNode field : diycon)
@@ -221,7 +234,7 @@ public class MarketSyncService
                         double v = Double.parseDouble(m.group());
                         if (v > 0)
                         {
-                            return BigDecimal.valueOf(v * 1.10).setScale(2, RoundingMode.HALF_UP);
+                            return BigDecimal.valueOf(v * (1 + markup)).setScale(2, RoundingMode.HALF_UP);
                         }
                     }
                     catch (NumberFormatException ignored) {}
@@ -259,17 +272,39 @@ public class MarketSyncService
         return node.asText("");
     }
 
-    /** 删除正文里内联的电话/飞机号/微信/QQ，避免绕过官方联系方式 */
-    private String stripContacts(String con)
+    /** 清洗结果：cleaned=删除联系方式后的正文；contacts=被删除的联系方式（后台内部留存） */
+    private static class CleanResult
     {
-        if (con == null || con.isEmpty()) return "";
+        String cleaned = "";
+        String contacts = "";
+    }
+
+    /**
+     * 删除正文里内联的电话/飞机号/微信/QQ（避免顾客绕过官方联系方式），
+     * 同时把删掉的联系方式收集起来，供后台内部联系卖家用。
+     */
+    private CleanResult cleanAndExtract(String con)
+    {
+        CleanResult r = new CleanResult();
+        if (con == null || con.isEmpty()) return r;
+
+        Set<String> found = new LinkedHashSet<>();
         String s = con;
         for (Pattern p : CONTACT_PATTERNS)
         {
-            s = p.matcher(s).replaceAll(" ");
+            Matcher m = p.matcher(s);
+            StringBuffer sb = new StringBuffer();
+            while (m.find())
+            {
+                found.add(m.group().trim());
+                m.appendReplacement(sb, " ");
+            }
+            m.appendTail(sb);
+            s = sb.toString();
         }
-        // 收敛多余空白
-        return s.replaceAll("[ \\t]{2,}", " ").replaceAll("(\\s*\\n\\s*){2,}", "\n").trim();
+        r.cleaned = s.replaceAll("[ \\t]{2,}", " ").replaceAll("(\\s*\\n\\s*){2,}", "\n").trim();
+        r.contacts = String.join(" | ", found);
+        return r;
     }
 
     private static String cut(String s, int max)
@@ -295,6 +330,12 @@ public class MarketSyncService
     private static long parseLong(String s, long def)
     {
         try { return Long.parseLong(s.trim()); }
+        catch (Exception e) { return def; }
+    }
+
+    private static double parseDouble(String s, double def)
+    {
+        try { return Double.parseDouble(s.trim()); }
         catch (Exception e) { return def; }
     }
 }

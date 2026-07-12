@@ -40,6 +40,11 @@
         <result property="deleted"        column="deleted"/>
     </resultMap>
 
+    <!-- 后台专用：在 PostResult 基础上额外映射 source_contact（对外接口用 PostResult，不含此列） -->
+    <resultMap id="AdminPostResult" type="com.ruoyi.mall.domain.MallMarketPost" extends="PostResult">
+        <result property="sourceContact" column="source_contact"/>
+    </resultMap>
+
     <resultMap id="ReportResult" type="com.ruoyi.mall.domain.MallMarketReport">
         <id     property="reportId"         column="report_id"/>
         <result property="targetType"       column="target_type"/>
@@ -140,7 +145,7 @@
           (member_id, title, description, price, price_type, images, category, status,
            phone, whatsapp, messenger, telegram, viber, wechat, line, instagram,
            location_label, latitude, longitude,
-           source, external_id, review_status,
+           source, external_id, source_contact, review_status,
            view_count, comment_count, moderated, del_flag, create_time)
         VALUES
           (#{memberId}, #{title}, #{description}, #{price},
@@ -149,7 +154,7 @@
            #{phone}, #{whatsapp}, #{messenger}, #{telegram},
            #{viber}, #{wechat}, #{line}, #{instagram},
            #{locationLabel}, #{latitude}, #{longitude},
-           #{source}, #{externalId}, '1',
+           #{source}, #{externalId}, #{sourceContact}, '1',
            0, 0, 0, '0', NOW())
     </insert>
 
@@ -274,7 +279,7 @@
 
     <!-- ── Admin list queries ──────────────────────────────────────────────── -->
 
-    <select id="selectAdminPostList" resultMap="PostResult">
+    <select id="selectAdminPostList" resultMap="AdminPostResult">
         SELECT p.*, m.nick_name AS member_nickname
         FROM mall_market_post p
         LEFT JOIN mall_member m ON m.member_id = p.member_id

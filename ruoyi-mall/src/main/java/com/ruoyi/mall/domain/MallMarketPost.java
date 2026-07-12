@@ -56,6 +56,8 @@ public class MallMarketPost {
     private String source;
     /** 外部来源唯一 ID，用于每日同步去重，普通用户发帖为空 */
     private String externalId;
+    /** 同步帖原始联系方式（后台内部可见、对外隐藏）；仅 AdminPostResult 映射，App 查询不返回 */
+    private String sourceContact;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createTime;
@@ -164,6 +166,9 @@ public class MallMarketPost {
 
     public String getExternalId() { return externalId; }
     public void setExternalId(String externalId) { this.externalId = externalId; }
+
+    public String getSourceContact() { return sourceContact; }
+    public void setSourceContact(String sourceContact) { this.sourceContact = sourceContact; }
 
     public Date getCreateTime() { return createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }
