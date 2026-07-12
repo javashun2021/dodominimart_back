@@ -2,6 +2,9 @@ package com.ruoyi.web.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -18,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ruoyi.common.config.Global;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.mall.domain.MallMarketPost;
 import com.ruoyi.mall.service.IMallMarketService;
 import com.ruoyi.mall.service.TranslationService;
@@ -103,6 +108,9 @@ public class MarketSyncService
         // 加价比例：0 或未配 = 不加价；0.1 = +10%。最终价 = 原价 × (1 + markup)
         double markup = parseDouble(cfg("mall.market.sync.price-markup", "0"), 0d);
         if (markup < 0) markup = 0d;
+        // 图片本地化的公网基地址（下载到本机后用自己域名拼 URL）
+        String imageBaseUrl = cfg("mall.market.sync.image-base-url", "https://dodominimart.com");
+        if (imageBaseUrl.endsWith("/")) imageBaseUrl = imageBaseUrl.substring(0, imageBaseUrl.length() - 1);
 
         int synced = 0, dup = 0, failed = 0;
         for (int page = 1; page <= maxPages; page++)
@@ -162,7 +170,8 @@ public class MarketSyncService
                     p.setTitle(cut(r.title, 200));
                     p.setDescription(r.description);
                     p.setCategory(normalizeCategory(r.category));
-                    p.setImages(joinImages(it.path("imglist")));
+                    // 把外部图片下载到本机、改用自己域名的地址（不用对方 CDN）
+                    p.setImages(localizeImages(it.path("imglist"), imageBaseUrl));
 
                     BigDecimal price = parsePrice(it.path("diycon"), markup);
                     if (price != null)
@@ -256,20 +265,51 @@ public class MarketSyncService
         return "Other";
     }
 
-    private String joinImages(JsonNode node)
+    /**
+     * 把外部 imglist 里的图片逐张下载到本机 /profile/upload/，改用自己域名的 URL。
+     * 存盘路径与 App 上传一致：&lt;uploadPath&gt;/&lt;yyyy/MM/dd&gt;/&lt;uuid&gt;.&lt;ext&gt;；
+     * 公网 URL = baseUrl + /profile/upload/&lt;yyyy/MM/dd&gt;/&lt;uuid&gt;.&lt;ext&gt;。下载失败的图跳过。
+     */
+    private String localizeImages(JsonNode imglist, String baseUrl)
     {
-        if (node == null || node.isMissingNode() || node.isNull()) return "";
-        if (node.isArray())
+        if (imglist == null || !imglist.isArray()) return "";
+        List<String> localUrls = new ArrayList<>();
+        String datePath = DateUtils.datePath();   // yyyy/MM/dd
+        for (JsonNode n : imglist)
         {
-            List<String> urls = new ArrayList<>();
-            for (JsonNode n : node)
+            String src = n.asText("");
+            if (src.isEmpty()) continue;
+            try
             {
-                String u = n.asText("");
-                if (!u.isEmpty()) urls.add(u);
+                byte[] bytes = restTemplate.getForObject(src, byte[].class);
+                if (bytes == null || bytes.length == 0) continue;
+
+                String ext = imageExt(src);
+                String name = java.util.UUID.randomUUID().toString().replace("-", "") + ext;
+                Path dir = Paths.get(Global.getUploadPath(), datePath);
+                Files.createDirectories(dir);
+                Files.write(dir.resolve(name), bytes);
+
+                localUrls.add(baseUrl + "/profile/upload/" + datePath + "/" + name);
             }
-            return String.join(",", urls);
+            catch (Exception e)
+            {
+                log.warn("[market-sync] download image failed, skipped: {} ({})", src, e.getMessage());
+            }
         }
-        return node.asText("");
+        return String.join(",", localUrls);
+    }
+
+    private static String imageExt(String url)
+    {
+        String u = url.toLowerCase();
+        int q = u.indexOf('?');
+        if (q > 0) u = u.substring(0, q);
+        if (u.endsWith(".png"))  return ".png";
+        if (u.endsWith(".webp")) return ".webp";
+        if (u.endsWith(".gif"))  return ".gif";
+        if (u.endsWith(".jpeg")) return ".jpeg";
+        return ".jpg";   // jpg 及未知按 jpg
     }
 
     /** 清洗结果：cleaned=删除联系方式后的正文；contacts=被删除的联系方式（后台内部留存） */
