@@ -113,7 +113,16 @@ public class FileUploadUtils
         String fileName = extractFilename(file, extension);
 
         File desc = getAbsoluteFile(baseDir, baseDir + fileName);
-        file.transferTo(desc);
+        // 全局图片压缩：图片类文件落盘前统一压缩优化；非图片/解码失败会原样返回，安全无副作用
+        if (ImageCompressUtils.isCompressible(extension))
+        {
+            byte[] optimized = ImageCompressUtils.compress(file.getBytes(), extension);
+            java.nio.file.Files.write(desc.toPath(), optimized);
+        }
+        else
+        {
+            file.transferTo(desc);
+        }
         return fileName;
     }
 

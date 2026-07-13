@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ruoyi.common.config.Global;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.file.ImageCompressUtils;
 import com.ruoyi.mall.domain.MallMarketPost;
 import com.ruoyi.mall.service.IMallMarketService;
 import com.ruoyi.mall.service.TranslationService;
@@ -39,8 +40,6 @@ import com.ruoyi.system.service.ISysConfigService;
 public class MarketSyncService
 {
     private static final Logger log = LoggerFactory.getLogger(MarketSyncService.class);
-
-    private static final String SOURCE = "ext";
 
     /** 允许的英文分类（LLM 判不出或返回非法值时归 Other） */
     private static final Set<String> CATEGORIES = new HashSet<>(Arrays.asList(
@@ -72,6 +71,9 @@ public class MarketSyncService
     @Autowired
     private IMallMarketService marketService;
 
+    @Autowired
+    private MarketAiService marketAiService;
+
     private final ObjectMapper mapper = new ObjectMapper();
     private final RestTemplate restTemplate = buildRestTemplate();
 
@@ -83,7 +85,7 @@ public class MarketSyncService
         return new RestTemplate(factory);
     }
 
-    /** 定时任务入口：执行一次全量分页同步 */
+    /** 定时任务入口：执行一次全量分页同步（多来源：综合二手 + 汽车二手） */
     public void syncOnce()
     {
         if (!"true".equalsIgnoreCase(cfg("mall.market.sync.enabled", "")))
@@ -91,29 +93,45 @@ public class MarketSyncService
             log.info("[market-sync] skipped (disabled)");
             return;
         }
-        String apiUrl = cfg("mall.market.sync.api-url", "");
-        if (apiUrl.isEmpty())
-        {
-            log.warn("[market-sync] skipped: api-url not configured");
-            return;
-        }
         if (!translationService.isConfigured())
         {
             log.warn("[market-sync] skipped: Anthropic key not configured");
             return;
         }
-        long memberId = parseLong(cfg("mall.market.sync.member-id", "1001"), 1001L);
-        String phone = cfg("mall.market.sync.contact-phone", "");
-        int maxPages = (int) parseLong(cfg("mall.market.sync.max-pages", "50"), 50L);
+        SyncCtx ctx = new SyncCtx();
+        ctx.memberId = parseLong(cfg("mall.market.sync.member-id", "1001"), 1001L);
+        ctx.phone = cfg("mall.market.sync.contact-phone", "");
+        ctx.maxPages = (int) parseLong(cfg("mall.market.sync.max-pages", "50"), 50L);
         // 加价比例：0 或未配 = 不加价；0.1 = +10%。最终价 = 原价 × (1 + markup)
-        double markup = parseDouble(cfg("mall.market.sync.price-markup", "0"), 0d);
-        if (markup < 0) markup = 0d;
+        ctx.markup = parseDouble(cfg("mall.market.sync.price-markup", "0"), 0d);
+        if (ctx.markup < 0) ctx.markup = 0d;
         // 图片本地化的公网基地址（下载到本机后用自己域名拼 URL）
         String imageBaseUrl = cfg("mall.market.sync.image-base-url", "https://dodominimart.com");
         if (imageBaseUrl.endsWith("/")) imageBaseUrl = imageBaseUrl.substring(0, imageBaseUrl.length() - 1);
+        ctx.imageBaseUrl = imageBaseUrl;
 
-        int synced = 0, dup = 0, failed = 0;
-        for (int page = 1; page <= maxPages; page++)
+        Stat stat = new Stat();
+        // 来源1：综合二手（ids=2）→ 分类交由 LLM 判定
+        String mainUrl = cfg("mall.market.sync.api-url", "");
+        if (!mainUrl.isEmpty()) syncSource(mainUrl, "ext", null, ctx, stat);
+        else log.warn("[market-sync] api-url not configured");
+        // 来源2：汽车二手（ids=4）→ 固定归到 Vehicles 分类
+        String vehUrl = cfg("mall.market.sync.api-url-vehicles", "");
+        if (!vehUrl.isEmpty()) syncSource(vehUrl, "ext-veh", "Vehicles", ctx, stat);
+
+        log.info("[market-sync] done: synced={} dup(skip)={} failed={}", stat.synced, stat.dup, stat.failed);
+    }
+
+    /**
+     * 同步单个来源的全量分页数据。
+     *
+     * @param apiUrl         来源接口地址（不含 page，方法内翻页追加）
+     * @param source         来源标记（用于去重命名空间，如 ext / ext-veh）
+     * @param forcedCategory 非空则强制归到该分类（如汽车源固定 Vehicles）；为空则用 LLM 判定
+     */
+    private void syncSource(String apiUrl, String source, String forcedCategory, SyncCtx ctx, Stat stat)
+    {
+        for (int page = 1; page <= ctx.maxPages; page++)
         {
             JsonNode plists = fetchPlists(apiUrl, page);
             if (plists == null || !plists.isArray() || plists.size() == 0)
@@ -127,7 +145,7 @@ public class MarketSyncService
             {
                 String extId = it.path("id").asText("");
                 if (extId.isEmpty()) continue;
-                if (marketService.isExternalImported(SOURCE, extId)) { dup++; continue; }
+                if (marketService.isExternalImported(source, extId)) { stat.dup++; continue; }
                 fresh.add(it);
             }
             if (fresh.isEmpty()) continue;
@@ -150,9 +168,9 @@ public class MarketSyncService
             }
             catch (Exception e)
             {
-                failed += fresh.size();
-                log.warn("[market-sync] page {} translate failed, skipped {} items: {}",
-                        page, fresh.size(), e.getMessage());
+                stat.failed += fresh.size();
+                log.warn("[market-sync] {} page {} translate failed, skipped {} items: {}",
+                        source, page, fresh.size(), e.getMessage());
                 continue;
             }
 
@@ -164,16 +182,19 @@ public class MarketSyncService
                 try
                 {
                     MallMarketPost p = new MallMarketPost();
-                    p.setMemberId(memberId);
-                    p.setSource(SOURCE);
+                    p.setMemberId(ctx.memberId);
+                    p.setSource(source);
                     p.setExternalId(it.path("id").asText(""));
-                    p.setTitle(cut(r.title, 200));
+                    // 标题：以图片识别商品名为主、正文交叉确认（双重确认）；无图/失败回退到翻译标题
+                    String visionTitle = marketAiService.identifyProductTitle(
+                            firstImagesCsv(it.path("imglist"), 3), bodies.get(i));
+                    p.setTitle(cut(!visionTitle.isEmpty() ? visionTitle : r.title, 200));
                     p.setDescription(r.description);
-                    p.setCategory(normalizeCategory(r.category));
+                    p.setCategory(forcedCategory != null ? forcedCategory : normalizeCategory(r.category));
                     // 把外部图片下载到本机、改用自己域名的地址（不用对方 CDN）
-                    p.setImages(localizeImages(it.path("imglist"), imageBaseUrl));
+                    p.setImages(localizeImages(it.path("imglist"), ctx.imageBaseUrl));
 
-                    BigDecimal price = parsePrice(it.path("diycon"), markup);
+                    BigDecimal price = parsePrice(it.path("diycon"), ctx.markup);
                     if (price != null)
                     {
                         p.setPrice(price);
@@ -184,22 +205,21 @@ public class MarketSyncService
                         p.setPrice(null);
                         p.setPriceType("negotiable");
                     }
-                    p.setPhone(phone);
+                    p.setPhone(ctx.phone);
                     // 原始联系方式留后台内部查看（对外接口不返回）
                     p.setSourceContact(cut(contacts.get(i), 500));
 
                     marketService.importExternalPost(p);
-                    synced++;
+                    stat.synced++;
                 }
                 catch (Exception e)
                 {
-                    failed++;
-                    log.warn("[market-sync] insert failed for external id {}: {}",
-                            it.path("id").asText(""), e.getMessage());
+                    stat.failed++;
+                    log.warn("[market-sync] insert failed for {} id {}: {}",
+                            source, it.path("id").asText(""), e.getMessage());
                 }
             }
         }
-        log.info("[market-sync] done: synced={} dup(skip)={} failed={}", synced, dup, failed);
     }
 
     // ------------------------------------------------------------------ helpers
@@ -285,6 +305,8 @@ public class MarketSyncService
                 if (bytes == null || bytes.length == 0) continue;
 
                 String ext = imageExt(src);
+                // 落盘前统一压缩优化（非图片/失败会原样返回）
+                bytes = ImageCompressUtils.compress(bytes, ext);
                 String name = java.util.UUID.randomUUID().toString().replace("-", "") + ext;
                 Path dir = Paths.get(Global.getUploadPath(), datePath);
                 Files.createDirectories(dir);
@@ -300,6 +322,20 @@ public class MarketSyncService
         return String.join(",", localUrls);
     }
 
+    /** 从外部 imglist 取前 max 张原始 URL 拼成逗号串，供标题的图片识别用（原始地址在同步时可靠可达） */
+    private static String firstImagesCsv(JsonNode imglist, int max)
+    {
+        if (imglist == null || !imglist.isArray()) return "";
+        List<String> urls = new ArrayList<>();
+        for (JsonNode n : imglist)
+        {
+            String s = n.asText("");
+            if (!s.isEmpty()) urls.add(s);
+            if (urls.size() >= max) break;
+        }
+        return String.join(",", urls);
+    }
+
     private static String imageExt(String url)
     {
         String u = url.toLowerCase();
@@ -310,6 +346,24 @@ public class MarketSyncService
         if (u.endsWith(".gif"))  return ".gif";
         if (u.endsWith(".jpeg")) return ".jpeg";
         return ".jpg";   // jpg 及未知按 jpg
+    }
+
+    /** 一次同步的公共上下文（各来源共用的会员/电话/翻页/加价/图片域名配置） */
+    private static class SyncCtx
+    {
+        long memberId;
+        String phone;
+        int maxPages;
+        double markup;
+        String imageBaseUrl;
+    }
+
+    /** 同步累计计数（跨来源汇总） */
+    private static class Stat
+    {
+        int synced;
+        int dup;
+        int failed;
     }
 
     /** 清洗结果：cleaned=删除联系方式后的正文；contacts=被删除的联系方式（后台内部留存） */

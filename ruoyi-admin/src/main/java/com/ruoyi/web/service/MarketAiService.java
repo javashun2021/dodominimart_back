@@ -33,6 +33,8 @@ public class MarketAiService
     private static final String API_URL = "https://api.anthropic.com/v1/messages";
     /** 每次最多送几张图给视觉模型(控成本/延迟) */
     private static final int MAX_IMAGES = 4;
+    /** 标题识别时最多送几张图(单条帖，控成本) */
+    private static final int MAX_TITLE_IMAGES = 3;
 
     private static final String[] CATEGORIES = {
             "Electronics", "Clothing", "Food", "Furniture", "Books", "Vehicles", "Baby & Kids", "Other" };
@@ -143,6 +145,83 @@ public class MarketAiService
             log.warn("Market AI optimize failed: {}", e.getMessage());
             throw new RuntimeException("optimize failed", e);
         }
+    }
+
+    /**
+     * 结合商品图片 + 卖家正文，双重确认商品名称，产出简洁英文标题（供同步帖用）。
+     * 以图片识别为主、正文交叉核对为辅。无图 / 未配置 / 失败时返回空串，由调用方回退。
+     *
+     * @param imagesCsv 逗号分隔的图片 URL（最多取前 {@link #MAX_TITLE_IMAGES} 张）
+     * @param bodyText  卖家原始正文（可为中文，仅作交叉核对，不翻译）
+     */
+    public String identifyProductTitle(String imagesCsv, String bodyText)
+    {
+        if (!isConfigured()) return "";
+        // 无图不做图片识别，交由调用方回退到翻译标题
+        if (imagesCsv == null || imagesCsv.trim().isEmpty()) return "";
+        try
+        {
+            List<Object> content = new ArrayList<>();
+            int used = 0;
+            for (String raw : imagesCsv.split(","))
+            {
+                if (used >= MAX_TITLE_IMAGES) break;
+                String url = raw.trim();
+                if (url.isEmpty()) continue;
+                Map<String, Object> imgBlock = buildImageBlock(url);
+                if (imgBlock != null) { content.add(imgBlock); used++; }
+            }
+            if (used == 0) return "";   // 图都抓失败 → 回退
+
+            Map<String, Object> textBlock = new HashMap<>();
+            textBlock.put("type", "text");
+            textBlock.put("text", buildTitlePrompt(bodyText, used));
+            content.add(textBlock);
+
+            Map<String, Object> userMsg = new HashMap<>();
+            userMsg.put("role", "user");
+            userMsg.put("content", content);
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("model", model);
+            payload.put("max_tokens", 256);
+            payload.put("messages", new Object[] { userMsg });
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
+            headers.set("anthropic-version", "2023-06-01");
+
+            String respBody = restTemplate.postForObject(
+                    API_URL, new HttpEntity<>(mapper.writeValueAsString(payload), headers), String.class);
+
+            JsonNode root = mapper.readTree(respBody);
+            String text = root.path("content").path(0).path("text").asText("");
+            JsonNode j = mapper.readTree(stripFences(text));
+            return j.path("title").asText("").trim();
+        }
+        catch (Exception e)
+        {
+            log.warn("Market AI title identify failed: {}", e.getMessage());
+            return "";   // 失败回退，不影响同步
+        }
+    }
+
+    private String buildTitlePrompt(String bodyText, int imageCount)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are naming a second-hand marketplace item for its listing title.\n");
+        sb.append("Look carefully at the ").append(imageCount)
+          .append(" product photo(s) above to identify exactly what item is being sold.\n");
+        sb.append("Then read the seller's original listing text below (it may be in Chinese) and use it to CONFIRM the item.\n");
+        sb.append("The photos are the primary source of truth; the text is a cross-check. ");
+        sb.append("If they disagree, trust the photos but reconcile with any concrete brand/model/spec mentioned in the text.\n");
+        sb.append("\nOriginal listing text:\n").append(nz(bodyText)).append("\n");
+        sb.append("\nReturn ONLY a JSON object (no markdown, no code fences): {\"title\":\"..\"}.\n");
+        sb.append("title = a concise, specific English product name for the listing, max 8 words. ");
+        sb.append("Include brand/model/key spec when clearly visible. ");
+        sb.append("Do NOT include price, contact info, emojis or marketing fluff.\n");
+        return sb.toString();
     }
 
     // ------------------------------------------------------------------ helpers
