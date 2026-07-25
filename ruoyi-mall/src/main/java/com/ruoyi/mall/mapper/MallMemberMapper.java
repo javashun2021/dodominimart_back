@@ -44,4 +44,10 @@ public interface MallMemberMapper
 
     /** 查询被某会员邀请注册的所有人，含已完成订单数 */
     List<MallMember> selectReferredMembers(Long referrerId);
+
+    /** 按角色查会员（推广员管理：role='promoter'） */
+    List<MallMember> selectMembersByRole(@Param("role") String role);
+
+    /** 统计某会员拉新数（被其邀请注册的人数） */
+    int countReferredBy(@Param("referrerId") Long referrerId);
 }

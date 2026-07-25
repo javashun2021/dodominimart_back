@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <form class="form-horizontal m" th:object="${merchant}">
+        <div class="form-group"><label class="col-sm-3 control-label">Name：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{name}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Category：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{category}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Description：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{description}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Address：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{address}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Lat / Lng：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{lat} + ' , ' + *{lng}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Phone：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{phone}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Business Hours：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{businessHours}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Promoter ID：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{promoterId}"></p></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Logo：</label>
+            <div class="col-sm-8"><img th:if="*{logoUrl}" th:src="*{logoUrl}" style="max-height:120px;"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Images：</label>
+            <div class="col-sm-8" id="imgBox"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">Reject Reason：</label>
+            <div class="col-sm-8"><p class="form-control-static" th:text="*{rejectReason}"></p></div></div>
+    </form>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var images = [[${merchant.images}]];
+    if (images) {
+        var html = images.split(',').map(function(u) {
+            u = u.trim();
+            return u ? '<img src="' + u + '" style="max-height:100px;margin:4px;">' : '';
+        }).join('');
+        document.getElementById('imgBox').innerHTML = html;
+    }
+</script>
+</body>
+</html>

@@ -66,6 +66,7 @@ public class ApiProductController extends BaseApiController
         query.setOnlyFlashSale(onlyFlashSale);
         query.setOnlyGroupBuy(onlyGroupBuy);
         query.setInStockOnly(inStockOnly);
+        query.setSelfOperatedOnly(true);  // 自营首页/列表只展示平台自营商品，入驻商家商品走 /merchants
         List<MallProduct> list = productService.selectProductList(query);
         return pageResult(new PageInfo<>(list));
     }

@@ -59,6 +59,9 @@ public class MallProduct extends BaseEntity
     @Excel(name = "首页精选", readConverterExp = "0=否,1=是")
     private Integer isFeatured;
 
+    /** 归属商家ID（NULL=平台自营；非空=某入驻商家的商品） */
+    private Long merchantId;
+
     /** 删除标志（0存在 2删除） */
     private String delFlag;
 
@@ -84,6 +87,8 @@ public class MallProduct extends BaseEntity
     private boolean onlyGroupBuy;
     /** 非DB：只看有货 */
     private boolean inStockOnly;
+    /** 非DB：只看平台自营（merchant_id IS NULL），App 自营首页/列表用 */
+    private boolean selfOperatedOnly;
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -130,6 +135,9 @@ public class MallProduct extends BaseEntity
     public Integer getIsFeatured() { return isFeatured; }
     public void setIsFeatured(Integer isFeatured) { this.isFeatured = isFeatured; }
 
+    public Long getMerchantId() { return merchantId; }
+    public void setMerchantId(Long merchantId) { this.merchantId = merchantId; }
+
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
 
@@ -165,4 +173,7 @@ public class MallProduct extends BaseEntity
 
     public boolean isInStockOnly() { return inStockOnly; }
     public void setInStockOnly(boolean inStockOnly) { this.inStockOnly = inStockOnly; }
+
+    public boolean isSelfOperatedOnly() { return selfOperatedOnly; }
+    public void setSelfOperatedOnly(boolean selfOperatedOnly) { this.selfOperatedOnly = selfOperatedOnly; }
 }

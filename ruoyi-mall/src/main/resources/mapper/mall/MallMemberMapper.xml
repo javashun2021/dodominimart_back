@@ -43,6 +43,14 @@
         <include refid="selectMemberVo"/> where member_id = #{memberId}
     </select>
 
+    <select id="selectMembersByRole" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where role = #{role} order by create_time desc
+    </select>
+
+    <select id="countReferredBy" parameterType="Long" resultType="int">
+        select count(1) from mall_member where referrer_id = #{referrerId}
+    </select>
+
     <select id="selectMemberByGoogleId" parameterType="String" resultMap="MallMemberResult">
         <include refid="selectMemberVo"/> where google_id = #{googleId}
     </select>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallMerchantMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallMerchant" id="MallMerchantResult">
+        <id     property="merchantId"       column="merchant_id"       />
+        <result property="name"             column="name"              />
+        <result property="category"         column="category"          />
+        <result property="description"      column="description"       />
+        <result property="logoUrl"          column="logo_url"          />
+        <result property="images"           column="images"            />
+        <result property="address"          column="address"           />
+        <result property="lat"              column="lat"               />
+        <result property="lng"              column="lng"               />
+        <result property="phone"            column="phone"             />
+        <result property="businessHours"    column="business_hours"    />
+        <result property="serviceRadiusKm"  column="service_radius_km" />
+        <result property="promoterId"       column="promoter_id"       />
+        <result property="ownerMemberId"    column="owner_member_id"   />
+        <result property="status"           column="status"            />
+        <result property="rejectReason"     column="reject_reason"     />
+        <result property="reviewTime"       column="review_time"       />
+        <result property="reviewer"         column="reviewer"          />
+        <result property="sort"             column="sort"              />
+        <result property="delFlag"          column="del_flag"          />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
+        <result property="promoterName"     column="promoter_name"     />
+    </resultMap>
+
+    <sql id="selectMerchantVo">
+        select m.merchant_id, m.name, m.category, m.description, m.logo_url, m.images, m.address,
+               m.lat, m.lng, m.phone, m.business_hours, m.service_radius_km, m.promoter_id, m.owner_member_id,
+               m.status, m.reject_reason, m.review_time, m.reviewer, m.sort, m.del_flag,
+               m.create_by, m.create_time, m.update_by, m.update_time, m.remark,
+               pm.nick_name as promoter_name
+        from mall_merchant m
+        left join mall_member pm on pm.member_id = m.promoter_id
+    </sql>
+
+    <select id="selectMerchantList" parameterType="com.ruoyi.mall.domain.MallMerchant" resultMap="MallMerchantResult">
+        <include refid="selectMerchantVo"/>
+        <where>
+            m.del_flag = '0'
+            <if test="name != null and name != ''">AND m.name like concat('%', #{name}, '%')</if>
+            <if test="category != null and category != ''">AND m.category = #{category}</if>
+            <if test="status != null and status != ''">AND m.status = #{status}</if>
+            <if test="promoterId != null">AND m.promoter_id = #{promoterId}</if>
+        </where>
+        order by m.status asc, m.create_time desc
+    </select>
+
+    <select id="selectMerchantById" parameterType="Long" resultMap="MallMerchantResult">
+        <include refid="selectMerchantVo"/>
+        where m.merchant_id = #{merchantId}
+    </select>
+
+    <select id="selectActiveMerchants" resultMap="MallMerchantResult">
+        <include refid="selectMerchantVo"/>
+        where m.del_flag = '0' and m.status = '1'
+        order by m.sort asc, m.merchant_id asc
+    </select>
+
+    <select id="selectByPromoter" parameterType="Long" resultMap="MallMerchantResult">
+        <include refid="selectMerchantVo"/>
+        where m.del_flag = '0' and m.promoter_id = #{promoterId}
+        order by m.create_time desc
+    </select>
+
+    <select id="countByPromoter" parameterType="Long" resultType="int">
+        select count(1) from mall_merchant where del_flag = '0' and promoter_id = #{promoterId}
+    </select>
+
+    <insert id="insertMerchant" parameterType="com.ruoyi.mall.domain.MallMerchant" useGeneratedKeys="true" keyProperty="merchantId">
+        insert into mall_merchant(name, category, description, logo_url, images, address, lat, lng, phone,
+                                  business_hours, service_radius_km, promoter_id, owner_member_id,
+                                  status, sort, del_flag, create_by, create_time)
+        values(#{name}, #{category}, #{description}, #{logoUrl}, #{images}, #{address}, #{lat}, #{lng}, #{phone},
+               #{businessHours}, ifnull(#{serviceRadiusKm}, 5), #{promoterId}, #{ownerMemberId},
+               ifnull(#{status}, '0'), ifnull(#{sort}, 0), '0', #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateMerchant" parameterType="com.ruoyi.mall.domain.MallMerchant">
+        update mall_merchant
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="logoUrl != null">logo_url = #{logoUrl},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="lat != null">lat = #{lat},</if>
+            <if test="lng != null">lng = #{lng},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="businessHours != null">business_hours = #{businessHours},</if>
+            <if test="serviceRadiusKm != null">service_radius_km = #{serviceRadiusKm},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where merchant_id = #{merchantId}
+    </update>
+
+    <update id="updateReview" parameterType="com.ruoyi.mall.domain.MallMerchant">
+        update mall_merchant
+        set status = #{status},
+            reject_reason = #{rejectReason},
+            review_time = #{reviewTime},
+            reviewer = #{reviewer}
+        where merchant_id = #{merchantId}
+    </update>
+
+    <update id="deleteMerchantById" parameterType="Long">
+        update mall_merchant set del_flag = '2' where merchant_id = #{merchantId}
+    </update>
+
+</mapper>

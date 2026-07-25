@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="assign()" shiro:hasPermission="mall:promoter:assign">
+                <i class="fa fa-plus"></i> Assign Promoter (by Member ID)
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var assignFlag = [[${@permission.hasPermi('mall:promoter:assign')}]];
+    var prefix = ctx + "mall/promoter";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            showSearch: false,
+            showRefresh: true,
+            showToggle: false,
+            showColumns: false,
+            modalName: "Promoter",
+            columns: [
+                {field: 'memberId',      title: 'Member ID'},
+                {field: 'nickName',      title: 'Nickname'},
+                {field: 'phone',         title: 'Phone'},
+                {field: 'email',         title: 'Email'},
+                {field: 'inviteCode',    title: 'Promo Code'},
+                {field: 'referredCount', title: 'New Users', align: 'center'},
+                {field: 'merchantCount', title: 'Merchants Onboarded', align: 'center'},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    if (assignFlag === 'hidden') return '';
+                    return '<a class="btn btn-danger btn-xs" onclick="revoke(\'' + row.memberId + '\')"><i class="fa fa-remove"></i>Revoke</a>';
+                }}
+            ]
+        });
+    });
+
+    function assign() {
+        layer.prompt({ formType: 0, title: "Member ID to set as promoter" }, function(val, index) {
+            $.ajax({
+                url: prefix + "/assign",
+                type: "post",
+                contentType: "application/json",
+                data: JSON.stringify({ memberId: val }),
+                success: function(r) { $.operate.ajaxSuccess(r); }
+            });
+            layer.close(index);
+        });
+    }
+
+    function revoke(id) {
+        $.modal.confirm("Revoke promoter role from member " + id + "?", function() {
+            $.ajax({
+                url: prefix + "/revoke",
+                type: "post",
+                contentType: "application/json",
+                data: JSON.stringify({ memberId: id }),
+                success: function(r) { $.operate.ajaxSuccess(r); }
+            });
+        });
+    }
+</script>
+</body>
+</html>

@@ -19,6 +19,7 @@
         <result property="status"          column="status"          />
         <result property="sort"            column="sort"            />
         <result property="isFeatured"      column="is_featured"     />
+        <result property="merchantId"      column="merchant_id"     />
         <result property="delFlag"         column="del_flag"        />
         <result property="createBy"        column="create_by"       />
         <result property="createTime"      column="create_time"     />
@@ -39,7 +40,7 @@
 
     <sql id="selectProductVo">
         select p.product_id, p.category_id, p.name, p.brand_name, p.description, p.price, p.stock,
-               p.image_url, p.images, p.spec_name, p.spec_options, p.barcode, p.status, p.sort, p.is_featured, p.del_flag, p.create_by, p.create_time,
+               p.image_url, p.images, p.spec_name, p.spec_options, p.barcode, p.status, p.sort, p.is_featured, p.merchant_id, p.del_flag, p.create_by, p.create_time,
                p.update_by, p.update_time,
                fs.sale_id       as flash_sale_id,
                fs.flash_price   as flash_price,
@@ -76,6 +77,8 @@
             <if test="onlyFlashSale">AND fs.sale_id IS NOT NULL</if>
             <if test="onlyGroupBuy">AND ga.activity_id IS NOT NULL</if>
             <if test="inStockOnly">AND p.stock > 0</if>
+            <if test="merchantId != null">AND p.merchant_id = #{merchantId}</if>
+            <if test="selfOperatedOnly">AND p.merchant_id IS NULL</if>
         </where>
         order by
         <choose>
@@ -93,10 +96,10 @@
 
     <insert id="insertProduct" parameterType="com.ruoyi.mall.domain.MallProduct" useGeneratedKeys="true" keyProperty="productId">
         insert into mall_product(category_id, name, brand_name, description, price, stock, image_url, images,
-                                 spec_name, spec_options, barcode, status, sort, is_featured,
+                                 spec_name, spec_options, barcode, status, sort, is_featured, merchant_id,
                                  del_flag, create_by, create_time)
         values(#{categoryId}, #{name}, #{brandName}, #{description}, #{price}, #{stock}, #{imageUrl}, #{images},
-               #{specName}, #{specOptions}, #{barcode}, #{status}, #{sort}, COALESCE(#{isFeatured}, 0),
+               #{specName}, #{specOptions}, #{barcode}, #{status}, #{sort}, COALESCE(#{isFeatured}, 0), #{merchantId},
                #{delFlag}, #{createBy}, #{createTime})
     </insert>
 

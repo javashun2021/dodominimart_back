@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="merchant-form">
+                <div class="select-list">
+                    <ul>
+                        <li>Merchant Name：<input type="text" name="name"/></li>
+                        <li>Category：
+                            <select name="category" th:with="type=${@dict.getType('mall_merchant_type')}">
+                                <option value="">All</option>
+                                <option th:each="d : ${type}" th:text="${d.dictLabel}" th:value="${d.dictValue}"></option>
+                            </select>
+                        </li>
+                        <li>Status：
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="0">Pending</option>
+                                <option value="1">Open</option>
+                                <option value="2">Rejected</option>
+                                <option value="3">Suspended</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;Search</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;Reset</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="mall:merchant:add">
+                <i class="fa fa-plus"></i> Add
+            </a>
+            <a class="btn btn-primary btn-edit disabled" onclick="$.operate.edit()" shiro:hasPermission="mall:merchant:edit">
+                <i class="fa fa-edit"></i> Edit
+            </a>
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="mall:merchant:remove">
+                <i class="fa fa-remove"></i> Delete
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var editFlag   = [[${@permission.hasPermi('mall:merchant:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('mall:merchant:remove')}]];
+    var reviewFlag = [[${@permission.hasPermi('mall:merchant:review')}]];
+    var prefix = ctx + "mall/merchant";
+    var categoryDatas = [[${@dict.getType('mall_merchant_type')}]];
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            modalName: "Merchant",
+            sortName: "sort",
+            columns: [
+                {checkbox: true},
+                {field: 'merchantId',    title: 'ID'},
+                {field: 'name',          title: 'Merchant'},
+                {field: 'category',      title: 'Category', formatter: function(v) { return $.table.selectDictLabel(categoryDatas, v); }},
+                {field: 'address',       title: 'Address'},
+                {field: 'phone',         title: 'Phone'},
+                {field: 'promoterName',  title: 'Promoter', formatter: function(v, row) { return v ? v : (row.promoterId || '-'); }},
+                {field: 'status',        title: 'Status', align: 'center', formatter: function(v) {
+                    if (v === '0') return '<span class="badge badge-warning">Pending</span>';
+                    if (v === '1') return '<span class="badge badge-primary">Open</span>';
+                    if (v === '2') return '<span class="badge badge-danger">Rejected</span>';
+                    return '<span class="badge badge-default">Suspended</span>';
+                }},
+                {title: 'Action', align: 'center', formatter: function(v, row) {
+                    var a = [];
+                    a.push('<a class="btn btn-info btn-xs" onclick="showDetail(\'' + row.merchantId + '\')"><i class="fa fa-search"></i>Detail</a> ');
+                    if (row.status === '0' && reviewFlag !== 'hidden') {
+                        a.push('<a class="btn btn-success btn-xs" onclick="approve(\'' + row.merchantId + '\')"><i class="fa fa-check"></i>Approve</a> ');
+                        a.push('<a class="btn btn-warning btn-xs" onclick="reject(\'' + row.merchantId + '\')"><i class="fa fa-close"></i>Reject</a> ');
+                    }
+                    a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.merchantId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
+                    a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.merchantId + '\')"><i class="fa fa-remove"></i>Delete</a>');
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+
+    function showDetail(id) {
+        $.modal.open("Merchant Detail", prefix + "/detail/" + id);
+    }
+
+    function approve(id) {
+        $.modal.confirm("Approve this merchant to Open?", function() {
+            $.operate.post(prefix + "/approve/" + id, {});
+        });
+    }
+
+    function reject(id) {
+        layer.prompt({ formType: 2, title: "Reject reason", area: ['400px', '120px'] }, function(val, index) {
+            $.ajax({
+                url: prefix + "/reject/" + id,
+                type: "post",
+                contentType: "application/json",
+                data: JSON.stringify({ rejectReason: val || "" }),
+                success: function(r) { $.operate.ajaxSuccess(r); }
+            });
+            layer.close(index);
+        });
+    }
+</script>
+</body>
+</html>
