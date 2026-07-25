@@ -102,6 +102,8 @@ public class MarketSyncService
         ctx.memberId = parseLong(cfg("mall.market.sync.member-id", "1001"), 1001L);
         ctx.phone = cfg("mall.market.sync.contact-phone", "");
         ctx.maxPages = (int) parseLong(cfg("mall.market.sync.max-pages", "50"), 50L);
+        // 联系人替换开关：true=清洗正文联系方式并用官方电话覆盖（原行为）；false=暂不替换，保留卖家原始联系方式
+        ctx.replaceContact = !"false".equalsIgnoreCase(cfg("mall.market.sync.replace-contact", "true"));
         // 加价比例：0 或未配 = 不加价；0.1 = +10%。最终价 = 原价 × (1 + markup)
         ctx.markup = parseDouble(cfg("mall.market.sync.price-markup", "0"), 0d);
         if (ctx.markup < 0) ctx.markup = 0d;
@@ -155,9 +157,17 @@ public class MarketSyncService
             List<String> contacts = new ArrayList<>();
             for (JsonNode it : fresh)
             {
-                CleanResult cr = cleanAndExtract(it.path("con").asText(""));
-                bodies.add(cr.cleaned);
-                contacts.add(cr.contacts);
+                if (ctx.replaceContact)
+                {
+                    CleanResult cr = cleanAndExtract(it.path("con").asText(""));
+                    bodies.add(cr.cleaned);
+                    contacts.add(cr.contacts);
+                }
+                else
+                {   // 暂不替换：保留原始正文（含卖家联系方式），不单独留存
+                    bodies.add(it.path("con").asText(""));
+                    contacts.add("");
+                }
             }
 
             // 3) 批量翻译（失败则跳过整页新帖，靠 external_id 下次重试）
@@ -205,9 +215,9 @@ public class MarketSyncService
                         p.setPrice(null);
                         p.setPriceType("negotiable");
                     }
-                    p.setPhone(ctx.phone);
-                    // 原始联系方式留后台内部查看（对外接口不返回）
-                    p.setSourceContact(cut(contacts.get(i), 500));
+                    // 联系人替换开关关闭时：不用官方电话覆盖、不留存原始联系方式（保留在正文里）
+                    p.setPhone(ctx.replaceContact ? ctx.phone : "");
+                    p.setSourceContact(ctx.replaceContact ? cut(contacts.get(i), 500) : "");
 
                     marketService.importExternalPost(p);
                     stat.synced++;
@@ -356,6 +366,7 @@ public class MarketSyncService
         int maxPages;
         double markup;
         String imageBaseUrl;
+        boolean replaceContact;
     }
 
     /** 同步累计计数（跨来源汇总） */
