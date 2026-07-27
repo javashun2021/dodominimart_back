@@ -77,6 +77,9 @@ DELIMITER ;
 CALL __v45_add_idx('mall_product', 'idx_merchant', 'merchant_id');
 DROP PROCEDURE IF EXISTS __v45_add_idx;
 
+-- 商家商品不归属自营分类，category_id 放开为可空（自营仍会填，不受影响）。MODIFY 幂等。
+ALTER TABLE mall_product MODIFY category_id INT(11) NULL COMMENT '自营分类ID(商家商品可空)';
+
 -- ── 3. 商家分类字典 mall_merchant_type ───────────────────────────────────────
 INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
 SELECT '商家分类', 'mall_merchant_type', '0', 'admin', NOW(), '附近商家入驻分类'

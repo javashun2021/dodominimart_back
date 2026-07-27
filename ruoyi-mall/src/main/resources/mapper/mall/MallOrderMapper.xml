@@ -34,6 +34,8 @@
         <result property="cashierId"          column="cashier_id"           />
         <result property="storeId"            column="store_id"             />
         <result property="storeName"          column="store_name"           />
+        <result property="merchantId"         column="merchant_id"          />
+        <result property="merchantName"       column="merchant_name"        />
     </resultMap>
 
     <sql id="selectOrderVo">
@@ -42,7 +44,7 @@
                cancel_reason, order_source, create_time, update_by, update_time,
                runner_member_id, runner_accepted_time, delivery_fee, runner_fee_settled,
                points_used, member_coupon_id, coupon_discount,
-               tender_type, cash_received, change_due, cashier_id, store_id
+               tender_type, cash_received, change_due, cashier_id, store_id, merchant_id
         from mall_order
     </sql>
 
@@ -52,10 +54,11 @@
                o.cancel_reason, o.order_source, o.create_time, o.update_by, o.update_time,
                o.runner_member_id, o.runner_accepted_time, o.delivery_fee, o.runner_fee_settled,
                o.points_used, o.member_coupon_id, o.coupon_discount,
-               o.tender_type, o.cash_received, o.change_due, o.cashier_id, o.store_id,
-               s.name as store_name
+               o.tender_type, o.cash_received, o.change_due, o.cashier_id, o.store_id, o.merchant_id,
+               s.name as store_name, m.name as merchant_name
         from mall_order o
         left join mall_store s on s.store_id = o.store_id
+        left join mall_merchant m on m.merchant_id = o.merchant_id
         <where>
             <if test="memberId != null">AND o.member_id = #{memberId}</if>
             <if test="status != null and status != ''">AND o.status = #{status}</if>
@@ -63,6 +66,7 @@
             <if test="orderSource != null and orderSource != ''">AND o.order_source = #{orderSource}</if>
             <if test="paymentMethod != null and paymentMethod != ''">AND o.payment_method = #{paymentMethod}</if>
             <if test="storeId != null">AND o.store_id = #{storeId}</if>
+            <if test="merchantId != null">AND o.merchant_id = #{merchantId}</if>
         </where>
         order by o.create_time desc
     </select>
@@ -82,10 +86,10 @@
     <insert id="insertOrder" parameterType="com.ruoyi.mall.domain.MallOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into mall_order(order_no, member_id, address_snapshot, total_amount, status, remark,
                                payment_method, payment_status, order_source, points_used,
-                               member_coupon_id, coupon_discount, delivery_fee, store_id, create_time)
+                               member_coupon_id, coupon_discount, delivery_fee, store_id, merchant_id, create_time)
         values(#{orderNo}, #{memberId}, #{addressSnapshot}, #{totalAmount}, #{status}, #{remark},
                #{paymentMethod}, 'UNPAID', #{orderSource}, ifnull(#{pointsUsed}, 0),
-               #{memberCouponId}, ifnull(#{couponDiscount}, 0), ifnull(#{deliveryFee}, 0), #{storeId}, #{createTime})
+               #{memberCouponId}, ifnull(#{couponDiscount}, 0), ifnull(#{deliveryFee}, 0), #{storeId}, #{merchantId}, #{createTime})
     </insert>
 
     <update id="updateOrder" parameterType="com.ruoyi.mall.domain.MallOrder">
@@ -116,8 +120,9 @@
     <select id="selectAvailableForRunner" parameterType="Long" resultMap="MallOrderResult">
         <include refid="selectOrderVo"/>
         where status = '1' and runner_member_id is null
-        <!-- 骑手已绑定门店则只看本店的单；未绑定(null)则看全部，兼容存量骑手 -->
-        <if test="storeId != null">and store_id = #{storeId}</if>
+        <!-- 骑手已绑定门店则只看本店的单；未绑定(null)则看全部，兼容存量骑手。
+             商家单(merchant_id 非空、无归属自营门店)对所有在线骑手放行。 -->
+        <if test="storeId != null">and (store_id = #{storeId} or merchant_id is not null)</if>
         order by create_time asc
     </select>
 

@@ -5,6 +5,9 @@ import com.ruoyi.mall.domain.MallPointsLog;
 
 public interface IMallPointsService
 {
+    /** 积分功能是否开启（平台开关，关闭时 earn/deduct 均 no-op）。 */
+    boolean isEnabled();
+
     /** 获得积分（source: 1=订单 2=评价 3=注册） */
     void earn(Long memberId, int delta, int source, String sourceId, String remark);
 

@@ -128,6 +128,9 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
 
         // Pass 1: validate all items and compute prices — no stock changes yet
+        // 归属商家判定：一单一商家（自营 merchant_id 记为 0 参与判重）。混装/跨商家直接拒绝。
+        java.util.Set<Long> merchantKeys = new java.util.HashSet<>();
+        Long orderMerchantId = null;
         Map<Long, com.ruoyi.mall.domain.MallFlashSale> flashSaleMap = new java.util.HashMap<>();
         for (MallOrderItem item : items)
         {
@@ -135,6 +138,11 @@ public class MallOrderServiceImpl implements IMallOrderService
             if (product == null || !"0".equals(product.getStatus()))
             {
                 throw new RuntimeException("Product not available: " + item.getProductId());
+            }
+            merchantKeys.add(product.getMerchantId() == null ? 0L : product.getMerchantId());
+            if (product.getMerchantId() != null)
+            {
+                orderMerchantId = product.getMerchantId();
             }
             if (product.getStock() < item.getQuantity())
             {
@@ -161,6 +169,18 @@ public class MallOrderServiceImpl implements IMallOrderService
             item.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
         }
 
+        // 一单一商家：不允许自营与商家、或多个商家的商品混在同一单
+        if (merchantKeys.size() > 1)
+        {
+            throw new RuntimeException("One order can only contain items from a single store");
+        }
+        boolean isMerchantOrder = orderMerchantId != null;
+        // 商家单一期仅支持 到店支付(STORE) / 货到付款(COD)，不走 GCASH
+        if (isMerchantOrder && "GCASH".equalsIgnoreCase(paymentMethod))
+        {
+            throw new RuntimeException("Online payment is not available for merchant orders yet");
+        }
+
         BigDecimal total = items.stream()
                 .map(MallOrderItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -185,9 +205,9 @@ public class MallOrderServiceImpl implements IMallOrderService
             }
         }
 
-        // 积分抵扣：100分=₱10，先验后扣，防止超扣
+        // 积分抵扣：100分=₱10，先验后扣，防止超扣。平台开关关闭时忽略传入的 pointsToUse。
         int actualPointsUsed = 0;
-        if (pointsToUse > 0)
+        if (pointsToUse > 0 && pointsService.isEnabled())
         {
             int balance = pointsService.getBalance(memberId);
             int canUse  = Math.min(pointsToUse, balance);
@@ -236,8 +256,11 @@ public class MallOrderServiceImpl implements IMallOrderService
         // 这样「应付 = totalAmount + deliveryFee」自洽，GCash 收款/验签/退款都按此口径。
         order.setDeliveryFee((isStore || couponFreeDelivery || deliveryFee == null)
                 ? BigDecimal.ZERO : deliveryFee);
-        // 归属门店（模型C）：下单固化，决定骑手抢单池/发货网点
-        order.setStoreId(storeId);
+        // 归属商家：非空=某商家的单（一单一商家）；自营为 null
+        order.setMerchantId(orderMerchantId);
+        // 归属门店（模型C）：下单固化，决定骑手抢单池/发货网点。
+        // 商家单不属于自营网点，store_id 置空；骑手抢单池对商家单单独放行（见 selectAvailableForRunner）。
+        order.setStoreId(isMerchantOrder ? null : storeId);
         order.setCreateTime(new Date());
         orderMapper.insertOrder(order);
 

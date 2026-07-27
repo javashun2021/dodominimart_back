@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.mall.domain.MallPointsLog;
 import com.ruoyi.mall.mapper.MallPointsMapper;
 import com.ruoyi.mall.service.IMallPointsService;
+import com.ruoyi.mall.service.IPlatformToggleService;
 
 @Service
 public class MallPointsServiceImpl implements IMallPointsService
@@ -15,10 +16,20 @@ public class MallPointsServiceImpl implements IMallPointsService
     @Autowired
     private MallPointsMapper pointsMapper;
 
+    @Autowired
+    private IPlatformToggleService platformToggle;
+
+    @Override
+    public boolean isEnabled()
+    {
+        return platformToggle.isPointsEnabled();
+    }
+
     @Override
     @Transactional
     public void earn(Long memberId, int delta, int source, String sourceId, String remark)
     {
+        if (!isEnabled()) return;   // 平台开关关闭：不发放积分
         if (delta <= 0) return;
         pointsMapper.addPoints(memberId, delta);
         int balance = pointsMapper.selectBalance(memberId);
@@ -37,6 +48,7 @@ public class MallPointsServiceImpl implements IMallPointsService
     @Transactional
     public int deduct(Long memberId, int points, String sourceId)
     {
+        if (!isEnabled()) return 0; // 平台开关关闭：不允许积分抵扣
         if (points <= 0) return 0;
         int affected = pointsMapper.addPoints(memberId, -points);
         if (affected == 0) return 0; // 余额不足，WHERE 条件未命中

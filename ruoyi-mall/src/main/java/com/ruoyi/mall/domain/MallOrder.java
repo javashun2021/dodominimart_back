@@ -70,6 +70,11 @@ public class MallOrder implements Serializable
     /** 非DB：门店名称（列表/详情展示用） */
     private String storeName;
 
+    /** 归属商家ID（NULL=平台自营，非NULL=某商家的单；一单一商家） */
+    private Long merchantId;
+    /** 非DB：商家名称（列表/详情展示用） */
+    private String merchantName;
+
     /** 非数据库字段，查询详情时填充 */
     private List<MallOrderItem> items;
     /** 非DB：接单 runner 的手机号（详情接口填充） */
@@ -197,4 +202,10 @@ public class MallOrder implements Serializable
 
     public String getStoreName()         { return storeName; }
     public void   setStoreName(String v) { this.storeName = v; }
+
+    public Long   getMerchantId()          { return merchantId; }
+    public void   setMerchantId(Long v)    { this.merchantId = v; }
+
+    public String getMerchantName()          { return merchantName; }
+    public void   setMerchantName(String v)  { this.merchantName = v; }
 }
