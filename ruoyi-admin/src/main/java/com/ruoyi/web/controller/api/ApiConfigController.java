@@ -48,6 +48,9 @@ public class ApiConfigController
         // 积分功能开关（默认关闭；App 据此决定是否显示积分入口/结算抵扣）
         data.put("pointsEnabled", "true".equalsIgnoreCase(val("mall.points.enabled", "false")));
 
+        // 站内聊天 WebSocket 地址（App 连 wss://.../ws/chat?token=<jwt>）
+        data.put("chatWsUrl", val("app.chat.ws.url", ""));
+
         // 搜索热词（逗号分隔）
         data.put("searchHotwords", val("mall.search.hotwords", ""));
 

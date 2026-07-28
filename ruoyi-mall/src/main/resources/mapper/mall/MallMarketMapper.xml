@@ -390,4 +390,10 @@
         ORDER BY b.create_time DESC
     </select>
 
+    <select id="countBlockBetween" resultType="int">
+        SELECT COUNT(*) FROM mall_market_block
+        WHERE (blocker_id = #{a} AND blocked_id = #{b})
+           OR (blocker_id = #{b} AND blocked_id = #{a})
+    </select>
+
 </mapper>

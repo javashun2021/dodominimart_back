@@ -84,6 +84,12 @@ public class MallMarketServiceImpl implements IMallMarketService {
     }
 
     @Override
+    public boolean isBlocked(Long a, Long b) {
+        if (a == null || b == null) return false;
+        return marketMapper.countBlockBetween(a, b) > 0;
+    }
+
+    @Override
     public MallMarketComment addComment(Long postId, Long memberId, String content) {
         MallMarketComment comment = new MallMarketComment();
         comment.setPostId(postId);

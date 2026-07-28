@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallChatConversationMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.MallChatConversation" id="ConversationResult">
+        <id     property="conversationId"   column="conversation_id"   />
+        <result property="memberAId"        column="member_a_id"       />
+        <result property="memberBId"        column="member_b_id"       />
+        <result property="originPostId"     column="origin_post_id"     />
+        <result property="lastMessageText"  column="last_message_text"  />
+        <result property="lastMessageTime"  column="last_message_time"  />
+        <result property="aUnread"          column="a_unread"           />
+        <result property="bUnread"          column="b_unread"           />
+        <result property="aDeleted"         column="a_deleted"          />
+        <result property="bDeleted"         column="b_deleted"          />
+        <result property="createTime"       column="create_time"        />
+        <result property="updateTime"       column="update_time"        />
+    </resultMap>
+
+    <sql id="cols">
+        conversation_id, member_a_id, member_b_id, origin_post_id,
+        last_message_text, last_message_time, a_unread, b_unread,
+        a_deleted, b_deleted, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="ConversationResult">
+        select <include refid="cols"/> from mall_chat_conversation where conversation_id = #{conversationId}
+    </select>
+
+    <select id="selectByPair" resultMap="ConversationResult">
+        select <include refid="cols"/> from mall_chat_conversation
+        where member_a_id = #{a} and member_b_id = #{b}
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.mall.domain.MallChatConversation"
+            useGeneratedKeys="true" keyProperty="conversationId">
+        insert into mall_chat_conversation
+            (member_a_id, member_b_id, origin_post_id, a_unread, b_unread, a_deleted, b_deleted, create_time, update_time)
+        values
+            (#{memberAId}, #{memberBId}, #{originPostId}, 0, 0, '0', '0', now(), now())
+    </insert>
+
+    <update id="touchOnSend">
+        update mall_chat_conversation
+        set last_message_text = #{lastText},
+            last_message_time = #{lastTime},
+            update_time       = #{lastTime},
+            a_unread = a_unread + (case when member_a_id = #{recipientId} then 1 else 0 end),
+            b_unread = b_unread + (case when member_b_id = #{recipientId} then 1 else 0 end),
+            a_deleted = '0',
+            b_deleted = '0'
+        where conversation_id = #{conversationId}
+    </update>
+
+    <update id="clearUnread">
+        update mall_chat_conversation
+        set a_unread = case when member_a_id = #{memberId} then 0 else a_unread end,
+            b_unread = case when member_b_id = #{memberId} then 0 else b_unread end
+        where conversation_id = #{conversationId}
+    </update>
+
+    <select id="selectConversationsForMember" resultType="java.util.Map">
+        select c.conversation_id as conversationId,
+               (case when c.member_a_id = #{memberId} then c.member_b_id else c.member_a_id end) as memberId,
+               m.nick_name  as memberNickname,
+               m.avatar_url as memberAvatar,
+               c.last_message_text as lastMessageText,
+               DATE_FORMAT(c.last_message_time, '%Y-%m-%dT%H:%i:%s') as lastMessageTime,
+               (case when c.member_a_id = #{memberId} then c.a_unread else c.b_unread end) as unread,
+               c.origin_post_id as originPostId
+        from mall_chat_conversation c
+        left join mall_member m
+               on m.member_id = (case when c.member_a_id = #{memberId} then c.member_b_id else c.member_a_id end)
+        where (c.member_a_id = #{memberId} or c.member_b_id = #{memberId})
+          and ((c.member_a_id = #{memberId} and c.a_deleted = '0')
+            or (c.member_b_id = #{memberId} and c.b_deleted = '0'))
+          and c.last_message_time is not null
+        order by c.last_message_time desc
+    </select>
+
+    <select id="selectUnreadTotal" resultType="int">
+        select coalesce(sum(case when member_a_id = #{memberId} then a_unread else b_unread end), 0)
+        from mall_chat_conversation
+        where member_a_id = #{memberId} or member_b_id = #{memberId}
+    </select>
+
+</mapper>

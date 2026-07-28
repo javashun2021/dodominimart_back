@@ -181,4 +181,10 @@ public class MallMarketPost {
 
     public String getMemberAvatar() { return memberAvatar; }
     public void setMemberAvatar(String memberAvatar) { this.memberAvatar = memberAvatar; }
+
+    /**
+     * 是否可站内聊天：作者是真实会员（source 为空）=true；同步帖（source 非空、卖家为外部/机器人号）=false。
+     * App 据此显示「站内聊天」还是「外链联系」。派生字段，随 getPost/listPosts 一并下发。
+     */
+    public boolean getChattable() { return source == null || source.trim().isEmpty(); }
 }

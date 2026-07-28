@@ -23,6 +23,9 @@ public interface IMallMarketService {
     void unblockUser(Long blockerId, Long blockedId);
     List<java.util.Map<String, Object>> listBlockedMembers(Long blockerId);
 
+    /** a、b 之间是否存在任一方向的拉黑（聊天门禁复用市场拉黑表）。 */
+    boolean isBlocked(Long a, Long b);
+
     // ── 举报 & 审核 ──────────────────────────────────────────────────────────
     void reportPost(Long postId, Long reporterId, String reason, String detail);
     void reportComment(Long commentId, Long reporterId, String reason, String detail);

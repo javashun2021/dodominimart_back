@@ -92,4 +92,7 @@ public interface MallMarketMapper {
     List<Long> selectBlockedIds(@Param("blockerId") Long blockerId);
     /** 我拉黑的用户列表（含昵称/头像），供「已拉黑」管理页展示 */
     List<java.util.Map<String, Object>> selectBlockedMembers(@Param("blockerId") Long blockerId);
+
+    /** 统计 a、b 之间任一方向的拉黑记录数（聊天门禁复用） */
+    int countBlockBetween(@Param("a") Long a, @Param("b") Long b);
 }

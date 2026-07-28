@@ -319,6 +319,8 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/app/**", "anon"); // App 错误上报：未登录/登录均可上报
         filterChainDefinitionMap.put("/api/v1/beta/**", "anon"); // Android 内测申请/查状态/审批：公开下载页用
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
+        // 聊天 WebSocket 握手：Shiro 放行，JWT 在握手拦截器里用 query param 校验
+        filterChainDefinitionMap.put("/ws/**", "anon");
 
         Map<String, Filter> filters = new LinkedHashMap<>();
         filters.put("onlineSession", onlineSessionFilter());
