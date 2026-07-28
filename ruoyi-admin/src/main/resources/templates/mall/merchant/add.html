@@ -45,12 +45,32 @@
             <div class="col-sm-8"><input class="form-control" type="text" name="businessHours" placeholder="08:00-22:00"></div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">Logo URL：</label>
-            <div class="col-sm-8"><input class="form-control" type="text" name="logoUrl"></div>
+            <label class="col-sm-3 control-label">Logo / Main Image：</label>
+            <div class="col-sm-8">
+                <div class="input-group">
+                    <input class="form-control" type="text" id="logoUrl" name="logoUrl">
+                    <span class="input-group-btn">
+                        <label class="btn btn-default" for="uploadLogo"><i class="fa fa-upload"></i> Upload</label>
+                        <input type="file" id="uploadLogo" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+                    </span>
+                </div>
+                <div id="logoPreview" style="margin-top:8px;display:none">
+                    <img id="logoImg" src="" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">
+                </div>
+                <span class="help-block" style="margin-bottom:0;">Main image — shown on the merchant card & detail header</span>
+            </div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">Images (comma URLs)：</label>
-            <div class="col-sm-8"><textarea class="form-control" name="images" rows="2"></textarea></div>
+            <label class="col-sm-3 control-label">Store Photos：</label>
+            <div class="col-sm-8">
+                <input type="hidden" id="images" name="images">
+                <span class="input-group-btn">
+                    <label class="btn btn-default" for="uploadImages"><i class="fa fa-plus"></i> Add photos</label>
+                    <input type="file" id="uploadImages" accept="image/*" multiple style="display:none">
+                </span>
+                <div id="imagesPreview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px"></div>
+                <span class="help-block" style="margin-bottom:0;">Storefront gallery on merchant detail (multiple allowed, tap × to remove)</span>
+            </div>
         </div>
         <div class="form-group">
             <label class="col-sm-3 control-label">Sort：</label>
@@ -76,6 +96,68 @@
             $.operate.save(prefix + "/add", $('#form-merchant-add').serialize());
         }
     }
+
+    // 主图上传（存完整 URL，App 直接可用）
+    function uploadLogo(input) {
+        if (!input.files || !input.files[0]) return;
+        var fd = new FormData();
+        fd.append('file', input.files[0]);
+        $.ajax({
+            url: ctx + 'common/upload', type: 'POST', data: fd,
+            processData: false, contentType: false,
+            success: function(res) {
+                if (res.code === 0) {
+                    $('#logoUrl').val(res.url);
+                    $('#logoImg').attr('src', res.url);
+                    $('#logoPreview').show();
+                } else {
+                    $.modal.alertWarning(res.msg);
+                }
+            }
+        });
+    }
+
+    // 店铺照多图（存逗号分隔完整 URL）
+    var storeImages = [];
+    function renderImages() {
+        $('#images').val(storeImages.join(','));
+        var html = '';
+        for (var i = 0; i < storeImages.length; i++) {
+            html += '<div style="position:relative;display:inline-block">'
+                  + '<img src="' + storeImages[i] + '" height="80" style="border-radius:4px;border:1px solid #ddd;padding:2px">'
+                  + '<a data-idx="' + i + '" class="del-store-img" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;cursor:pointer;font-size:12px">&times;</a>'
+                  + '</div>';
+        }
+        $('#imagesPreview').html(html);
+    }
+
+    $(function() {
+        $('#uploadImages').on('change', function() {
+            var input = this;
+            if (!input.files || !input.files.length) return;
+            var files = Array.prototype.slice.call(input.files);
+            var done = 0;
+            files.forEach(function(f) {
+                var fd = new FormData();
+                fd.append('file', f);
+                $.ajax({
+                    url: ctx + 'common/upload', type: 'POST', data: fd,
+                    processData: false, contentType: false,
+                    success: function(res) {
+                        if (res.code === 0) { storeImages.push(res.url); }
+                        else { $.modal.alertWarning(res.msg); }
+                    },
+                    complete: function() { if (++done === files.length) renderImages(); }
+                });
+            });
+            input.value = '';
+        });
+        $('#imagesPreview').on('click', '.del-store-img', function() {
+            var idx = parseInt($(this).data('idx'), 10);
+            storeImages.splice(idx, 1);
+            renderImages();
+        });
+    });
 </script>
 </body>
 </html>
