@@ -51,7 +51,7 @@
                     <input class="form-control" type="text" id="logoUrl" name="logoUrl">
                     <span class="input-group-btn">
                         <label class="btn btn-default" for="uploadLogo"><i class="fa fa-upload"></i> Upload</label>
-                        <input type="file" id="uploadLogo" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+                        <input type="file" id="uploadLogo" accept="image/*" style="display:none">
                     </span>
                 </div>
                 <div id="logoPreview" style="margin-top:8px;display:none">
@@ -132,6 +132,7 @@
     }
 
     $(function() {
+        $('#uploadLogo').on('change', function() { uploadLogo(this); });
         $('#uploadImages').on('change', function() {
             var input = this;
             if (!input.files || !input.files.length) return;
