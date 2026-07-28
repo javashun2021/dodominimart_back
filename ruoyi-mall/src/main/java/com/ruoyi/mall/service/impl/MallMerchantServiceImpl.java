@@ -80,6 +80,46 @@ public class MallMerchantServiceImpl implements IMallMerchantService
     }
 
     @Override
+    public MallMerchant getMyMerchant(Long ownerMemberId)
+    {
+        return merchantMapper.selectByOwner(ownerMemberId);
+    }
+
+    @Override
+    public MallMerchant applyMerchant(MallMerchant draft, Long ownerMemberId)
+    {
+        if (draft == null || draft.getName() == null || draft.getName().trim().isEmpty())
+        {
+            throw new RuntimeException("Store name is required");
+        }
+        MallMerchant existing = merchantMapper.selectByOwner(ownerMemberId);
+        if (existing != null && "1".equals(existing.getStatus()))
+        {
+            throw new RuntimeException("You already have an active store");
+        }
+        // 服务端强制敏感字段，忽略客户端传入的 status/owner/promoter
+        draft.setOwnerMemberId(ownerMemberId);
+        draft.setPromoterId(null);
+        draft.setStatus("0");        // 待审核
+        draft.setDelFlag("0");
+        if (existing == null)
+        {
+            draft.setMerchantId(null);
+            draft.setCreateBy("member:" + ownerMemberId);
+            insertMerchant(draft);
+        }
+        else
+        {
+            // 编辑待审(0) / 被拒(2)或停业(3)后重新提交
+            draft.setMerchantId(existing.getMerchantId());
+            draft.setUpdateBy("member:" + ownerMemberId);
+            draft.setRejectReason("");   // 清空上次拒绝原因
+            updateMerchant(draft);
+        }
+        return merchantMapper.selectByOwner(ownerMemberId);
+    }
+
+    @Override
     public List<MallMerchant> selectByPromoter(Long promoterId)
     {
         return merchantMapper.selectByPromoter(promoterId);

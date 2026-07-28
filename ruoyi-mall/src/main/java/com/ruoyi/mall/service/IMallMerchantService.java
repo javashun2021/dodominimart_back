@@ -22,6 +22,16 @@ public interface IMallMerchantService
     /** 审核拒绝：status=2 + 原因 */
     void rejectMerchant(Long merchantId, String reviewer, String rejectReason);
 
+    /** 会员本人的店铺/开店申请（一人一店，无则 null） */
+    MallMerchant getMyMerchant(Long ownerMemberId);
+
+    /**
+     * 会员自助开店：提交/更新开店申请（进后台待审核 status=0）。
+     * 已有营业中(status=1)的店则拒绝；待审(0)可编辑，被拒(2)/停业(3)可重新提交。
+     * 服务端强制 ownerMemberId=当前会员、promoterId=null、status=0。
+     */
+    MallMerchant applyMerchant(MallMerchant draft, Long ownerMemberId);
+
     /** 某地推员录入的商家 */
     List<MallMerchant> selectByPromoter(Long promoterId);
 

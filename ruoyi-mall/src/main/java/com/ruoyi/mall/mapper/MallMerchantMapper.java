@@ -16,6 +16,9 @@ public interface MallMerchantMapper
     /** 某地推员录入的商家（按创建时间倒序） */
     List<MallMerchant> selectByPromoter(Long promoterId);
 
+    /** 会员本人的店铺/开店申请（一人一店，取最新一条非删除记录） */
+    MallMerchant selectByOwner(Long ownerMemberId);
+
     /** 统计某地推员录入的商家总数（业绩） */
     int countByPromoter(Long promoterId);
 
