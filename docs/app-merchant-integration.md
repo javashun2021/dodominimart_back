@@ -57,6 +57,8 @@ App 工程：`D:\DODOminimart\APP`。后端 base URL 同现有（生产 `https:/
       "phone": "0917xxxxxxx",
       "businessHours": "08:00-22:00",
       "distanceKm": 0.42,        // 仅当请求带 lat/lng 时有值
+      "ownerMemberId": 1052,     // 店主会员ID；自助开店的店有值，平台/地推录入的店为 null
+      "chattable": true,         // true=可站内聊天（见 §8）；false=只能打电话
       "status": "1"
     }
   ]
@@ -244,3 +246,17 @@ Body 示例（商家 COD 单）：
 - **骑手取货导航**：商家单已进骑手池，但商家取货点定位/联系方式在骑手端的展示待二期完善（订单已带 `merchantId`，可按需拉商家详情）。
 - **商家端 App**：商家自己收单/备货/确认收款（`role=merchant`）；目前由平台后台/地推员代确认。
 - 数据模型已预留：`mall_order.merchant_id`、`mall_merchant.service_radius_km`、`owner_member_id`。
+
+---
+
+## 8. 在商家页发起站内聊天（复用会员 1:1 聊天）
+
+自助开店的店主本身就是一个真实会员（`ownerMemberId`），所以「和商店聊天」= 和店主会员 1:1 私聊，**直接复用现有会员聊天**（协议见 `app-chat-integration.md`），后端无需商家专用聊天。
+
+**App 在商家详情页：**
+- 若 `chattable == true`（等价于 `ownerMemberId != null`）→ 显示「联系店主 / Chat」按钮。
+- 点按 → `POST /api/v1/chat/conversations`  body `{ "targetMemberId": <ownerMemberId>, "postId": null }` → 拿到 `conversationId` → 进聊天页（后续收发走 WS/REST，同 `app-chat-integration.md`）。
+- 若 `chattable == false`（平台自录/地推录入、无店主）→ **隐藏聊天按钮**，回退到电话 `phone`。
+
+> 聊天页标题可直接用店铺名 `name`；对方昵称/头像也可从会话接口（`GET /api/v1/chat/conversations` 的 `memberNickname/memberAvatar`）取。
+> 服务端仍会二次校验：对无店主/机器人号发起会话会被拒（`This seller is not available for in-app chat`），互相拉黑也会拦截。

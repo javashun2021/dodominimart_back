@@ -144,4 +144,11 @@ public class MallMerchant extends BaseEntity
 
     public String getPromoterName() { return promoterName; }
     public void setPromoterName(String promoterName) { this.promoterName = promoterName; }
+
+    /**
+     * 非DB派生：是否可站内聊天。
+     * 有真实店主会员(自助开店 owner_member_id 非空)=true；
+     * 平台自录/测试/地推录入(无店主)=false，App 据此显示「联系店主」或回退打电话。
+     */
+    public boolean getChattable() { return ownerMemberId != null; }
 }
