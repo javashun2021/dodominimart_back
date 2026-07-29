@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.ImageUrlUtils;
 import com.ruoyi.mall.domain.MallMerchant;
 import com.ruoyi.mall.mapper.MallMerchantMapper;
 import com.ruoyi.mall.service.IMallMerchantService;
@@ -38,6 +39,7 @@ public class MallMerchantServiceImpl implements IMallMerchantService
     @Override
     public int insertMerchant(MallMerchant merchant)
     {
+        normalizeImages(merchant);
         merchant.setCreateTime(DateUtils.getNowDate());
         return merchantMapper.insertMerchant(merchant);
     }
@@ -45,8 +47,17 @@ public class MallMerchantServiceImpl implements IMallMerchantService
     @Override
     public int updateMerchant(MallMerchant merchant)
     {
+        normalizeImages(merchant);
         merchant.setUpdateTime(DateUtils.getNowDate());
         return merchantMapper.updateMerchant(merchant);
+    }
+
+    /** 入库前把 logoUrl/images 归一化成相对路径，避免存成内网绝对地址。 */
+    private void normalizeImages(MallMerchant merchant)
+    {
+        if (merchant == null) return;
+        merchant.setLogoUrl(ImageUrlUtils.toRelative(merchant.getLogoUrl()));
+        merchant.setImages(ImageUrlUtils.toRelative(merchant.getImages()));
     }
 
     @Override

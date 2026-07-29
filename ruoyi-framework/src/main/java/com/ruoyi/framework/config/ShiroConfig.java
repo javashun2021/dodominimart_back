@@ -318,6 +318,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/sse/**", "anon"); // JWT validated in controller via query param
         filterChainDefinitionMap.put("/api/v1/app/**", "anon"); // App 错误上报：未登录/登录均可上报
         filterChainDefinitionMap.put("/api/v1/beta/**", "anon"); // Android 内测申请/查状态/审批：公开下载页用
+        filterChainDefinitionMap.put("/api/v1/places/**", "anon"); // 地图选点地址搜索：游客未登录也可选位置（注意：Places 走服务端 key 计费，有匿名滥用风险）
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
         // 聊天 WebSocket 握手：Shiro 放行，JWT 在握手拦截器里用 query param 校验
         filterChainDefinitionMap.put("/ws/**", "anon");

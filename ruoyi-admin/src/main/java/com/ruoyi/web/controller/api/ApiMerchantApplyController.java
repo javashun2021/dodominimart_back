@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.base.AjaxResult;
+import com.ruoyi.common.utils.ImageUrlUtils;
 import com.ruoyi.mall.domain.MallMerchant;
 import com.ruoyi.mall.service.IMallMerchantService;
 
@@ -31,7 +32,13 @@ public class ApiMerchantApplyController extends BaseApiController
     public AjaxResult getMyApplication(HttpServletRequest request)
     {
         Long memberId = getCurrentMemberId(request);
-        return AjaxResult.success("ok").put("data", merchantService.getMyMerchant(memberId));
+        MallMerchant m = merchantService.getMyMerchant(memberId);
+        if (m != null)
+        {
+            m.setLogoUrl(ImageUrlUtils.toRelative(m.getLogoUrl()));
+            m.setImages(ImageUrlUtils.toRelative(m.getImages()));
+        }
+        return AjaxResult.success("ok").put("data", m);
     }
 
     /** 提交/更新开店申请（body 为商家对象，name 必填，其余可选） */

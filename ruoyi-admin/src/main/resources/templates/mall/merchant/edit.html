@@ -96,7 +96,7 @@
         }
     }
 
-    // 主图上传（存完整 URL，App 直接可用）
+    // 主图上传（存相对路径 /profile/upload/...，App 与后台同源显示均可用）
     function uploadLogo(input) {
         if (!input.files || !input.files[0]) return;
         var fd = new FormData();
@@ -106,8 +106,8 @@
             processData: false, contentType: false,
             success: function(res) {
                 if (res.code === 0) {
-                    $('#logoUrl').val(res.url);
-                    $('#logoImg').attr('src', res.url);
+                    $('#logoUrl').val(res.path);
+                    $('#logoImg').attr('src', res.path);
                     $('#logoPreview').show();
                 } else {
                     $.modal.alertWarning(res.msg);
@@ -116,7 +116,7 @@
         });
     }
 
-    // 店铺照多图（存逗号分隔完整 URL）
+    // 店铺照多图（存逗号分隔相对路径）
     var storeImages = [];
     function renderImages() {
         $('#images').val(storeImages.join(','));
@@ -149,7 +149,7 @@
                     url: ctx + 'common/upload', type: 'POST', data: fd,
                     processData: false, contentType: false,
                     success: function(res) {
-                        if (res.code === 0) { storeImages.push(res.url); }
+                        if (res.code === 0) { storeImages.push(res.path); }
                         else { $.modal.alertWarning(res.msg); }
                     },
                     complete: function() { if (++done === files.length) renderImages(); }

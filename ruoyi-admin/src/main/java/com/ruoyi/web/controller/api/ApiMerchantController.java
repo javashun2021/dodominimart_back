@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.base.AjaxResult;
+import com.ruoyi.common.utils.ImageUrlUtils;
 import com.ruoyi.mall.domain.MallMerchant;
 import com.ruoyi.mall.domain.MallProduct;
 import com.ruoyi.mall.service.IMallMerchantService;
@@ -46,6 +47,7 @@ public class ApiMerchantController
         int from = Math.min((pageNum - 1) * pageSize, total);
         int to = Math.min(from + pageSize, total);
         List<MallMerchant> pageList = all.subList(from, to);
+        for (MallMerchant m : pageList) normalizeImages(m);
         return AjaxResult.success("ok")
                 .put("total", total)
                 .put("pageNum", pageNum)
@@ -62,6 +64,7 @@ public class ApiMerchantController
         {
             return AjaxResult.error("Merchant not available");
         }
+        normalizeImages(m);
         MallProduct query = new MallProduct();
         query.setMerchantId(id);
         query.setStatus("0");
@@ -69,5 +72,13 @@ public class ApiMerchantController
         return AjaxResult.success("ok")
                 .put("merchant", m)
                 .put("products", products);
+    }
+
+    /** 商家 logoUrl/images 归一化为相对路径（兼容历史存量的内网绝对地址）。 */
+    private void normalizeImages(MallMerchant m)
+    {
+        if (m == null) return;
+        m.setLogoUrl(ImageUrlUtils.toRelative(m.getLogoUrl()));
+        m.setImages(ImageUrlUtils.toRelative(m.getImages()));
     }
 }

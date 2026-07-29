@@ -86,7 +86,7 @@ public class GCashServiceImpl implements IGCashService
 
             Map<String, Object> attributes = new HashMap<>();
             attributes.put("line_items", lineItems);
-            attributes.put("payment_method_types", new String[] { "gcash" });
+            attributes.put("payment_method_types", new String[] { "gcash","paymaya","card" });
             attributes.put("reference_number", orderNo);
             attributes.put("description", "DodoMiniMart Order " + orderNo);
             attributes.put("success_url", appendOrder(successUrl, orderNo));

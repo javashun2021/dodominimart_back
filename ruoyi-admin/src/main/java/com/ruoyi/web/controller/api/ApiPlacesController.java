@@ -22,7 +22,8 @@ import com.ruoyi.common.base.AjaxResult;
  * GET /api/v1/places/autocomplete?input=&sessiontoken=  — 输入联想（返回候选列表）
  * GET /api/v1/places/details?placeId=&sessiontoken=     — 取某个候选的经纬度+完整地址
  *
- * 两个接口都落在 ShiroConfig 的 /api/** → jwtAuth 兜底，需登录，防止 key 被匿名滥用。
+ * ShiroConfig 已将 /api/v1/places/** 设为 anon（游客未登录也能在地图选点里搜地址）。
+ * 注意：Places 走服务端 key 计费，匿名放开有被滥用刷量的风险，必要时可加限流/限来源。
  * key 未配置（mall.google.places-key 为空）时返回空结果，不报错。
  * 计费优化：同一次搜索的 autocomplete 多次请求 + 最后一次 details 共用同一个 sessiontoken。
  */

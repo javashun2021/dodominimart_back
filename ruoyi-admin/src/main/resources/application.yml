@@ -155,7 +155,7 @@ mall:
   translate:
     # 二手市场外部帖同步用的 Claude 翻译（zh→en）。
     # 密钥请用环境变量 MALL_TRANSLATE_ANTHROPIC_KEY 覆盖；下面为占位值，含 PLACEHOLDER 时同步会跳过不发中文入库。
-    anthropic-key: ${MALL_TRANSLATE_ANTHROPIC_KEY:sk-ant-PLACEHOLDER-REPLACE-ME}
+    anthropic-key: ${MALL_TRANSLATE_ANTHROPIC_KEY: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}
     model: claude-haiku-4-5
   beta:
     # Android 内测申请：审批链接签名盐（非密码，仅防止他人乱点审批）。可用环境变量 MALL_BETA_APPROVE_SECRET 覆盖。
