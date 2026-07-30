@@ -1,0 +1,55 @@
+# 多门店设计备忘（商户下多分店，共用一套商品）· 暂缓实现
+
+> 状态：**已定方案，暂不建表**。等有真实「一个商户开多家分店」的需求再动工。
+> 记录于平台化改造(v48–v50)之后：DodoMiniMart 已收敛为「平台下的一家店」(商家 `merchant_id=17`)。
+
+## 目标
+
+一个**商户(brand)** 下可以有**多个门店/分店(outlet)**，多门店**共用同一套商品与品牌信息**；
+用户在「附近」看到的是**门店**，下单由**就近门店**发货。
+
+## 现状（已有的零件，别重造）
+
+| 层 | 表 | 现在的角色 |
+|---|---|---|
+| 商户/品牌 | `mall_merchant` | 一行=一个商家，**当前自带单一 location**(lat/lng/address/phone/hours)。品牌信息(logo/描述/分类)也在这。 |
+| 商品目录 | `mall_product.merchant_id` | 挂在**商户**层 → 天然「共用一套商品」✅ |
+| 发货门店/网点 | `mall_store` | 自营发货点。订单带 `store_id`；骑手按 `store_id` 分池抢单。**这就是「分店/发货点」概念**，只是目前只服务自营。 |
+| 订单 | `mall_order.merchant_id` + `mall_order.store_id` | 品牌归属 + 发货门店，两个维度都已存在。 |
+
+**关键洞察**：`mall_store` 已经是「多门店发货」模型。DodoMiniMart(自营商家17)**现在就是**靠 `mall_store` 的多网点发货的 —— 即**自营侧的多门店已经通了**。推广到其他商户 = 给 `mall_store` 加一个 `merchant_id` 归属即可，不需要新表。
+
+## 选定方案：给 `mall_store` 加 `merchant_id`（复用发货模型，不新建分店表）
+
+### 1. 建表/改列
+```sql
+ALTER TABLE mall_store ADD COLUMN merchant_id BIGINT DEFAULT NULL
+    COMMENT '归属商户ID(NULL=平台自营历史网点；非空=某商户的分店)';
+ALTER TABLE mall_store ADD INDEX idx_merchant (merchant_id);
+ALTER TABLE mall_store ADD INDEX idx_geo (lat, lng);
+```
+- 商品/品牌仍在 `mall_merchant`（共用），**不做**任何 per-branch 商品表。
+- 每个 `mall_store` 行 = 一个分店，带自己的 lat/lng/address/phone/hours/status。
+
+### 2. 数据迁移（回填默认分店）
+- 对每个「有 location 的 `mall_merchant`」自动建一条 `mall_store`（merchant_id=该商家、坐标取商家坐标）作为它的第一家门店。
+- 商家17(DodoMiniMart) 的自营网点：给现有 `mall_store` 行补 `merchant_id=17`（或保留 NULL 走自营历史逻辑，二选一，迁移时定）。
+
+### 3. 接口
+- **附近**：`/api/v1/merchants`（按商家单点排序）改/增为**按门店排序** —— 查 `mall_store` 按 GPS 距离升序，每条门店 join 出**父商户**的 name/logo/category。tap 门店 → 进该商户的商品目录。
+- **商户详情**：`/api/v1/merchants/{id}` 商品不变(仍取 merchant 层)；附带该商户的门店列表 + 就近门店。
+- **下单**：`store_id` = 用户选的/就近的分店；`merchant_id` = 该分店的商户。发货/骑手池已按 `store_id` 工作，天然可用。
+
+### 4. 后台
+- 已有「门店管理」(`mall_store` CRUD) + 「商家管理」(`mall_merchant`)。给门店加一个「归属商户」下拉即可。
+
+## 需要单独拍板的点（做的时候再定）
+
+1. **库存**：`mall_product.stock` 是**全商户共享一个库存池**。多门店常需**按门店独立库存** —— 那要新增 `mall_product_stock(product_id, store_id, stock)`，是**大改**。一期可先「共享库存」，按门店库存留二期。用户原话「共用一套商品」= 至少商品/资料共用；库存是否共用需确认。
+2. `mall_merchant` 的单点 location 是**保留作展示兜底**，还是迁走后废弃。
+3. 每分店的营业时间/电话/客服(聊天)是分店级还是商户级 —— 聊天(chat)建议仍挂**商户店主**层，不下沉到分店。
+4. 配送半径/配送费是否按分店。
+
+## 与已完成改造的兼容性
+
+- 不冲突、不返工。当前 `mall.self.merchant.id=17` 的自营→门店改造与本方案正交：将来 DodoMiniMart 若开分店，就是给 `mall_store` 挂 `merchant_id=17` 的多行，商品仍是商家17 的目录。
