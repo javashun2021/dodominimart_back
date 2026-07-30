@@ -15,6 +15,9 @@ public class MallStore extends BaseEntity
 
     private Long storeId;
 
+    /** 归属商户ID（NULL=历史自营网点；非空=某商户的分店/门店） */
+    private Long merchantId;
+
     @Excel(name = "门店名称")
     private String name;
 
@@ -50,6 +53,9 @@ public class MallStore extends BaseEntity
 
     public Long getStoreId() { return storeId; }
     public void setStoreId(Long storeId) { this.storeId = storeId; }
+
+    public Long getMerchantId() { return merchantId; }
+    public void setMerchantId(Long merchantId) { this.merchantId = merchantId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallProductStockMapper">
+
+    <select id="selectStock" resultType="java.lang.Integer">
+        select stock from mall_product_stock
+        where product_id = #{productId} and store_id = #{storeId}
+    </select>
+
+    <select id="countStock" resultType="int">
+        select count(1) from mall_product_stock
+        where product_id = #{productId} and store_id = #{storeId}
+    </select>
+
+    <update id="deductStock">
+        update mall_product_stock
+        set stock = stock - #{quantity}, update_time = now()
+        where product_id = #{productId} and store_id = #{storeId} and stock >= #{quantity}
+    </update>
+
+    <update id="restoreStock">
+        update mall_product_stock
+        set stock = stock + #{quantity}, update_time = now()
+        where product_id = #{productId} and store_id = #{storeId}
+    </update>
+
+    <insert id="upsertStock" parameterType="com.ruoyi.mall.domain.MallProductStock">
+        insert into mall_product_stock(product_id, store_id, stock, create_time, update_time)
+        values(#{productId}, #{storeId}, #{stock}, now(), now())
+        on duplicate key update stock = #{stock}, update_time = now()
+    </insert>
+
+    <delete id="deleteStock">
+        delete from mall_product_stock
+        where product_id = #{productId} and store_id = #{storeId}
+    </delete>
+
+    <select id="selectByStore" resultType="com.ruoyi.mall.domain.MallProductStock">
+        select ps.product_id as productId, ps.store_id as storeId, ps.stock as stock,
+               ps.create_time as createTime, ps.update_time as updateTime,
+               p.name as productName
+        from mall_product_stock ps
+        left join mall_product p on p.product_id = ps.product_id
+        where ps.store_id = #{storeId}
+        order by ps.product_id
+    </select>
+
+</mapper>

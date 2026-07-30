@@ -24,6 +24,7 @@ import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallPaymentRecordMapper;
 import com.ruoyi.mall.mapper.MallProductMapper;
+import com.ruoyi.mall.mapper.MallProductStockMapper;
 import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.domain.CouponDiscountResult;
 import com.ruoyi.mall.service.IMallCouponService;
@@ -65,6 +66,8 @@ public class MallOrderServiceImpl implements IMallOrderService
     private MallRefundRequestMapper refundRequestMapper;
     @Autowired
     private com.ruoyi.mall.service.IPlatformToggleService platformToggleService;
+    @Autowired
+    private MallProductStockMapper productStockMapper;
 
     /** 完成后退款（售后）申请时限：3 天 */
     private static final long REFUND_WINDOW_MS = 3L * 24 * 60 * 60 * 1000;
@@ -146,7 +149,11 @@ public class MallOrderServiceImpl implements IMallOrderService
             {
                 orderMerchantId = product.getMerchantId();
             }
-            if (product.getStock() < item.getQuantity())
+            // 有效库存：门店配了独立库存(mall_product_stock)用门店的，否则回退商户总库存
+            Integer storeStock = (storeId != null)
+                    ? productStockMapper.selectStock(product.getProductId(), storeId) : null;
+            int availStock = (storeStock != null) ? storeStock : product.getStock();
+            if (availStock < item.getQuantity())
             {
                 throw new RuntimeException("Insufficient stock: " + product.getName());
             }
@@ -183,6 +190,8 @@ public class MallOrderServiceImpl implements IMallOrderService
             orderMerchantId = null;
         }
         boolean isMerchantOrder = orderMerchantId != null;
+        // 库存扣减归属门店：与下面 order.setStoreId 一致（自营/自营商家=传入门店；入驻商家单=null）
+        Long stockStoreId = isMerchantOrder ? null : storeId;
         // 商家单一期仅支持 到店支付(STORE) / 货到付款(COD)，不走 GCASH
         if (isMerchantOrder && "GCASH".equalsIgnoreCase(paymentMethod))
         {
@@ -206,7 +215,12 @@ public class MallOrderServiceImpl implements IMallOrderService
                     throw new RuntimeException("Flash sale stock sold out: " + item.getProductName());
                 }
             }
-            int affected = productMapper.deductStock(item.getProductId(), item.getQuantity());
+            // 门店配了独立库存就扣门店的，否则扣商户总库存（两池独立，与校验/回补口径一致）
+            boolean storeOverride = stockStoreId != null
+                    && productStockMapper.countStock(item.getProductId(), stockStoreId) > 0;
+            int affected = storeOverride
+                    ? productStockMapper.deductStock(item.getProductId(), stockStoreId, item.getQuantity())
+                    : productMapper.deductStock(item.getProductId(), item.getQuantity());
             if (affected == 0)
             {
                 throw new RuntimeException("Insufficient stock: " + item.getProductName());
@@ -488,7 +502,18 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             for (MallOrderItem it : items)
             {
-                productMapper.restoreStock(it.getProductId(), it.getQuantity());
+                // 回补到当初扣减的同一个池：门店有独立库存回补门店，否则回补商户总库存
+                Long sid = order.getStoreId();
+                boolean storeOverride = sid != null
+                        && productStockMapper.countStock(it.getProductId(), sid) > 0;
+                if (storeOverride)
+                {
+                    productStockMapper.restoreStock(it.getProductId(), sid, it.getQuantity());
+                }
+                else
+                {
+                    productMapper.restoreStock(it.getProductId(), it.getQuantity());
+                }
             }
         }
         if (order.getPointsUsed() > 0)
