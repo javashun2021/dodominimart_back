@@ -8,9 +8,10 @@
 > - 下单/退款：有效库存与扣补走 `COALESCE(门店覆盖, 商户总库存)`，两池独立（`MallOrderServiceImpl`）。
 > - 后台：门店 新增/编辑 加「归属商户」；门店列表 Merchant 列 + Stock 按钮；
 >   `/mall/store/stock/{id}` 逐商品设/清本店独立库存。
-> - App 无需改：已有门店选择(store_selector)并在结账带 `storeId`。
-> - **已知限制**：① POS(`createPosOrder`)仍扣商户总库存（收银员未绑定门店，需另做 cashier→store 绑定）；
->   ② App 商品列表展示的是总库存，真正可售在结账按门店校验（不足则下单报 Insufficient stock）。
+> - App：已有门店选择(store_selector)并在结账带 `storeId`；`/api/v1/products?storeId=` 与
+>   `/products/{id}?storeId=` 现返回**本店有效库存**（有独立库存用独立、否则总库存），列表/详情即显真实可售。
+> - POS：`createPosOrder(..., storeId)` 收银端传门店 → 按店库存扣减 + 门店归属（不传=扣总库存，向后兼容）。
+> - 剩余小项：POS storeId 目前由收银端传入；如需「收银员固定绑定门店」可后续加 cashier→store 绑定。
 
 ## 目标
 
