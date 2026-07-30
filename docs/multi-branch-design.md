@@ -1,7 +1,16 @@
-# 多门店设计备忘（商户下多分店，共用一套商品）· 暂缓实现
+# 多门店设计（商户下多分店，共用一套商品）· 已实现 v51
 
-> 状态：**已定方案，暂不建表**。等有真实「一个商户开多家分店」的需求再动工。
+> 状态：**已实现（v51 + 后端/后台）**。2026-07 落地。
 > 记录于平台化改造(v48–v50)之后：DodoMiniMart 已收敛为「平台下的一家店」(商家 `merchant_id=17`)。
+>
+> **实现清单**：
+> - v51：`mall_store.merchant_id`(回填17) + `mall_product_stock`(门店库存覆盖表)。
+> - 下单/退款：有效库存与扣补走 `COALESCE(门店覆盖, 商户总库存)`，两池独立（`MallOrderServiceImpl`）。
+> - 后台：门店 新增/编辑 加「归属商户」；门店列表 Merchant 列 + Stock 按钮；
+>   `/mall/store/stock/{id}` 逐商品设/清本店独立库存。
+> - App 无需改：已有门店选择(store_selector)并在结账带 `storeId`。
+> - **已知限制**：① POS(`createPosOrder`)仍扣商户总库存（收银员未绑定门店，需另做 cashier→store 绑定）；
+>   ② App 商品列表展示的是总库存，真正可售在结账按门店校验（不足则下单报 Insufficient stock）。
 
 ## 目标
 
