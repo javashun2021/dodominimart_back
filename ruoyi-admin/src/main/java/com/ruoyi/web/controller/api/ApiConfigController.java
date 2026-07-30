@@ -54,6 +54,10 @@ public class ApiConfigController
         // 联系我们开关（默认关闭；平台化下自营 Call Us / Messenger 入口不外露）
         data.put("contactEnabled", "true".equalsIgnoreCase(val("mall.contact.enabled", "false")));
 
+        // 平台自营商家ID（0=无）。App 据此把该商家的商品/订单当自营处理（可在线支付/走自营网点），
+        // 而非入驻商家单。对应后端 mall.self.merchant.id。
+        data.put("selfMerchantId", intVal("mall.self.merchant.id", 0));
+
         // 站内聊天 WebSocket 地址（App 连 wss://.../ws/chat?token=<jwt>）
         data.put("chatWsUrl", val("app.chat.ws.url", ""));
 
