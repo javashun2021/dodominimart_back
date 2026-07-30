@@ -51,6 +51,9 @@ public class MallStore extends BaseEntity
     /** 非DB：距用户距离(km)，仅 nearest 接口填充 */
     private BigDecimal distanceKm;
 
+    /** 非DB：归属商户名（后台列表展示） */
+    private String merchantName;
+
     public Long getStoreId() { return storeId; }
     public void setStoreId(Long storeId) { this.storeId = storeId; }
 
@@ -89,4 +92,7 @@ public class MallStore extends BaseEntity
 
     public BigDecimal getDistanceKm() { return distanceKm; }
     public void setDistanceKm(BigDecimal distanceKm) { this.distanceKm = distanceKm; }
+
+    public String getMerchantName() { return merchantName; }
+    public void setMerchantName(String merchantName) { this.merchantName = merchantName; }
 }

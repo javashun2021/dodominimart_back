@@ -6,6 +6,7 @@
     <resultMap type="com.ruoyi.mall.domain.MallStore" id="MallStoreResult">
         <id     property="storeId"          column="store_id"          />
         <result property="merchantId"       column="merchant_id"       />
+        <result property="merchantName"     column="merchant_name"     />
         <result property="name"             column="name"              />
         <result property="address"          column="address"           />
         <result property="lat"              column="lat"               />
@@ -24,7 +25,9 @@
     </resultMap>
 
     <sql id="selectStoreVo">
-        select store_id, merchant_id, name, address, lat, lng, phone, service_radius_km, business_hours,
+        select store_id, merchant_id,
+               (select name from mall_merchant mm where mm.merchant_id = mall_store.merchant_id) as merchant_name,
+               name, address, lat, lng, phone, service_radius_km, business_hours,
                status, sort, del_flag, create_by, create_time, update_by, update_time, remark
         from mall_store
     </sql>

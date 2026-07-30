@@ -24,4 +24,10 @@ public interface IMallStoreService
      * lat/lng 为空时返回排序最前的一家（兜底）。无营业门店返回 null。
      */
     MallStore selectNearestStore(BigDecimal lat, BigDecimal lng);
+
+    /** 门店级商品库存覆盖：该店已配的独立库存列表（含商品名）。 */
+    List<com.ruoyi.mall.domain.MallProductStock> listStoreStock(Long storeId);
+
+    /** 门店级商品库存覆盖：设置(stock!=null)或清除(stock==null，回退用商户总库存)。 */
+    void saveStoreStock(Long productId, Long storeId, Integer stock);
 }

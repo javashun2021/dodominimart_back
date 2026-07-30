@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.mall.domain.MallStore;
+import com.ruoyi.mall.domain.MallProductStock;
 import com.ruoyi.mall.mapper.MallStoreMapper;
+import com.ruoyi.mall.mapper.MallProductStockMapper;
 import com.ruoyi.mall.service.IMallStoreService;
 
 @Service
@@ -16,6 +18,9 @@ public class MallStoreServiceImpl implements IMallStoreService
 
     @Autowired
     private MallStoreMapper storeMapper;
+
+    @Autowired
+    private MallProductStockMapper productStockMapper;
 
     @Override
     public List<MallStore> selectStoreList(MallStore store)
@@ -93,6 +98,29 @@ public class MallStoreServiceImpl implements IMallStoreService
         }
         nearest.setDistanceKm(BigDecimal.valueOf(Math.round(best * 100.0) / 100.0));
         return nearest;
+    }
+
+    @Override
+    public List<MallProductStock> listStoreStock(Long storeId)
+    {
+        return productStockMapper.selectByStore(storeId);
+    }
+
+    @Override
+    public void saveStoreStock(Long productId, Long storeId, Integer stock)
+    {
+        if (stock == null)
+        {
+            productStockMapper.deleteStock(productId, storeId);
+        }
+        else
+        {
+            MallProductStock ps = new MallProductStock();
+            ps.setProductId(productId);
+            ps.setStoreId(storeId);
+            ps.setStock(stock);
+            productStockMapper.upsertStock(ps);
+        }
     }
 
     private double haversineKm(double lat1, double lng1, double lat2, double lng2)

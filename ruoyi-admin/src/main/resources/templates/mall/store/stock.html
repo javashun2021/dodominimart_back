@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <h4 style="margin-top:0">
+                        Per-store Stock — <span th:text="${store?.name}">-</span>
+                        <small class="text-muted" th:text="'(store #' + ${store?.storeId} + ')'"></small>
+                    </h4>
+                    <p class="text-muted">
+                        留空 = 用商户总库存；填数字 = 本店独立库存。下单/退款按「有独立库存用独立、否则用总库存」扣补。
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th style="width:90px">Product ID</th>
+                                <th>Product</th>
+                                <th style="width:110px">总库存</th>
+                                <th style="width:220px">本店独立库存<br><small>(留空=用总库存)</small></th>
+                                <th style="width:120px">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="p : ${products}">
+                                <td th:text="${p.productId}"></td>
+                                <td th:text="${p.name}"></td>
+                                <td th:text="${p.stock}"></td>
+                                <td>
+                                    <input type="number" min="0" class="form-control ps-input"
+                                           th:attr="data-pid=${p.productId}"
+                                           th:value="${overrides.get(p.productId)}"
+                                           placeholder="用总库存">
+                                </td>
+                                <td>
+                                    <a class="btn btn-primary btn-xs ps-save" th:attr="data-pid=${p.productId}">
+                                        <i class="fa fa-save"></i> Save
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(products)}">
+                                <td colspan="5" class="text-center text-muted">该门店所属商户暂无上架商品</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var storeId = [[${store?.storeId}]];
+    var prefix = ctx + "mall/store";
+    $(function () {
+        $('.ps-save').on('click', function () {
+            var pid = $(this).data('pid');
+            var val = $('.ps-input[data-pid="' + pid + '"]').val();
+            $.post(prefix + '/stock/save', {storeId: storeId, productId: pid, stock: val}, function (res) {
+                if (res.code === 0) {
+                    $.modal.msgSuccess(val === '' ? 'Cleared (uses total stock)' : 'Saved');
+                } else {
+                    $.modal.msgError(res.msg);
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

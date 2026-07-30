@@ -16,8 +16,15 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.page.TableDataInfo;
 import com.ruoyi.framework.util.ShiroUtils;
 import com.ruoyi.framework.web.base.BaseController;
+import java.util.HashMap;
+import java.util.Map;
 import com.ruoyi.mall.domain.MallStore;
+import com.ruoyi.mall.domain.MallMerchant;
+import com.ruoyi.mall.domain.MallProduct;
+import com.ruoyi.mall.domain.MallProductStock;
 import com.ruoyi.mall.service.IMallStoreService;
+import com.ruoyi.mall.service.IMallMerchantService;
+import com.ruoyi.mall.service.IMallProductService;
 
 /**
  * 门店/发货网点 管理
@@ -30,6 +37,12 @@ public class MallStoreController extends BaseController
 
     @Autowired
     private IMallStoreService storeService;
+
+    @Autowired
+    private IMallMerchantService merchantService;
+
+    @Autowired
+    private IMallProductService productService;
 
     @RequiresPermissions("mall:store:view")
     @GetMapping
@@ -50,8 +63,9 @@ public class MallStoreController extends BaseController
 
     @RequiresPermissions("mall:store:add")
     @GetMapping("/add")
-    public String add()
+    public String add(ModelMap mmap)
     {
+        mmap.put("merchants", merchantService.selectMerchantList(new MallMerchant()));
         return prefix + "/add";
     }
 
@@ -70,7 +84,66 @@ public class MallStoreController extends BaseController
     public String edit(@PathVariable Long storeId, ModelMap mmap)
     {
         mmap.put("store", storeService.selectStoreById(storeId));
+        mmap.put("merchants", merchantService.selectMerchantList(new MallMerchant()));
         return prefix + "/edit";
+    }
+
+    /** 门店级商品库存覆盖：配置页（列出该店所属商户的商品 + 本店独立库存） */
+    @RequiresPermissions("mall:store:edit")
+    @GetMapping("/stock/{storeId}")
+    public String stock(@PathVariable Long storeId, ModelMap mmap)
+    {
+        MallStore store = storeService.selectStoreById(storeId);
+        mmap.put("store", store);
+        MallProduct q = new MallProduct();
+        q.setStatus("0");
+        if (store != null && store.getMerchantId() != null)
+        {
+            q.setMerchantId(store.getMerchantId());
+        }
+        else
+        {
+            q.setSelfOperatedOnly(true);
+        }
+        mmap.put("products", productService.selectProductList(q));
+        Map<Long, Integer> overrides = new HashMap<>();
+        if (store != null)
+        {
+            for (MallProductStock ps : storeService.listStoreStock(storeId))
+            {
+                overrides.put(ps.getProductId(), ps.getStock());
+            }
+        }
+        mmap.put("overrides", overrides);
+        return prefix + "/stock";
+    }
+
+    /** 门店级商品库存覆盖：保存单行（stock 留空=清除，回退用商户总库存） */
+    @RequiresPermissions("mall:store:edit")
+    @Log(title = "门店库存", businessType = BusinessType.UPDATE)
+    @PostMapping("/stock/save")
+    @ResponseBody
+    public AjaxResult stockSave(Long storeId, Long productId, String stock)
+    {
+        if (storeId == null || productId == null)
+        {
+            return error("storeId and productId are required");
+        }
+        Integer s;
+        try
+        {
+            s = (stock == null || stock.trim().isEmpty()) ? null : Integer.valueOf(stock.trim());
+        }
+        catch (NumberFormatException e)
+        {
+            return error("Invalid stock value");
+        }
+        if (s != null && s < 0)
+        {
+            return error("Stock cannot be negative");
+        }
+        storeService.saveStoreStock(productId, storeId, s);
+        return success();
     }
 
     @RequiresPermissions("mall:store:edit")

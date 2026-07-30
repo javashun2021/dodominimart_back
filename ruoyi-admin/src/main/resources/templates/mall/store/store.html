@@ -59,6 +59,7 @@
                 {checkbox: true},
                 {field: 'storeId',       title: 'ID'},
                 {field: 'name',          title: 'Store Name'},
+                {field: 'merchantName',  title: 'Merchant', formatter: function(v) { return v || '<span class="text-muted">(self)</span>'; }},
                 {field: 'address',       title: 'Address'},
                 {field: 'phone',         title: 'Phone'},
                 {field: 'businessHours', title: 'Hours'},
@@ -70,6 +71,7 @@
                 {title: 'Action', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.storeId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
+                    a.push('<a class="btn btn-info btn-xs ' + editFlag + '" onclick="$.modal.openTab(\'Store Stock\', ctx + \'mall/store/stock/' + row.storeId + '\')"><i class="fa fa-cubes"></i>Stock</a> ');
                     a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.storeId + '\')"><i class="fa fa-remove"></i>Delete</a>');
                     return a.join('');
                 }}
