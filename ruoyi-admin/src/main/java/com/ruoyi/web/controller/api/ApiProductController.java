@@ -33,6 +33,9 @@ public class ApiProductController extends BaseApiController
     @Autowired
     private com.ruoyi.mall.service.IPlatformToggleService platformToggleService;
 
+    @Autowired
+    private com.ruoyi.mall.mapper.MallProductStockMapper productStockMapper;
+
     /** 分类列表 */
     @GetMapping("/categories")
     public AjaxResult listCategories()
@@ -55,6 +58,7 @@ public class ApiProductController extends BaseApiController
             @RequestParam(defaultValue = "false") boolean onlyFlashSale,
             @RequestParam(defaultValue = "false") boolean onlyGroupBuy,
             @RequestParam(defaultValue = "false") boolean inStockOnly,
+            @RequestParam(required = false) Long storeId,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize)
     {
@@ -81,18 +85,43 @@ public class ApiProductController extends BaseApiController
             query.setSelfOperatedOnly(true);
         }
         List<MallProduct> list = productService.selectProductList(query);
+        // 门店级库存覆盖：传了 storeId 就把有独立库存的商品 stock 换成本店库存（无覆盖仍用总库存）
+        applyStoreStock(list, storeId);
         return pageResult(new PageInfo<>(list));
     }
 
-    /** 商品详情 */
+    /** 商品详情（可带 storeId 取本店库存） */
     @GetMapping("/products/{id}")
-    public AjaxResult getProduct(@PathVariable Long id)
+    public AjaxResult getProduct(@PathVariable Long id,
+                                 @RequestParam(required = false) Long storeId)
     {
         MallProduct product = productService.selectProductById(id);
         if (product == null)
         {
             return AjaxResult.error("Product not found");
         }
+        if (storeId != null)
+        {
+            Integer s = productStockMapper.selectStock(id, storeId);
+            if (s != null) product.setStock(s);
+        }
         return AjaxResult.success("ok").put("data", product);
+    }
+
+    /** 把列表里「该门店配了独立库存」的商品 stock 覆盖为本店库存（storeId 为空则原样返回总库存）。 */
+    private void applyStoreStock(List<MallProduct> list, Long storeId)
+    {
+        if (storeId == null || list == null || list.isEmpty()) return;
+        java.util.Map<Long, Integer> overrides = new java.util.HashMap<>();
+        for (com.ruoyi.mall.domain.MallProductStock ps : productStockMapper.selectByStore(storeId))
+        {
+            overrides.put(ps.getProductId(), ps.getStock());
+        }
+        if (overrides.isEmpty()) return;
+        for (MallProduct p : list)
+        {
+            Integer s = overrides.get(p.getProductId());
+            if (s != null) p.setStock(s);
+        }
     }
 }

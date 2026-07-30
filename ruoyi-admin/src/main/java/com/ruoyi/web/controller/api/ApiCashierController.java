@@ -119,12 +119,13 @@ public class ApiCashierController extends BaseApiController
         int pointsToUse  = (int) parseLongOr(body.get("pointsToUse"), 0L);
         Long memberCouponId = parseLong(body.get("memberCouponId"));
         Long heldCartId  = parseLong(body.get("heldCartId"));
+        Long storeId     = parseLong(body.get("storeId")); // 收银终端所属门店；null=按商户总库存
 
         MallOrder order;
         try
         {
             order = orderService.createPosOrder(ownerId, items, cashier.getMemberId(),
-                    tenderType, cashReceived, pointsToUse, memberCouponId);
+                    tenderType, cashReceived, pointsToUse, memberCouponId, storeId);
         }
         catch (RuntimeException e)
         {

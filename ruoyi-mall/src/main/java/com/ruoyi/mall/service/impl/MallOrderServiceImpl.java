@@ -930,11 +930,11 @@ public class MallOrderServiceImpl implements IMallOrderService
     @Override
     @Transactional
     public MallOrder createPosOrder(Long ownerId, List<MallOrderItem> items, Long cashierId,
-            String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId)
+            String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId, Long storeId)
     {
         // 走到店分支：免地址、payment_method=STORE、order_source=IN_STORE、自动算 total
-        // TODO 多店：POS 到店单门店归属待收银员绑定门店后传入；到店单不进骑手池，此处暂传 null。
-        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId, BigDecimal.ZERO, null);
+        // 门店归属：收银端传 storeId → 按店库存扣减 + 订单归属该店；null=扣商户总库存(向后兼容)。
+        MallOrder order = createOrder(ownerId, null, items, "POS", "STORE", pointsToUse, memberCouponId, BigDecimal.ZERO, storeId);
 
         BigDecimal total = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
         if (cashReceived == null || cashReceived.compareTo(total) < 0)

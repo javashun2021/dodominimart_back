@@ -84,8 +84,9 @@ public interface IMallOrderService
      * @param cashierId    开单收银员 memberId
      * @param tenderType   实付方式（阶段1 CASH）
      * @param cashReceived 收现金额
+     * @param storeId      开单门店（决定按店库存扣减/门店归属；null=扣商户总库存，向后兼容）
      * @return 已完成的订单（含 tender/找零/明细）
      */
     MallOrder createPosOrder(Long ownerId, List<MallOrderItem> items, Long cashierId,
-            String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId);
+            String tenderType, BigDecimal cashReceived, int pointsToUse, Long memberCouponId, Long storeId);
 }
