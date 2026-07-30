@@ -63,6 +63,8 @@ public class MallOrderServiceImpl implements IMallOrderService
     private IGCashService gcashService;
     @Autowired
     private MallRefundRequestMapper refundRequestMapper;
+    @Autowired
+    private com.ruoyi.mall.service.IPlatformToggleService platformToggleService;
 
     /** 完成后退款（售后）申请时限：3 天 */
     private static final long REFUND_WINDOW_MS = 3L * 24 * 60 * 60 * 1000;
@@ -173,6 +175,12 @@ public class MallOrderServiceImpl implements IMallOrderService
         if (merchantKeys.size() > 1)
         {
             throw new RuntimeException("One order can only contain items from a single store");
+        }
+        // 平台自营商家(DodoMiniMart 自家门店)按自营处理：可在线支付、归属自营网点、订单不打商家标记。
+        Long selfMerchantId = platformToggleService.getSelfMerchantId();
+        if (selfMerchantId != null && selfMerchantId.equals(orderMerchantId))
+        {
+            orderMerchantId = null;
         }
         boolean isMerchantOrder = orderMerchantId != null;
         // 商家单一期仅支持 到店支付(STORE) / 货到付款(COD)，不走 GCASH

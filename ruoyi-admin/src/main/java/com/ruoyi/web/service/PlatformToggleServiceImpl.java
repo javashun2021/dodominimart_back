@@ -28,4 +28,19 @@ public class PlatformToggleServiceImpl implements IPlatformToggleService
             return false;
         }
     }
+
+    @Override
+    public Long getSelfMerchantId()
+    {
+        try
+        {
+            String v = configService.selectConfigByKey("mall.self.merchant.id");
+            return (v != null && !v.trim().isEmpty()) ? Long.valueOf(v.trim()) : null;
+        }
+        catch (Exception e)
+        {
+            // 参数缺失/非数字：返回 null，回退旧自营语义
+            return null;
+        }
+    }
 }

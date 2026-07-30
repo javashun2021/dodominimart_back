@@ -30,6 +30,9 @@ public class ApiProductController extends BaseApiController
     @Autowired
     private IMallProductService productService;
 
+    @Autowired
+    private com.ruoyi.mall.service.IPlatformToggleService platformToggleService;
+
     /** 分类列表 */
     @GetMapping("/categories")
     public AjaxResult listCategories()
@@ -66,7 +69,17 @@ public class ApiProductController extends BaseApiController
         query.setOnlyFlashSale(onlyFlashSale);
         query.setOnlyGroupBuy(onlyGroupBuy);
         query.setInStockOnly(inStockOnly);
-        query.setSelfOperatedOnly(true);  // 自营首页/列表只展示平台自营商品，入驻商家商品走 /merchants
+        // 平台首页/自营目录 = 自营商家(mall.self.merchant.id，即 DodoMiniMart 自家门店)的商品；
+        // 未配置则回退旧语义「平台自营 merchant_id IS NULL」。入驻商家商品仍走 /merchants。
+        Long selfMerchantId = platformToggleService.getSelfMerchantId();
+        if (selfMerchantId != null)
+        {
+            query.setMerchantId(selfMerchantId);
+        }
+        else
+        {
+            query.setSelfOperatedOnly(true);
+        }
         List<MallProduct> list = productService.selectProductList(query);
         return pageResult(new PageInfo<>(list));
     }
