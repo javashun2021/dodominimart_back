@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.system;
 import java.util.List;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -81,6 +82,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.INSERT)
     @PostMapping("/add")
     @ResponseBody
+    @CacheEvict(value = "mall_app_config", allEntries = true) // 改参数即清 App 配置缓存,使 /api/v1/config 立即返回新值
     public AjaxResult addSave(SysConfig config)
     {
         config.setCreateBy(ShiroUtils.getLoginName());
@@ -104,6 +106,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @PostMapping("/edit")
     @ResponseBody
+    @CacheEvict(value = "mall_app_config", allEntries = true) // 改参数即清 App 配置缓存,使 /api/v1/config 立即返回新值
     public AjaxResult editSave(SysConfig config)
     {
         config.setUpdateBy(ShiroUtils.getLoginName());
@@ -117,6 +120,7 @@ public class SysConfigController extends BaseController
     @Log(title = "参数管理", businessType = BusinessType.DELETE)
     @PostMapping("/remove")
     @ResponseBody
+    @CacheEvict(value = "mall_app_config", allEntries = true) // 改参数即清 App 配置缓存,使 /api/v1/config 立即返回新值
     public AjaxResult remove(String ids)
     {
         return toAjax(configService.deleteConfigByIds(ids));

@@ -21,6 +21,8 @@ public class ApiConfigController
     @Autowired
     private ISysConfigService configService;
 
+    // 方法级缓存 mall_app_config;改参数(SysConfigController 增删改/刷新缓存)时会 @CacheEvict 清空,
+    // 保证改公告等参数即时生效。
     @GetMapping
     @Cacheable(value = "mall_app_config", key = "'v1'")
     public AjaxResult getAppConfig()
