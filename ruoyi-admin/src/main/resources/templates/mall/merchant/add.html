@@ -45,6 +45,18 @@
             <div class="col-sm-8"><input class="form-control" type="text" name="businessHours" placeholder="08:00-22:00"></div>
         </div>
         <div class="form-group">
+            <label class="col-sm-3 control-label">Other Contacts：</label>
+            <div class="col-sm-8">
+                <input type="hidden" name="contactInfo" id="contactInfo">
+                <div class="input-group" style="margin-bottom:6px"><span class="input-group-addon" style="width:110px;text-align:left">WhatsApp</span><input class="form-control ci" data-key="whatsapp" type="text" placeholder="+63 9xx xxx xxxx"></div>
+                <div class="input-group" style="margin-bottom:6px"><span class="input-group-addon" style="width:110px;text-align:left">Messenger</span><input class="form-control ci" data-key="messenger" type="text" placeholder="m.me/yourpage 或用户名"></div>
+                <div class="input-group" style="margin-bottom:6px"><span class="input-group-addon" style="width:110px;text-align:left">Telegram</span><input class="form-control ci" data-key="telegram" type="text" placeholder="@username 或 t.me/xxx"></div>
+                <div class="input-group" style="margin-bottom:6px"><span class="input-group-addon" style="width:110px;text-align:left">Viber</span><input class="form-control ci" data-key="viber" type="text" placeholder="+63 9xx xxx xxxx"></div>
+                <div class="input-group"><span class="input-group-addon" style="width:110px;text-align:left">WeChat</span><input class="form-control ci" data-key="wechat" type="text" placeholder="WeChat ID"></div>
+                <span class="help-block" style="margin-bottom:0;">区别于 Phone，供 App 显示 Messenger / Telegram 等联系方式（留空的不保存）</span>
+            </div>
+        </div>
+        <div class="form-group">
             <label class="col-sm-3 control-label">Logo / Main Image：</label>
             <div class="col-sm-8">
                 <div class="input-group">
@@ -91,8 +103,18 @@
 <div th:include="include :: footer"></div>
 <script>
     var prefix = ctx + "mall/merchant";
+    // 把结构化联系方式输入收成 JSON 写入隐藏字段(只保留填了值的)；空则存空串
+    function collectContactInfo() {
+        var obj = {};
+        $('.ci').each(function() {
+            var k = $(this).data('key'), v = $.trim($(this).val());
+            if (v) obj[k] = v;
+        });
+        $('#contactInfo').val(Object.keys(obj).length ? JSON.stringify(obj) : '');
+    }
     function submitHandler() {
         if ($.validate.form()) {
+            collectContactInfo();
             $.operate.save(prefix + "/add", $('#form-merchant-add').serialize());
         }
     }

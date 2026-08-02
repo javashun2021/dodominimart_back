@@ -46,6 +46,9 @@ public class MallMerchant extends BaseEntity
     /** 营业时间，如 08:00-22:00 */
     private String businessHours;
 
+    /** 其它联系方式(JSON)：区别于 phone，存 messenger/telegram/whatsapp/viber/wechat 等 */
+    private String contactInfo;
+
     /** 配送半径(km)，二期配送用 */
     private BigDecimal serviceRadiusKm;
 
@@ -111,6 +114,9 @@ public class MallMerchant extends BaseEntity
 
     public String getBusinessHours() { return businessHours; }
     public void setBusinessHours(String businessHours) { this.businessHours = businessHours; }
+
+    public String getContactInfo() { return contactInfo; }
+    public void setContactInfo(String contactInfo) { this.contactInfo = contactInfo; }
 
     public BigDecimal getServiceRadiusKm() { return serviceRadiusKm; }
     public void setServiceRadiusKm(BigDecimal serviceRadiusKm) { this.serviceRadiusKm = serviceRadiusKm; }
