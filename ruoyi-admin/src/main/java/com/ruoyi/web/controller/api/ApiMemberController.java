@@ -52,7 +52,7 @@ public class ApiMemberController extends BaseApiController
         MallMember member = memberService.selectMemberById(memberId);
         if (member == null)
         {
-            return AjaxResult.error("Member not found");
+            return AjaxResult.error("会员不存在");
         }
         // 标记是否已设置登录密码（供前端显示“设置/修改密码”），再清除哈希
         member.setHasPassword(member.getPasswordHash() != null);
@@ -75,7 +75,7 @@ public class ApiMemberController extends BaseApiController
         try
         {
             memberService.setPassword(memberId, oldPassword, newPassword);
-            return AjaxResult.success("Password updated");
+            return AjaxResult.success("密码修改成功");
         }
         catch (RuntimeException e)
         {
@@ -98,7 +98,7 @@ public class ApiMemberController extends BaseApiController
             String nick = body.get("nickName");
             if (nick == null || nick.trim().isEmpty() || nick.length() > 50)
             {
-                return AjaxResult.error("Nickname must be 1-50 characters");
+                return AjaxResult.error("昵称需为 1-50 个字符");
             }
             member.setNickName(nick.trim());
         }
@@ -107,7 +107,7 @@ public class ApiMemberController extends BaseApiController
             String phone = body.get("phone");
             if (phone != null && phone.length() > 20)
             {
-                return AjaxResult.error("Phone number is too long");
+                return AjaxResult.error("手机号过长");
             }
             member.setPhone(phone);
         }
@@ -116,7 +116,7 @@ public class ApiMemberController extends BaseApiController
             String avatar = body.get("avatarUrl");
             if (avatar != null && avatar.length() > 500)
             {
-                return AjaxResult.error("Avatar URL is too long");
+                return AjaxResult.error("头像地址过长");
             }
             member.setAvatarUrl(avatar);
         }
@@ -126,7 +126,7 @@ public class ApiMemberController extends BaseApiController
             if (gender != null && !gender.isEmpty()
                     && !"0".equals(gender) && !"1".equals(gender) && !"2".equals(gender))
             {
-                return AjaxResult.error("Gender must be 0 (unknown), 1 (male) or 2 (female)");
+                return AjaxResult.error("性别只能是 0（未知）、1（男）或 2（女）");
             }
             member.setGender((gender == null || gender.isEmpty()) ? "0" : gender);
         }
@@ -142,18 +142,18 @@ public class ApiMemberController extends BaseApiController
                     Date date = sdf.parse(birthday.trim());
                     if (date.after(new Date()))
                     {
-                        return AjaxResult.error("Birthday cannot be in the future");
+                        return AjaxResult.error("生日不能是未来日期");
                     }
                     member.setBirthday(date);
                 }
                 catch (ParseException e)
                 {
-                    return AjaxResult.error("Birthday must be in yyyy-MM-dd format");
+                    return AjaxResult.error("生日格式须为 yyyy-MM-dd");
                 }
             }
         }
         memberService.updateMember(member);
-        return AjaxResult.success("Profile updated");
+        return AjaxResult.success("资料修改成功");
     }
 
     // ── 地址管理 ──────────────────────────────────────────
@@ -181,7 +181,7 @@ public class ApiMemberController extends BaseApiController
             address.setIsDefault("0");
         }
         addressService.insertAddress(address);
-        return AjaxResult.success("Address added").put("data", address);
+        return AjaxResult.success("地址添加成功").put("data", address);
     }
 
     /**
@@ -196,12 +196,12 @@ public class ApiMemberController extends BaseApiController
         MallAddress existing = addressService.selectAddressById(id);
         if (existing == null || !existing.getMemberId().equals(memberId))
         {
-            return AjaxResult.error("Address not found");
+            return AjaxResult.error("地址不存在");
         }
         address.setAddressId(id);
         address.setMemberId(memberId);
         addressService.updateAddress(address);
-        return AjaxResult.success("Address updated");
+        return AjaxResult.success("地址修改成功");
     }
 
     /** 删除地址 */
@@ -212,10 +212,10 @@ public class ApiMemberController extends BaseApiController
         MallAddress existing = addressService.selectAddressById(id);
         if (existing == null || !existing.getMemberId().equals(memberId))
         {
-            return AjaxResult.error("Address not found");
+            return AjaxResult.error("地址不存在");
         }
         addressService.deleteAddressById(id);
-        return AjaxResult.success("Address deleted");
+        return AjaxResult.success("地址删除成功");
     }
 
     /**
@@ -230,10 +230,10 @@ public class ApiMemberController extends BaseApiController
         String token = body.get("fcmToken");
         if (token == null || token.isEmpty())
         {
-            return AjaxResult.error("fcmToken is required");
+            return AjaxResult.error("fcmToken 不能为空");
         }
         memberMapper.updateFcmToken(memberId, token);
-        return AjaxResult.success("FCM token updated");
+        return AjaxResult.success("FCM Token 更新成功");
     }
 
     /**
@@ -247,9 +247,9 @@ public class ApiMemberController extends BaseApiController
         MallAddress existing = addressService.selectAddressById(id);
         if (existing == null || !existing.getMemberId().equals(memberId))
         {
-            return AjaxResult.error("Address not found");
+            return AjaxResult.error("地址不存在");
         }
         addressService.setDefaultAddress(id, memberId);
-        return AjaxResult.success("Default address updated");
+        return AjaxResult.success("默认地址设置成功");
     }
 }

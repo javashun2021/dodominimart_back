@@ -83,13 +83,13 @@ public class ApiAuthController
             claims = verifyGoogleIdToken(idToken);
             if (claims == null)
             {
-                return AjaxResult.error("Invalid Google idToken");
+                return AjaxResult.error("无效的 Google idToken");
             }
             String aud = String.valueOf(claims.get("aud"));
             List<String> allowedIds = Arrays.asList(googleClientIds.split(","));
             if (!allowedIds.contains(aud.trim()))
             {
-                return AjaxResult.error("Token audience mismatch");
+                return AjaxResult.error("Token 受众不匹配");
             }
         }
         else if (accessToken != null && !accessToken.isEmpty())
@@ -98,12 +98,12 @@ public class ApiAuthController
             claims = verifyGoogleAccessToken(accessToken);
             if (claims == null)
             {
-                return AjaxResult.error("Invalid Google accessToken");
+                return AjaxResult.error("无效的 Google accessToken");
             }
         }
         else
         {
-            return AjaxResult.error("idToken or accessToken is required");
+            return AjaxResult.error("idToken 或 accessToken 不能为空");
         }
 
         String googleId     = String.valueOf(claims.get("sub"));
@@ -115,10 +115,10 @@ public class ApiAuthController
         MallMember member = memberService.loginOrRegisterByGoogle(googleId, email, name, picture, referralCode);
         if (!"0".equals(member.getStatus()))
         {
-            return AjaxResult.error("Account is disabled");
+            return AjaxResult.error("账号已被禁用");
         }
 
-        return AjaxResult.success("Login successful").put("data", buildLoginResult(member));
+        return AjaxResult.success("登录成功").put("data", buildLoginResult(member));
     }
 
     /**
@@ -131,7 +131,7 @@ public class ApiAuthController
         String identityToken = body.get("identityToken");
         if (identityToken == null || identityToken.isEmpty())
         {
-            return AjaxResult.error("identityToken is required");
+            return AjaxResult.error("identityToken 不能为空");
         }
 
         Claims claims;
@@ -141,21 +141,21 @@ public class ApiAuthController
         }
         catch (Exception e)
         {
-            return AjaxResult.error("Apple token verification failed");
+            return AjaxResult.error("Apple 令牌校验失败");
         }
 
         String appleId      = claims.getSubject();
         String email        = claims.get("email", String.class);
         if (email == null) email = "";
-        String fullName     = body.getOrDefault("fullName", "Apple User");
+        String fullName     = body.getOrDefault("fullName", "Apple 用户");
         String referralCode = body.get("referralCode");
 
         MallMember member = memberService.loginOrRegisterByApple(appleId, email, fullName, referralCode);
         if (!"0".equals(member.getStatus()))
         {
-            return AjaxResult.error("Account is disabled");
+            return AjaxResult.error("账号已被禁用");
         }
-        return AjaxResult.success("Login successful").put("data", buildLoginResult(member));
+        return AjaxResult.success("登录成功").put("data", buildLoginResult(member));
     }
 
     /**
@@ -178,7 +178,7 @@ public class ApiAuthController
         String oldToken = body.get("token");
         if (oldToken == null || !jwtUtils.validateToken(oldToken))
         {
-            return AjaxResult.error("Invalid or expired token");
+            return AjaxResult.error("令牌无效或已过期");
         }
         Long memberId = jwtUtils.getMemberIdFromToken(oldToken);
         String newToken = jwtUtils.generateToken(memberId);
@@ -242,7 +242,7 @@ public class ApiAuthController
         {
             String code = memberService.createVerifyCode(email);
             mailService.sendVerifyCode(email.trim(), code);
-            return AjaxResult.success("Verification code sent to your email");
+            return AjaxResult.success("验证码已发送至邮箱");
         }
         catch (RuntimeException e)
         {
@@ -265,7 +265,7 @@ public class ApiAuthController
         try
         {
             MallMember member = memberService.registerByEmail(email, code, password, nickName, referralCode);
-            return AjaxResult.success("Registration successful").put("data", buildLoginResult(member));
+            return AjaxResult.success("注册成功").put("data", buildLoginResult(member));
         }
         catch (RuntimeException e)
         {
@@ -285,7 +285,7 @@ public class ApiAuthController
         try
         {
             MallMember member = memberService.loginByEmail(email, password);
-            return AjaxResult.success("Login successful").put("data", buildLoginResult(member));
+            return AjaxResult.success("登录成功").put("data", buildLoginResult(member));
         }
         catch (RuntimeException e)
         {

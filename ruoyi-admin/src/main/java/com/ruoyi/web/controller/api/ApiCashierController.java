@@ -71,7 +71,7 @@ public class ApiCashierController extends BaseApiController
         MallMember member = memberMapper.selectMemberById(memberId);
         if (member == null || (!"cashier".equals(member.getRole()) && !"admin".equals(member.getRole())))
         {
-            throw new RuntimeException("Cashier access required");
+            throw new RuntimeException("需要收银员权限");
         }
         return member;
     }
@@ -85,7 +85,7 @@ public class ApiCashierController extends BaseApiController
         MallMember m = memberMapper.selectMemberByPhone(phone);
         if (m == null)
         {
-            return AjaxResult.success("not found").put("data", null);
+            return AjaxResult.success("未找到").put("data", null);
         }
         Map<String, Object> data = new HashMap<>();
         data.put("memberId", m.getMemberId());
@@ -105,13 +105,13 @@ public class ApiCashierController extends BaseApiController
         List<MallOrderItem> items;
         try { items = parseItems(body.get("items")); }
         catch (RuntimeException e) { return AjaxResult.error(e.getMessage()); }
-        if (items.isEmpty()) return AjaxResult.error("items cannot be empty");
+        if (items.isEmpty()) return AjaxResult.error("商品项不能为空");
 
         Long ownerId = parseLong(body.get("customerMemberId"));
         if (ownerId == null) ownerId = walkinMemberId();
         if (ownerId == null || ownerId <= 0)
         {
-            return AjaxResult.error("Walk-in member not configured (app.pos.walkin.member.id)");
+            return AjaxResult.error("未配置到店顾客账号（app.pos.walkin.member.id）");
         }
 
         String tenderType = body.get("tenderType") != null ? body.get("tenderType").toString().toUpperCase() : "CASH";
@@ -148,7 +148,7 @@ public class ApiCashierController extends BaseApiController
         data.put("changeDue", order.getChangeDue());
         data.put("printed", printed);
         if (printError != null) data.put("printError", printError);
-        return AjaxResult.success("Order completed").put("data", data);
+        return AjaxResult.success("订单已完成").put("data", data);
     }
 
     @PostMapping("/orders/{orderId}/print")
@@ -156,11 +156,11 @@ public class ApiCashierController extends BaseApiController
     {
         requireCashier(request);
         MallOrder order = orderService.selectOrderById(orderId);
-        if (order == null) return AjaxResult.error("Order not found");
+        if (order == null) return AjaxResult.error("订单不存在");
         try
         {
             printService.printReceipt(order, buildReceiptConfig());
-            return AjaxResult.success("Printed");
+            return AjaxResult.success("打印成功");
         }
         catch (Exception e)
         {
@@ -198,7 +198,7 @@ public class ApiCashierController extends BaseApiController
         List<MallOrderItem> items;
         try { items = parseItems(body.get("items")); }
         catch (RuntimeException e) { return AjaxResult.error(e.getMessage()); }
-        if (items.isEmpty()) return AjaxResult.error("items cannot be empty");
+        if (items.isEmpty()) return AjaxResult.error("商品项不能为空");
 
         // 规整 + 价格快照（仅展示用）
         List<Map<String, Object>> normalized = new ArrayList<>();
@@ -226,13 +226,13 @@ public class ApiCashierController extends BaseApiController
         cart.setItemCount(itemCount);
         cart.setTotalAmount(total);
         try { cart.setCartJson(com.ruoyi.common.json.JSON.marshal(normalized)); }
-        catch (Exception e) { return AjaxResult.error("Failed to serialize cart"); }
+        catch (Exception e) { return AjaxResult.error("购物车序列化失败"); }
 
         heldCartService.hold(cart);
         Map<String, Object> data = new HashMap<>();
         data.put("id",    cart.getId());
         data.put("label", cart.getLabel());
-        return AjaxResult.success("Held").put("data", data);
+        return AjaxResult.success("已挂单").put("data", data);
     }
 
     @GetMapping("/held-carts/{id}")
@@ -242,7 +242,7 @@ public class ApiCashierController extends BaseApiController
         MallPosHeldCart cart = heldCartService.get(id);
         if (cart == null || "2".equals(cart.getStatus()))
         {
-            return AjaxResult.error("Held cart not found");
+            return AjaxResult.error("未找到挂单");
         }
 
         // 按当前商品价/库存重算，标注失效/缺货项
@@ -280,7 +280,7 @@ public class ApiCashierController extends BaseApiController
         }
         catch (Exception e)
         {
-            return AjaxResult.error("Failed to read held cart");
+            return AjaxResult.error("读取挂单失败");
         }
 
         Map<String, Object> data = new HashMap<>();
@@ -297,7 +297,7 @@ public class ApiCashierController extends BaseApiController
     {
         requireCashier(request);
         heldCartService.voidCart(id);
-        return AjaxResult.success("Voided");
+        return AjaxResult.success("已作废");
     }
 
     // ── helpers ──────────────────────────────────────────────────────
@@ -312,8 +312,8 @@ public class ApiCashierController extends BaseApiController
             Map<?, ?> m = (Map<?, ?>) o;
             Long productId = parseLong(m.get("productId"));
             int qty = (int) parseLongOr(m.get("quantity"), 0L);
-            if (productId == null) throw new RuntimeException("Each item must have productId");
-            if (qty <= 0) throw new RuntimeException("quantity must be greater than 0");
+            if (productId == null) throw new RuntimeException("每个商品项必须包含 productId");
+            if (qty <= 0) throw new RuntimeException("数量必须大于 0");
             MallOrderItem item = new MallOrderItem();
             item.setProductId(productId);
             item.setQuantity(qty);
@@ -329,10 +329,10 @@ public class ApiCashierController extends BaseApiController
         rc.enabled   = "true".equalsIgnoreCase(cfg("app.pos.printer.enabled", "false"));
         rc.ip        = cfg("app.pos.printer.ip", "");
         rc.port      = (int) parseLongOr(cfg("app.pos.printer.port", "9100"), 9100L);
-        rc.storeName = cfg("app.store.name", "DODOMINIMART");
+        rc.storeName = cfg("app.store.name", "我的商店");
         rc.address   = cfg("app.receipt.address", "");
         rc.phone     = cfg("app.contact.phone", "");
-        rc.footer    = cfg("app.receipt.footer", "Thank you for shopping!");
+        rc.footer    = cfg("app.receipt.footer", "谢谢惠顾！");
         return rc;
     }
 

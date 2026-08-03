@@ -39,7 +39,7 @@ public class ApiStoreController
         MallStore store = storeService.selectNearestStore(lat, lng);
         if (store == null)
         {
-            return AjaxResult.error("No store available");
+            return AjaxResult.error("暂无可用门店");
         }
         return AjaxResult.success("ok").put("data", store);
     }

@@ -35,11 +35,11 @@ public class ApiReviewController extends BaseApiController
         List<Map<String, Object>> reviews =
                 (List<Map<String, Object>>) body.get("reviews");
         if (reviews == null || reviews.isEmpty())
-            return AjaxResult.error("reviews list is required");
+            return AjaxResult.error("评价列表不能为空");
         try
         {
             reviewService.submitReviews(orderId, memberId, reviews);
-            return AjaxResult.success("Reviews submitted");
+            return AjaxResult.success("评价提交成功");
         }
         catch (RuntimeException e)
         {

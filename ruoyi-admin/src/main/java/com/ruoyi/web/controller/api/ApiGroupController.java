@@ -102,7 +102,7 @@ public class ApiGroupController extends BaseApiController
         Object activityIdObj = body.get("activityId");
         if (activityIdObj == null)
         {
-            return AjaxResult.error("activityId is required");
+            return AjaxResult.error("activityId 不能为空");
         }
         try
         {
@@ -113,7 +113,7 @@ public class ApiGroupController extends BaseApiController
 
             MallGroupOrder result = groupService.createGroup(activityId, memberId, quantity, addressId);
             notifyGroup("Group Started", memberId, result);
-            return AjaxResult.success("Group created").put("data", result);
+            return AjaxResult.success("开团成功").put("data", result);
         }
         catch (RuntimeException e)
         {
@@ -135,7 +135,7 @@ public class ApiGroupController extends BaseApiController
     public AjaxResult getGroupDetail(@PathVariable("inviteCode") String inviteCode)
     {
         MallGroupOrder detail = groupService.getGroupDetail(inviteCode);
-        if (detail == null) return AjaxResult.error("Group not found");
+        if (detail == null) return AjaxResult.error("拼团不存在");
         return AjaxResult.success().put("data", detail);
     }
 
@@ -151,7 +151,7 @@ public class ApiGroupController extends BaseApiController
         try
         {
             MallGroupOrder result = groupService.closeGroup(inviteCode, memberId);
-            return AjaxResult.success("Group closed successfully").put("data", result);
+            return AjaxResult.success("拼团已关闭").put("data", result);
         }
         catch (RuntimeException e)
         {
@@ -177,7 +177,7 @@ public class ApiGroupController extends BaseApiController
 
             MallGroupOrder result = groupService.joinGroup(inviteCode, memberId, quantity, addressId);
             notifyGroup("Group Joined", memberId, result);
-            return AjaxResult.success("Joined group").put("data", result);
+            return AjaxResult.success("参团成功").put("data", result);
         }
         catch (RuntimeException e)
         {

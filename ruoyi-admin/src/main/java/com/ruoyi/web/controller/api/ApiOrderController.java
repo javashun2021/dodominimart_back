@@ -77,7 +77,7 @@ public class ApiOrderController extends BaseApiController
 
         if ("GCASH".equals(paymentMethod) && !isGcashEnabled())
         {
-            return AjaxResult.error("GCash payment is currently unavailable");
+            return AjaxResult.error("GCash 支付暂不可用");
         }
 
         // 到店单（STORE）无需配送地址；其余支付方式需指定或使用默认地址
@@ -92,7 +92,7 @@ public class ApiOrderController extends BaseApiController
             MallAddress defaultAddr = addressService.selectDefaultAddressByMemberId(memberId);
             if (defaultAddr == null)
             {
-                return AjaxResult.error("Please set a delivery address");
+                return AjaxResult.error("请设置收货地址");
             }
             addressId = defaultAddr.getAddressId();
         }
@@ -101,7 +101,7 @@ public class ApiOrderController extends BaseApiController
         List<Map<String, Object>> rawItems = (List<Map<String, Object>>) body.get("items");
         if (rawItems == null || rawItems.isEmpty())
         {
-            return AjaxResult.error("items cannot be empty");
+            return AjaxResult.error("商品项不能为空");
         }
 
         List<MallOrderItem> items = new ArrayList<>();
@@ -111,12 +111,12 @@ public class ApiOrderController extends BaseApiController
             Object quantityObj  = raw.get("quantity");
             if (productIdObj == null || quantityObj == null)
             {
-                return AjaxResult.error("Each item must have productId and quantity");
+                return AjaxResult.error("每个商品项必须包含 productId 和 quantity");
             }
             int qty = Integer.valueOf(quantityObj.toString());
             if (qty <= 0)
             {
-                return AjaxResult.error("quantity must be greater than 0");
+                return AjaxResult.error("数量必须大于 0");
             }
             MallOrderItem item = new MallOrderItem();
             item.setProductId(Long.valueOf(productIdObj.toString()));
@@ -191,7 +191,7 @@ public class ApiOrderController extends BaseApiController
             }
             catch (Exception ignored) {}
 
-            return AjaxResult.success("Order placed successfully").put("data", order);
+            return AjaxResult.success("下单成功").put("data", order);
         }
         catch (RuntimeException e)
         {
@@ -232,7 +232,7 @@ public class ApiOrderController extends BaseApiController
         MallOrder order = orderService.selectOrderById(id);
         if (order == null || !order.getMemberId().equals(memberId))
         {
-            return AjaxResult.error("Order not found");
+            return AjaxResult.error("订单不存在");
         }
         if (order.getRunnerMemberId() != null)
         {
@@ -288,12 +288,12 @@ public class ApiOrderController extends BaseApiController
         Object scoreObj = body.get("score");
         if (scoreObj == null)
         {
-            return AjaxResult.error("score is required");
+            return AjaxResult.error("评分不能为空");
         }
         int score = Integer.valueOf(scoreObj.toString());
         if (score < 1 || score > 5)
         {
-            return AjaxResult.error("score must be between 1 and 5");
+            return AjaxResult.error("评分必须在 1 到 5 之间");
         }
         MallRunnerRating rating = new MallRunnerRating();
         rating.setOrderId(id);
@@ -303,7 +303,7 @@ public class ApiOrderController extends BaseApiController
         try
         {
             runnerService.rateRunner(rating);
-            return AjaxResult.success("Rating submitted");
+            return AjaxResult.success("评价提交成功");
         }
         catch (RuntimeException e)
         {
@@ -325,7 +325,7 @@ public class ApiOrderController extends BaseApiController
         try
         {
             orderService.cancelOrder(id, memberId, reason);
-            return AjaxResult.success("Order cancelled");
+            return AjaxResult.success("订单已取消");
         }
         catch (RuntimeException e)
         {
@@ -374,7 +374,7 @@ public class ApiOrderController extends BaseApiController
                         + "Reason: " + reason);
             }
             catch (Exception ignored) {}
-            return AjaxResult.success("Refund request submitted").put("status", req.getStatus());
+            return AjaxResult.success("退款申请已提交").put("status", req.getStatus());
         }
         catch (RuntimeException e)
         {

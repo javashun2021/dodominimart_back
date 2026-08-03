@@ -77,7 +77,7 @@ public class ApiProductController extends BaseApiController
         MallProduct product = productService.selectProductById(id);
         if (product == null)
         {
-            return AjaxResult.error("Product not found");
+            return AjaxResult.error("商品不存在");
         }
         return AjaxResult.success("ok").put("data", product);
     }

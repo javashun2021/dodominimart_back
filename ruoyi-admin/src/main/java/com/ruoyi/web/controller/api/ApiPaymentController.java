@@ -56,22 +56,22 @@ public class ApiPaymentController extends BaseApiController
     {
         if (!"true".equalsIgnoreCase(configService.selectConfigByKey("mall.gcash.enabled")))
         {
-            return AjaxResult.error("GCash payment is currently unavailable");
+            return AjaxResult.error("GCash 支付暂不可用");
         }
 
         Long memberId = getCurrentMemberId(request);
         MallOrder order = orderService.selectOrderById(id);
         if (order == null || !order.getMemberId().equals(memberId))
         {
-            return AjaxResult.error("Order not found");
+            return AjaxResult.error("订单不存在");
         }
         if (!"0".equals(order.getStatus()))
         {
-            return AjaxResult.error("Order cannot be paid in current status");
+            return AjaxResult.error("当前订单状态不可支付");
         }
         if ("PAID".equals(order.getPaymentStatus()))
         {
-            return AjaxResult.error("Order already paid");
+            return AjaxResult.error("订单已支付");
         }
 
         // 应付 = 商品额(totalAmount) + 配送费(下单已固化在订单上)

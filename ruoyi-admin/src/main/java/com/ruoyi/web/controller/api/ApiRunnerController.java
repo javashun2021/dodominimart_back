@@ -63,7 +63,7 @@ public class ApiRunnerController extends BaseApiController
         try
         {
             runnerService.applyRunner(app);
-            return AjaxResult.success("Application submitted").put("data", runnerService.getApplication(app.getMemberId()));
+            return AjaxResult.success("申请提交成功").put("data", runnerService.getApplication(app.getMemberId()));
         }
         catch (RuntimeException e)
         {
@@ -106,7 +106,7 @@ public class ApiRunnerController extends BaseApiController
             }
             catch (Exception ignored) {}
 
-            return AjaxResult.success("Order accepted").put("data", order);
+            return AjaxResult.success("接单成功").put("data", order);
         }
         catch (RuntimeException e)
         {
@@ -122,7 +122,7 @@ public class ApiRunnerController extends BaseApiController
         try
         {
             MallOrder order = runnerService.completeOrder(orderId, memberId);
-            return AjaxResult.success("Order completed").put("data", order);
+            return AjaxResult.success("订单已完成").put("data", order);
         }
         catch (RuntimeException e)
         {
@@ -207,7 +207,7 @@ public class ApiRunnerController extends BaseApiController
                 }
             }
 
-            return AjaxResult.success(online ? "You are now online" : "You are now offline");
+            return AjaxResult.success(online ? "已上线" : "已下线");
         }
         catch (RuntimeException e)
         {
