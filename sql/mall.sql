@@ -58,11 +58,11 @@ create table mall_category (
 -- ----------------------------
 -- 初始化分类数据
 -- ----------------------------
-insert into mall_category values(100, 'Drinks',        '', 1, '0', 'admin', now(), 'admin', now());
-insert into mall_category values(101, 'Snacks',         '', 2, '0', 'admin', now(), 'admin', now());
-insert into mall_category values(102, 'Daily Essentials','', 3, '0', 'admin', now(), 'admin', now());
-insert into mall_category values(103, 'Instant Noodles','', 4, '0', 'admin', now(), 'admin', now());
-insert into mall_category values(104, 'Canned Goods',   '', 5, '0', 'admin', now(), 'admin', now());
+insert into mall_category values(100, '饮料',     '', 1, '0', 'admin', now(), 'admin', now());
+insert into mall_category values(101, '零食',     '', 2, '0', 'admin', now(), 'admin', now());
+insert into mall_category values(102, '日用品',   '', 3, '0', 'admin', now(), 'admin', now());
+insert into mall_category values(103, '方便面',   '', 4, '0', 'admin', now(), 'admin', now());
+insert into mall_category values(104, '罐头食品', '', 5, '0', 'admin', now(), 'admin', now());
 
 
 -- ----------------------------

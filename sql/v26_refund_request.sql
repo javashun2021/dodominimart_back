@@ -26,15 +26,15 @@ CREATE TABLE IF NOT EXISTS mall_refund_request (
 --       尽量不假设 sys_menu 列结构；执行后该菜单授予所有「能看订单」的角色。
 --       若你的库结构不同或更想手动加，可在 系统管理→菜单 仿照订单菜单新增一个 C 类型菜单：
 --       URL=/mall/refund，权限=mall:refund:view。
-INSERT INTO sys_menu (menu_name, parent_id, order_num, url, target, menu_type, visible, is_refresh, perms, icon, create_by, create_time)
-SELECT 'Refund Requests', parent_id, 9, '/mall/refund', target, 'C', visible, is_refresh, 'mall:refund:view', 'fa fa-undo', 'admin', now()
+INSERT INTO sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time)
+SELECT '退款申请', parent_id, 9, '/mall/refund', 'C', visible, 'mall:refund:view', 'fa fa-undo', 'admin', now()
 FROM sys_menu WHERE perms = 'mall:order:view' LIMIT 1;
 
 SET @refund_menu_id := LAST_INSERT_ID();
 
-INSERT INTO sys_menu (menu_name, parent_id, order_num, url, target, menu_type, visible, is_refresh, perms, icon, create_by, create_time) VALUES
-('Refund List',   @refund_menu_id, 1, '#', '', 'F', '0', '1', 'mall:refund:list',   '#', 'admin', now()),
-('Handle Refund', @refund_menu_id, 2, '#', '', 'F', '0', '1', 'mall:refund:handle', '#', 'admin', now());
+INSERT INTO sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time) VALUES
+('退款查询', @refund_menu_id, 1, '#', 'F', '0', 'mall:refund:list',   '#', 'admin', now()),
+('退款处理', @refund_menu_id, 2, '#', 'F', '0', 'mall:refund:handle', '#', 'admin', now());
 
 -- 把新菜单授予所有已拥有「订单查看」权限的角色
 INSERT INTO sys_role_menu (role_id, menu_id)

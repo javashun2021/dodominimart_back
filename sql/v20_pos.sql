@@ -16,13 +16,13 @@ ALTER TABLE mall_order ADD COLUMN cashier_id    BIGINT        NULL COMMENT '开�
 
 -- 3.3 走入顾客(walk-in)兜底账号：无会员的到店散客都挂这个 memberId
 --     建一个 nick_name='Walk-in' 的会员，拿到它的 member_id 后回填到下面的配置 app.pos.walkin.member.id
-INSERT INTO mall_member(nick_name, role, status, create_time)
-VALUES('Walk-in', 'customer', '0', NOW());
--- 提示：执行后 SELECT member_id FROM mall_member WHERE nick_name='Walk-in'; 把值填进 app.pos.walkin.member.id
+INSERT INTO mall_member(nick_name, email, role, status, create_time)
+VALUES('到店散客', 'walkin@pos.local', 'customer', '0', NOW());
+SET @walkin_id := LAST_INSERT_ID();
 
--- 3.4 配置项：walk-in 账号 + 小票打印机
+-- 3.4 配置项：walk-in 账号 + 小票打印机（walk-in memberId 由上一步自动回填）
 INSERT INTO sys_config(config_name, config_key, config_value, config_type, create_by, create_time, remark) VALUES
-('POS走入顾客账号',   'app.pos.walkin.member.id', '0',             'Y', 'admin', NOW(), '无会员到店散客挂此 memberId（执行3.3后回填）'),
+('POS走入顾客账号',   'app.pos.walkin.member.id', @walkin_id,      'Y', 'admin', NOW(), '无会员到店散客挂此 memberId（自动回填）'),
 ('POS小票打印机IP',   'app.pos.printer.ip',       '192.168.1.100', 'Y', 'admin', NOW(), '网口热敏打印机局域网IP'),
 ('POS小票打印机端口', 'app.pos.printer.port',     '9100',          'Y', 'admin', NOW(), 'ESC/POS 原始打印端口'),
 ('POS小票打印开关',   'app.pos.printer.enabled',  'false',         'Y', 'admin', NOW(), '为 false 时打印只写日志不连真机（打印机到货前打桩用）');
