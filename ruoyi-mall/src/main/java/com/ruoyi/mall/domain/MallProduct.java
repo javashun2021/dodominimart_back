@@ -89,6 +89,10 @@ public class MallProduct extends BaseEntity
     private boolean inStockOnly;
     /** 非DB：只看平台自营（merchant_id IS NULL），App 自营首页/列表用 */
     private boolean selfOperatedOnly;
+    /** 非DB：所属店铺名（跨店聚合接口 /products/nearby 填充；App 卡片显示「店名·距离」） */
+    private String storeName;
+    /** 非DB：所属店铺距离(km)（跨店聚合接口填充；自营为 0/null 排最前） */
+    private BigDecimal storeDistanceKm;
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -176,4 +180,10 @@ public class MallProduct extends BaseEntity
 
     public boolean isSelfOperatedOnly() { return selfOperatedOnly; }
     public void setSelfOperatedOnly(boolean selfOperatedOnly) { this.selfOperatedOnly = selfOperatedOnly; }
+
+    public String getStoreName() { return storeName; }
+    public void setStoreName(String storeName) { this.storeName = storeName; }
+
+    public BigDecimal getStoreDistanceKm() { return storeDistanceKm; }
+    public void setStoreDistanceKm(BigDecimal storeDistanceKm) { this.storeDistanceKm = storeDistanceKm; }
 }
