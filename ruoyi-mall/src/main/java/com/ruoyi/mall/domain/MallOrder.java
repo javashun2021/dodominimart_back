@@ -79,6 +79,17 @@ public class MallOrder implements Serializable
     /** 非DB：顾客姓名/昵称（runner 列表填充，App 展示用） */
     private String customerName;
 
+    /** 聚合支付：下游商户订单号 */
+    private String merchantOutTradeNo;
+    /** 聚合支付：平台补贴（名义额 - 实付MOSS额） */
+    private BigDecimal subsidy;
+
+    public String getMerchantOutTradeNo() { return merchantOutTradeNo; }
+    public void setMerchantOutTradeNo(String merchantOutTradeNo) { this.merchantOutTradeNo = merchantOutTradeNo; }
+
+    public BigDecimal getSubsidy() { return subsidy; }
+    public void setSubsidy(BigDecimal subsidy) { this.subsidy = subsidy; }
+
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
 

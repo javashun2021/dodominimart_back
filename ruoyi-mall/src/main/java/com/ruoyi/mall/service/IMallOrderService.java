@@ -35,6 +35,25 @@ public interface IMallOrderService
     /** 标记订单支付成功（GCash 回调时调用） */
     void markOrderPaid(String orderNo, String paymentNo, BigDecimal amount);
 
+    // ── 聚合支付（下游商户）撮合订单 ──
+    /**
+     * 撮合建单（事务）：按 productId+quantity 从商品库快照价格建一笔商城订单（走真实扣库存），
+     * 不走积分/券/推荐/推送。挂在 userId 对应的会员下；记录下游商户单号 + 平台补贴。
+     * total 由商品单价合计得出（撮合时已保证 = 名义额）。
+     */
+    MallOrder createAggregateOrder(Long memberId, List<MallOrderItem> items,
+                                   String merchantOutTradeNo, BigDecimal subsidy);
+
+    /**
+     * 撮合订单浮动结算（行锁+幂等）：直接置 PAID + 实付金额，**不做等额校验**（实付≤订单额，差额=补贴）。
+     * 与 App 会员支付的严格 markOrderPaid 分离。
+     * @return 是否本次真正结算（重复调用返回 false）
+     */
+    boolean settleAggregateOrderPaid(String orderNo, String paymentNo, BigDecimal paidAmount);
+
+    /** 撮合订单作废（上游下单失败时）：回补库存 + 置已取消 */
+    void cancelAggregateOrder(String orderNo, String reason);
+
     /**
      * 后台整单退款：线上(PayMongo)走 API 真退、现金单(COD/到店)仅标记；
      * 同时回滚库存 + 退还下单时抵扣的积分，并置订单为已退款/已取消。

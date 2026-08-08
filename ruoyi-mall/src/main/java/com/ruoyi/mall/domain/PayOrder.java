@@ -27,6 +27,14 @@ public class PayOrder
     private String requestId;
     private String payUrl;
     private String upstreamNo;
+    /** 对应商城订单id */
+    private Long mallOrderId;
+    /** 对应商城订单号（给 MOSS 的 outTradeNo） */
+    private String mallOrderNo;
+    /** 实付 MOSS 金额（浮动后） */
+    private BigDecimal payAmount;
+    /** 平台补贴（名义额 - 实付） */
+    private BigDecimal subsidy;
     /** CREATED / PAID / CLOSED */
     private String status;
     /** 0未通知 1成功 2失败 */
@@ -84,6 +92,18 @@ public class PayOrder
 
     public String getUpstreamNo() { return upstreamNo; }
     public void setUpstreamNo(String upstreamNo) { this.upstreamNo = upstreamNo; }
+
+    public Long getMallOrderId() { return mallOrderId; }
+    public void setMallOrderId(Long mallOrderId) { this.mallOrderId = mallOrderId; }
+
+    public String getMallOrderNo() { return mallOrderNo; }
+    public void setMallOrderNo(String mallOrderNo) { this.mallOrderNo = mallOrderNo; }
+
+    public BigDecimal getPayAmount() { return payAmount; }
+    public void setPayAmount(BigDecimal payAmount) { this.payAmount = payAmount; }
+
+    public BigDecimal getSubsidy() { return subsidy; }
+    public void setSubsidy(BigDecimal subsidy) { this.subsidy = subsidy; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

@@ -10,6 +10,9 @@ public interface PayOrderMapper
 
     PayOrder selectByPlatformNo(String platformNo);
 
+    /** 按商城订单号定位（MOSS 回来的是商城订单号） */
+    PayOrder selectByMallOrderNo(String mallOrderNo);
+
     PayOrder selectByMerchantAndOutTradeNo(@Param("merchantCode") String merchantCode,
                                            @Param("outTradeNo") String outTradeNo);
 

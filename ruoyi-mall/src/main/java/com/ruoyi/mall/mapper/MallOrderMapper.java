@@ -18,6 +18,11 @@ public interface MallOrderMapper
 
     int updateOrder(MallOrder order);
 
+    /** 聚合支付：回填商户单号 + 补贴 */
+    int updateAggregateInfo(@org.apache.ibatis.annotations.Param("orderId") Long orderId,
+                            @org.apache.ibatis.annotations.Param("merchantOutTradeNo") String merchantOutTradeNo,
+                            @org.apache.ibatis.annotations.Param("subsidy") java.math.BigDecimal subsidy);
+
     /** POS：写入到店实付方式/收现/找零/收银员 */
     int updatePosTender(MallOrder order);
 

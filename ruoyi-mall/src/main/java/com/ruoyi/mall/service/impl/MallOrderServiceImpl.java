@@ -756,6 +756,127 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
     }
 
+    // ───────────────────────── 聚合支付撮合订单 ─────────────────────────
+
+    @Override
+    @Transactional
+    public MallOrder createAggregateOrder(Long memberId, List<MallOrderItem> items,
+                                          String merchantOutTradeNo, BigDecimal subsidy)
+    {
+        if (items == null || items.isEmpty())
+        {
+            throw new RuntimeException("撮合明细为空");
+        }
+        // Pass1：按常规价快照 + 校验库存（不走闪购价，保证合计=撮合目标）
+        for (MallOrderItem item : items)
+        {
+            MallProduct p = productMapper.selectProductById(item.getProductId());
+            if (p == null || !"0".equals(p.getStatus()))
+            {
+                throw new RuntimeException("Product not available: " + item.getProductId());
+            }
+            if (p.getStock() < item.getQuantity())
+            {
+                throw new RuntimeException("Insufficient stock: " + p.getName());
+            }
+            item.setProductName(p.getName());
+            item.setProductImage(p.getImageUrl());
+            item.setPrice(p.getPrice());
+            item.setOriginalPrice(p.getPrice());
+            item.setSubtotal(p.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+        BigDecimal total = items.stream().map(MallOrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Pass2：原子扣库存
+        for (MallOrderItem item : items)
+        {
+            int affected = productMapper.deductStock(item.getProductId(), item.getQuantity());
+            if (affected == 0)
+            {
+                throw new RuntimeException("Insufficient stock: " + item.getProductName());
+            }
+        }
+
+        MallOrder order = new MallOrder();
+        order.setOrderNo(generateOrderNo());
+        order.setMemberId(memberId);
+        order.setAddressSnapshot("");
+        order.setTotalAmount(total);
+        order.setStatus("0");
+        order.setPaymentMethod("MOSS");
+        order.setRemark("聚合支付撮合单");
+        order.setOrderSource("AGGREGATE");
+        order.setPointsUsed(0);
+        order.setCouponDiscount(BigDecimal.ZERO);
+        order.setDeliveryFee(BigDecimal.ZERO);
+        order.setCreateTime(new Date());
+        orderMapper.insertOrder(order);
+
+        for (MallOrderItem item : items)
+        {
+            item.setOrderId(order.getOrderId());
+        }
+        orderItemMapper.insertOrderItemBatch(items);
+
+        orderMapper.updateAggregateInfo(order.getOrderId(), merchantOutTradeNo, subsidy);
+        order.setMerchantOutTradeNo(merchantOutTradeNo);
+        order.setSubsidy(subsidy);
+        return order;
+    }
+
+    @Override
+    @Transactional
+    public boolean settleAggregateOrderPaid(String orderNo, String paymentNo, BigDecimal paidAmount)
+    {
+        MallOrder order = orderMapper.selectOrderByOrderNoForUpdate(orderNo);
+        if (order == null)
+        {
+            throw new RuntimeException("Order not found: " + orderNo);
+        }
+        if ("PAID".equals(order.getPaymentStatus()))
+        {
+            return false; // 幂等
+        }
+        if ("4".equals(order.getStatus()))
+        {
+            throw new RuntimeException("Order is cancelled: " + orderNo);
+        }
+        // 注意：撮合单实付为浮动值（≤订单额），不做等额校验
+        order.setPaymentStatus("PAID");
+        order.setPaymentNo(paymentNo);
+        order.setPaidAmount(paidAmount);
+        order.setPaymentTime(new Date());
+        order.setStatus("1");
+        order.setUpdateTime(new Date());
+        orderMapper.updateOrder(order);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public void cancelAggregateOrder(String orderNo, String reason)
+    {
+        MallOrder order = orderMapper.selectOrderByOrderNoForUpdate(orderNo);
+        if (order == null)
+        {
+            return;
+        }
+        if ("4".equals(order.getStatus()) || "PAID".equals(order.getPaymentStatus()))
+        {
+            return; // 已取消/已支付不动
+        }
+        List<MallOrderItem> items = orderItemMapper.selectItemsByOrderId(order.getOrderId());
+        for (MallOrderItem it : items)
+        {
+            productMapper.restoreStock(it.getProductId(), it.getQuantity());
+        }
+        order.setStatus("4");
+        order.setCancelReason(reason != null ? reason : "聚合支付上游下单失败");
+        order.setUpdateTime(new Date());
+        orderMapper.updateOrder(order);
+    }
+
     @Override
     @Transactional
     public void awardOrderCompletionRewards(MallOrder order)

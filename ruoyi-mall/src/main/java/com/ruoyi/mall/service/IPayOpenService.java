@@ -24,10 +24,10 @@ public interface IPayOpenService
     Map<String, Object> query(String platformNo);
 
     /**
-     * 上游支付成功入口：置单 PAID 并触发回调下游。
+     * 上游支付成功入口：按**商城订单号**(MOSS outTradeNo)定位，结算商城订单 + 置 pay_order PAID + 回调下游。
      * @return 是否本次真正置为已支付（幂等：重复调用返回 false）
      */
-    boolean handleUpstreamPaid(String platformNo, String upstreamNo, String rawBody);
+    boolean handleUpstreamPaid(String mallOrderNo, String upstreamNo, String rawBody);
 
     /** 主动向商户补发一次回调（供定时任务/后台手动调用）。返回是否收到 success */
     boolean pushNotify(String platformNo);

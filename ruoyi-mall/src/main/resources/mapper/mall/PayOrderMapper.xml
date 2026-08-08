@@ -19,6 +19,10 @@
         <result property="requestId"      column="request_id"       />
         <result property="payUrl"         column="pay_url"          />
         <result property="upstreamNo"     column="upstream_no"      />
+        <result property="mallOrderId"    column="mall_order_id"    />
+        <result property="mallOrderNo"    column="mall_order_no"    />
+        <result property="payAmount"      column="pay_amount"       />
+        <result property="subsidy"        column="subsidy"          />
         <result property="status"         column="status"           />
         <result property="notifyStatus"   column="notify_status"    />
         <result property="notifyCount"    column="notify_count"     />
@@ -33,14 +37,20 @@
             useGeneratedKeys="true" keyProperty="id">
         insert into pay_order(platform_no, merchant_id, merchant_code, channel_id, out_trade_no,
             amount, currency, user_id, client_ip, extra, notify_url, request_id, pay_url,
-            upstream_no, status, notify_status, notify_count, create_time, update_time)
+            upstream_no, mall_order_id, mall_order_no, pay_amount, subsidy,
+            status, notify_status, notify_count, create_time, update_time)
         values(#{platformNo}, #{merchantId}, #{merchantCode}, #{channelId}, #{outTradeNo},
             #{amount}, #{currency}, #{userId}, #{clientIp}, #{extra}, #{notifyUrl}, #{requestId}, #{payUrl},
-            #{upstreamNo}, #{status}, #{notifyStatus}, #{notifyCount}, #{createTime}, #{updateTime})
+            #{upstreamNo}, #{mallOrderId}, #{mallOrderNo}, #{payAmount}, #{subsidy},
+            #{status}, #{notifyStatus}, #{notifyCount}, #{createTime}, #{updateTime})
     </insert>
 
     <select id="selectByPlatformNo" parameterType="String" resultMap="PayOrderResult">
         select * from pay_order where platform_no = #{platformNo} limit 1
+    </select>
+
+    <select id="selectByMallOrderNo" parameterType="String" resultMap="PayOrderResult">
+        select * from pay_order where mall_order_no = #{mallOrderNo} limit 1
     </select>
 
     <select id="selectByMerchantAndOutTradeNo" resultMap="PayOrderResult">

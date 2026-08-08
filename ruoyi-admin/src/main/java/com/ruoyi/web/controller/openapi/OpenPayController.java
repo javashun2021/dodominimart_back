@@ -129,8 +129,9 @@ public class OpenPayController
         {
             return "success"; // 非成功也应答，避免上游重推
         }
-        String platformNo = parsed.get("outTradeNo");
-        payOpenService.handleUpstreamPaid(platformNo, parsed.get("tradeNo"), rawBody);
+        // MOSS 的 outTradeNo = 商城订单号
+        String mallOrderNo = parsed.get("outTradeNo");
+        payOpenService.handleUpstreamPaid(mallOrderNo, parsed.get("tradeNo"), rawBody);
         return "success";
     }
 
@@ -159,9 +160,9 @@ public class OpenPayController
              + "</body></html>";
     }
 
-    /** mock 模拟支付成功：触发置单+回调下游 */
-    @PostMapping(value = "/mock/paid/{platformNo}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Object> mockPaid(@PathVariable("platformNo") String platformNo)
+    /** mock 模拟支付成功：入参为商城订单号(mock 收银台 no)，触发结算+回调下游 */
+    @PostMapping(value = "/mock/paid/{mallOrderNo}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> mockPaid(@PathVariable("mallOrderNo") String mallOrderNo)
     {
         Map<String, Object> r = new LinkedHashMap<>();
         if (!mossPayService.isMock())
@@ -170,7 +171,7 @@ public class OpenPayController
             r.put("msg", "非 mock 模式，禁止");
             return r;
         }
-        boolean changed = payOpenService.handleUpstreamPaid(platformNo, "MOCK" + platformNo, "{\"mock\":true}");
+        boolean changed = payOpenService.handleUpstreamPaid(mallOrderNo, "MOCK" + mallOrderNo, "{\"mock\":true}");
         r.put("code", "0000");
         r.put("msg", changed ? "已置为支付成功并回调下游" : "订单不存在或已支付(幂等)");
         return r;
