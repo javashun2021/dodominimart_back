@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>商户号：<input type="text" name="code"/></li>
+                        <li>商户名：<input type="text" name="name"/></li>
+                        <li>状态：
+                            <select name="status">
+                                <option value="">全部</option>
+                                <option value="Enable">启用</option>
+                                <option value="Disable">停用</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i> 搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i> 重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm hidden-xs" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.add()" shiro:hasPermission="pay:merchant:add">
+                <i class="fa fa-plus"></i> 新增商户
+            </a>
+            <a class="btn btn-danger btn-del disabled" onclick="$.operate.removeAll()" shiro:hasPermission="pay:merchant:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var editFlag   = [[${@permission.hasPermi('pay:merchant:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('pay:merchant:remove')}]];
+    var prefix = ctx + "pay/merchant";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            modalName: "支付商户",
+            columns: [
+                {checkbox: true},
+                {field: 'code',      title: '商户号(站点码)'},
+                {field: 'name',      title: '商户名'},
+                {field: 'appSecret', title: '签名密钥(KEY)', formatter: function(v) {
+                    if (!v) return '-';
+                    return '<code style="font-size:12px">' + v + '</code>';
+                }},
+                {field: 'status',    title: '状态', width: 80, formatter: function(v) {
+                    return v === 'Enable'
+                        ? '<span class="badge badge-primary">启用</span>'
+                        : '<span class="badge badge-default">停用</span>';
+                }},
+                {field: 'summary',   title: '备注'},
+                {field: 'createTime',title: '创建时间'},
+                {title: '操作', align: 'center', width: 220, formatter: function(v, row) {
+                    var a = [];
+                    if (editFlag) {
+                        a.push('<a class="btn btn-success btn-xs" onclick="$.operate.edit(\'' + row.id + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+                        a.push('<a class="btn btn-info btn-xs" onclick="resetKey(\'' + row.id + '\')"><i class="fa fa-key"></i>重置密钥</a> ');
+                    }
+                    if (removeFlag) a.push('<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>删除</a>');
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+
+    function resetKey(id) {
+        $.modal.confirm("确认重置该商户的签名密钥？重置后商户需用新密钥重新对接。", function() {
+            $.operate.post(prefix + "/resetKey/" + id, {}, function(res) {
+                if (res.code === 0) {
+                    $.modal.alertSuccess("新密钥：" + res.appSecret);
+                    $.table.refresh();
+                } else {
+                    $.modal.alertError(res.msg);
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

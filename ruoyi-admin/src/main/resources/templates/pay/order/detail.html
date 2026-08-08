@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <div class="row" th:object="${order}">
+        <table class="table table-bordered">
+            <tr><th style="width:180px">平台单号(payOrderNo)</th><td th:text="*{platformNo}"></td></tr>
+            <tr><th>商户号(站点码)</th><td th:text="*{merchantCode}"></td></tr>
+            <tr><th>通道编码</th><td th:text="*{channelId}"></td></tr>
+            <tr><th>商户单号(orderNo)</th><td th:text="*{outTradeNo}"></td></tr>
+            <tr><th>金额(元)</th><td th:text="*{amount}"></td></tr>
+            <tr><th>币种</th><td th:text="*{currency}"></td></tr>
+            <tr><th>会员id</th><td th:text="*{userId}"></td></tr>
+            <tr><th>会员IP</th><td th:text="*{clientIp}"></td></tr>
+            <tr><th>备注(extra)</th><td th:text="*{extra}"></td></tr>
+            <tr><th>状态</th><td th:text="*{status}"></td></tr>
+            <tr><th>上游单号(MOSS)</th><td th:text="*{upstreamNo}"></td></tr>
+            <tr><th>回调状态</th><td>
+                <span th:switch="*{notifyStatus}">
+                    <span th:case="1">成功</span>
+                    <span th:case="2">失败</span>
+                    <span th:case="*">未通知</span>
+                </span>
+                （已回调 <span th:text="*{notifyCount}"></span> 次）
+            </td></tr>
+            <tr><th>商户回调地址</th><td style="word-break:break-all" th:text="*{notifyUrl}"></td></tr>
+            <tr><th>支付链接</th><td style="word-break:break-all" th:text="*{payUrl}"></td></tr>
+            <tr><th>创建时间</th><td th:text="*{createTime}"></td></tr>
+            <tr><th>支付时间</th><td th:text="*{payTime}"></td></tr>
+        </table>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+</body>
+</html>

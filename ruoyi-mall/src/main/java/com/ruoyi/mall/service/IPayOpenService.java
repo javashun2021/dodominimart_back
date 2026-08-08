@@ -31,4 +31,7 @@ public interface IPayOpenService
 
     /** 主动向商户补发一次回调（供定时任务/后台手动调用）。返回是否收到 success */
     boolean pushNotify(String platformNo);
+
+    /** 批量补发待回调订单（定时任务用）。返回成功条数 */
+    int retryPendingNotify(int limit);
 }

@@ -22,6 +22,9 @@ public interface PayOrderMapper
     int updateNotifyResult(@Param("platformNo") String platformNo,
                            @Param("notifyStatus") Integer notifyStatus);
 
-    /** 待回调（已支付但未回调成功）的订单，用于定时补发 */
+    /** 待回调（已支付但未回调成功、未超重试上限）的订单，用于定时补发 */
     List<PayOrder> selectPendingNotify(@Param("limit") int limit);
+
+    /** 后台订单列表查询 */
+    List<PayOrder> selectOrderList(PayOrder query);
 }

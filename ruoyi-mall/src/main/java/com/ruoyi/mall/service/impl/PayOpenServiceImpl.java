@@ -293,6 +293,32 @@ public class PayOpenServiceImpl implements IPayOpenService
         return ok;
     }
 
+    @Override
+    public int retryPendingNotify(int limit)
+    {
+        java.util.List<PayOrder> pending = payOrderMapper.selectPendingNotify(limit);
+        int ok = 0;
+        for (PayOrder o : pending)
+        {
+            try
+            {
+                if (pushNotify(o.getPlatformNo()))
+                {
+                    ok++;
+                }
+            }
+            catch (Exception e)
+            {
+                log.warn("[OpenPay] 补发回调异常 platformNo={}: {}", o.getPlatformNo(), e.getMessage());
+            }
+        }
+        if (!pending.isEmpty())
+        {
+            log.info("[OpenPay] 回调补发：待补发 {} 单，本次成功 {} 单", pending.size(), ok);
+        }
+        return ok;
+    }
+
     // ------------------------------------------------------------- helpers
 
     private Map<String, Object> okCreate(String payUrl)

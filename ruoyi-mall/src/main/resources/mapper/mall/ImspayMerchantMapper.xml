@@ -32,4 +32,44 @@
         select * from imspay_merchant where id = #{id} limit 1
     </select>
 
+    <select id="selectMerchantList" parameterType="com.ruoyi.mall.domain.ImspayMerchant" resultMap="ImspayMerchantResult">
+        select * from imspay_merchant
+        <where>
+            <if test="code != null and code != ''">AND code like concat('%', #{code}, '%')</if>
+            <if test="name != null and name != ''">AND name like concat('%', #{name}, '%')</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <insert id="insertMerchant" parameterType="com.ruoyi.mall.domain.ImspayMerchant">
+        insert into imspay_merchant(id, code, name, app_secret, status, summary,
+            order_count_limit, user_daily_count_limit, user_daily_sum_limit, order_sum_limit,
+            telegram_chat_ids, create_time, update_time)
+        values(#{id}, #{code}, #{name}, #{appSecret}, #{status}, #{summary},
+            #{orderCountLimit}, #{userDailyCountLimit}, #{userDailySumLimit}, #{orderSumLimit},
+            #{telegramChatIds}, now(), now())
+    </insert>
+
+    <update id="updateMerchant" parameterType="com.ruoyi.mall.domain.ImspayMerchant">
+        update imspay_merchant
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="appSecret != null and appSecret != ''">app_secret = #{appSecret},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="orderCountLimit != null">order_count_limit = #{orderCountLimit},</if>
+            <if test="userDailyCountLimit != null">user_daily_count_limit = #{userDailyCountLimit},</if>
+            <if test="userDailySumLimit != null">user_daily_sum_limit = #{userDailySumLimit},</if>
+            <if test="orderSumLimit != null">order_sum_limit = #{orderSumLimit},</if>
+            <if test="telegramChatIds != null">telegram_chat_ids = #{telegramChatIds},</if>
+            update_time = now()
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="String">
+        delete from imspay_merchant where id = #{id}
+    </delete>
+
 </mapper>

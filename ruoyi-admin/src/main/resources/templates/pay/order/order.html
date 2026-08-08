@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<meta charset="utf-8">
+<head th:include="include :: header"></head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>平台单号：<input type="text" name="platformNo"/></li>
+                        <li>商户单号：<input type="text" name="outTradeNo"/></li>
+                        <li>商户号：<input type="text" name="merchantCode"/></li>
+                        <li>状态：
+                            <select name="status">
+                                <option value="">全部</option>
+                                <option value="CREATED">待支付</option>
+                                <option value="PAID">已支付</option>
+                                <option value="CLOSED">已关闭</option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i> 搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i> 重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table" data-mobile-responsive="true"></table>
+        </div>
+    </div>
+</div>
+<div th:include="include :: footer"></div>
+<script th:inline="javascript">
+    var notifyFlag = [[${@permission.hasPermi('pay:order:notify')}]];
+    var prefix = ctx + "pay/order";
+
+    $(function() {
+        $.table.init({
+            url: prefix + "/list",
+            modalName: "支付订单",
+            columns: [
+                {field: 'platformNo',   title: '平台单号', formatter: function(v) { return '<code style="font-size:12px">' + (v||'') + '</code>'; }},
+                {field: 'merchantCode', title: '商户号', width: 90},
+                {field: 'outTradeNo',   title: '商户单号'},
+                {field: 'amount',       title: '金额(元)', width: 90},
+                {field: 'status',       title: '状态', width: 80, formatter: function(v) {
+                    if (v === 'PAID') return '<span class="badge badge-primary">已支付</span>';
+                    if (v === 'CLOSED') return '<span class="badge badge-default">已关闭</span>';
+                    return '<span class="badge badge-warning">待支付</span>';
+                }},
+                {field: 'notifyStatus', title: '回调', width: 80, formatter: function(v) {
+                    if (v === 1) return '<span class="badge badge-primary">成功</span>';
+                    if (v === 2) return '<span class="badge badge-danger">失败</span>';
+                    return '<span class="badge badge-default">未通知</span>';
+                }},
+                {field: 'userId',       title: '会员id'},
+                {field: 'createTime',   title: '创建时间'},
+                {title: '操作', align: 'center', width: 170, formatter: function(v, row) {
+                    var a = [];
+                    a.push('<a class="btn btn-info btn-xs" onclick="detail(\'' + row.platformNo + '\')"><i class="fa fa-search"></i>详情</a> ');
+                    if (notifyFlag && row.status === 'PAID') {
+                        a.push('<a class="btn btn-warning btn-xs" onclick="renotify(\'' + row.platformNo + '\')"><i class="fa fa-bell"></i>补发回调</a>');
+                    }
+                    return a.join('');
+                }}
+            ]
+        });
+    });
+
+    function detail(no) {
+        $.modal.openTab("订单详情", prefix + "/detail/" + no);
+    }
+
+    function renotify(no) {
+        $.modal.confirm("确认向商户补发一次支付回调？", function() {
+            $.operate.post(prefix + "/renotify/" + no, {}, function(res) {
+                if (res.code === 0) { $.modal.alertSuccess(res.msg); $.table.refresh(); }
+                else { $.modal.alertError(res.msg); }
+            });
+        });
+    }
+</script>
+</body>
+</html>

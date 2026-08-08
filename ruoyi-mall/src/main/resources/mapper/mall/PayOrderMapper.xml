@@ -68,9 +68,22 @@
 
     <select id="selectPendingNotify" resultMap="PayOrderResult">
         select * from pay_order
-        where status = 'PAID' and notify_status &lt;&gt; 1 and notify_url is not null and notify_url &lt;&gt; ''
+        where status = 'PAID' and notify_status &lt;&gt; 1
+          and notify_count &lt; 6
+          and notify_url is not null and notify_url &lt;&gt; ''
         order by id asc
         limit #{limit}
+    </select>
+
+    <select id="selectOrderList" parameterType="com.ruoyi.mall.domain.PayOrder" resultMap="PayOrderResult">
+        select * from pay_order
+        <where>
+            <if test="platformNo != null and platformNo != ''">AND platform_no = #{platformNo}</if>
+            <if test="outTradeNo != null and outTradeNo != ''">AND out_trade_no = #{outTradeNo}</if>
+            <if test="merchantCode != null and merchantCode != ''">AND merchant_code = #{merchantCode}</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+        </where>
+        order by id desc
     </select>
 
 </mapper>
