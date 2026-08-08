@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.OrderBlockMapper">
+
+    <select id="countBlocked" resultType="int">
+        select count(*) from order_block_info
+        where
+        <trim prefixOverrides="OR">
+            <if test="userId != null and userId != ''">   OR user_id   = #{userId}</if>
+            <if test="clientIp != null and clientIp != ''"> OR client_ip = #{clientIp}</if>
+            <if test="buyerId != null and buyerId != ''">  OR buyer_id  = #{buyerId}</if>
+            <if test="(userId == null or userId == '') and (clientIp == null or clientIp == '') and (buyerId == null or buyerId == '')">
+                OR 1 = 0
+            </if>
+        </trim>
+    </select>
+
+</mapper>

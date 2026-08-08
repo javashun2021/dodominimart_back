@@ -315,6 +315,9 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/beta/**", "anon"); // Android 内测申请/查状态/审批：公开下载页用
         filterChainDefinitionMap.put("/api/**", "jwtAuth");
 
+        // 聚合支付-下游商户开放 API：Shiro 放行，鉴权在业务层按商户 app_secret 做 MD5 验签
+        filterChainDefinitionMap.put("/openapi/**", "anon");
+
         Map<String, Filter> filters = new LinkedHashMap<>();
         filters.put("onlineSession", onlineSessionFilter());
         filters.put("syncOnlineSession", syncOnlineSessionFilter());

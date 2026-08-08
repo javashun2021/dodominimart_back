@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.ImspayMerchantMapper">
+
+    <resultMap type="com.ruoyi.mall.domain.ImspayMerchant" id="ImspayMerchantResult">
+        <id     property="id"                  column="id"                     />
+        <result property="code"                column="code"                   />
+        <result property="name"                column="name"                   />
+        <result property="appSecret"           column="app_secret"             />
+        <result property="privateKey"          column="private_key"            />
+        <result property="secret"              column="secret"                 />
+        <result property="status"              column="status"                 />
+        <result property="createTime"          column="create_time"            />
+        <result property="updateTime"          column="update_time"            />
+        <result property="summary"             column="summary"                />
+        <result property="orderCountLimit"     column="order_count_limit"      />
+        <result property="userDailyCountLimit" column="user_daily_count_limit" />
+        <result property="userDailySumLimit"   column="user_daily_sum_limit"   />
+        <result property="orderSumLimit"       column="order_sum_limit"        />
+        <result property="depositBalance"      column="deposit_balance"        />
+        <result property="dailyStartTime"      column="daily_start_time"       />
+        <result property="dailyEndTime"        column="daily_end_time"         />
+        <result property="telegramChatIds"     column="telegram_chat_ids"      />
+    </resultMap>
+
+    <select id="selectByCode" parameterType="String" resultMap="ImspayMerchantResult">
+        select * from imspay_merchant where code = #{code} limit 1
+    </select>
+
+    <select id="selectById" parameterType="String" resultMap="ImspayMerchantResult">
+        select * from imspay_merchant where id = #{id} limit 1
+    </select>
+
+</mapper>
