@@ -121,14 +121,14 @@ public class MallCouponController extends BaseController
         Object memberIdObj = body.get("memberId");
         if (couponIdObj == null || memberIdObj == null)
         {
-            return AjaxResult.error("couponId and memberId are required");
+            return AjaxResult.error("缺少 couponId 或 memberId");
         }
         try
         {
             couponService.issueCoupon(
                     Long.parseLong(couponIdObj.toString()),
                     Long.parseLong(memberIdObj.toString()));
-            return success("Coupon issued successfully");
+            return success("优惠券发放成功");
         }
         catch (RuntimeException e)
         {

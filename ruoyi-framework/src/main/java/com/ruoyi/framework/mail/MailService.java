@@ -35,9 +35,9 @@ public class MailService
             msg.setFrom(from);
         }
         msg.setTo(toEmail);
-        msg.setSubject("Dodominimart - Verification Code");
-        msg.setText("Your verification code is: " + code
-                + "\n\nThis code expires in 10 minutes. Do not share it with anyone.");
+        msg.setSubject("星智商城 - 验证码");
+        msg.setText("您的验证码是：" + code
+                + "\n\n验证码 10 分钟内有效，请勿泄露给他人。");
         mailSender.send(msg);
     }
 

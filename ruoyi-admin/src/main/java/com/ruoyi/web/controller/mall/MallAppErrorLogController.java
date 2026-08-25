@@ -76,6 +76,6 @@ public class MallAppErrorLogController extends BaseController
     public AjaxResult clean(@RequestParam(defaultValue = "30") int days)
     {
         int rows = errorLogService.cleanErrorLogBefore(days);
-        return AjaxResult.success("Deleted " + rows + " logs older than " + days + " days");
+        return AjaxResult.success("已删除 " + rows + " 条超过 " + days + " 天的日志");
     }
 }

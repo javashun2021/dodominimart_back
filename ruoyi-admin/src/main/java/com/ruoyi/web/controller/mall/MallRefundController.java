@@ -60,7 +60,7 @@ public class MallRefundController extends BaseController
         try
         {
             orderService.approveRefundRequest(requestId, ShiroUtils.getLoginName());
-            return AjaxResult.success("Refund approved and processed");
+            return AjaxResult.success("退款已通过并处理");
         }
         catch (RuntimeException e)
         {
@@ -79,7 +79,7 @@ public class MallRefundController extends BaseController
         try
         {
             orderService.rejectRefundRequest(requestId, ShiroUtils.getLoginName(), remark);
-            return AjaxResult.success("Refund request rejected");
+            return AjaxResult.success("退款申请已驳回");
         }
         catch (RuntimeException e)
         {

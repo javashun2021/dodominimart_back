@@ -26,11 +26,11 @@ public class MallReviewServiceImpl implements IMallReviewService
     {
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null)
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         if (!memberId.equals(order.getMemberId()))
-            throw new RuntimeException("Order does not belong to you");
+            throw new RuntimeException("该订单不属于你");
         if (!"3".equals(order.getStatus()))
-            throw new RuntimeException("Order has not been delivered yet");
+            throw new RuntimeException("订单尚未送达");
 
         Date now = new Date();
         int newReviewCount = 0;

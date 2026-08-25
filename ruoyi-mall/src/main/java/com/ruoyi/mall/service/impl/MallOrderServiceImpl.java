@@ -119,12 +119,12 @@ public class MallOrderServiceImpl implements IMallOrderService
             address = addressMapper.selectAddressById(addressId);
             if (address == null || !address.getMemberId().equals(memberId))
             {
-                throw new RuntimeException("Invalid address");
+                throw new RuntimeException("收货地址无效");
             }
         }
         else if (!isStore)
         {
-            throw new RuntimeException("Invalid address");
+            throw new RuntimeException("收货地址无效");
         }
 
         // Pass 1: validate all items and compute prices — no stock changes yet
@@ -134,11 +134,11 @@ public class MallOrderServiceImpl implements IMallOrderService
             MallProduct product = productMapper.selectProductById(item.getProductId());
             if (product == null || !"0".equals(product.getStatus()))
             {
-                throw new RuntimeException("Product not available: " + item.getProductId());
+                throw new RuntimeException("商品已下架:" + item.getProductId());
             }
             if (product.getStock() < item.getQuantity())
             {
-                throw new RuntimeException("Insufficient stock: " + product.getName());
+                throw new RuntimeException("库存不足:" + product.getName());
             }
             item.setProductName(product.getName());
             item.setProductImage(product.getImageUrl());
@@ -151,7 +151,7 @@ public class MallOrderServiceImpl implements IMallOrderService
                 int remaining = flashSale.getStockLimit() - flashSale.getSoldCount();
                 if (remaining < item.getQuantity())
                 {
-                    throw new RuntimeException("Flash sale stock sold out: " + product.getName());
+                    throw new RuntimeException("秒杀库存已售罄:" + product.getName());
                 }
                 unitPrice = flashSale.getFlashPrice();
                 flashSaleMap.put(item.getProductId(), flashSale);
@@ -175,13 +175,13 @@ public class MallOrderServiceImpl implements IMallOrderService
                 boolean occupied = flashSaleService.occupyStock(flashSale.getSaleId(), item.getQuantity());
                 if (!occupied)
                 {
-                    throw new RuntimeException("Flash sale stock sold out: " + item.getProductName());
+                    throw new RuntimeException("秒杀库存已售罄:" + item.getProductName());
                 }
             }
             int affected = productMapper.deductStock(item.getProductId(), item.getQuantity());
             if (affected == 0)
             {
-                throw new RuntimeException("Insufficient stock: " + item.getProductName());
+                throw new RuntimeException("库存不足:" + item.getProductName());
             }
         }
 
@@ -375,17 +375,17 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null || !order.getMemberId().equals(memberId))
         {
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         }
         // 配送前可自助取消：待确认(0) / 已确认(1)。一旦配送中(2)/已完成(3)/已取消(4) 不可自助取消。
         String st = order.getStatus();
         if (!"0".equals(st) && !"1".equals(st))
         {
-            throw new RuntimeException("Order can no longer be cancelled");
+            throw new RuntimeException("订单已无法取消");
         }
         if ("REFUNDED".equalsIgnoreCase(order.getPaymentStatus()))
         {
-            throw new RuntimeException("Order already refunded");
+            throw new RuntimeException("订单已退款");
         }
 
         boolean online = "GCASH".equalsIgnoreCase(order.getPaymentMethod());
@@ -396,13 +396,13 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             if (order.getPaymentNo() == null || order.getPaymentNo().isEmpty())
             {
-                throw new RuntimeException("Missing payment reference; cannot refund");
+                throw new RuntimeException("缺少支付凭证,无法退款");
             }
             BigDecimal amt = order.getPaidAmount() != null ? order.getPaidAmount()
                     : order.getTotalAmount().add(order.getDeliveryFee() != null ? order.getDeliveryFee() : BigDecimal.ZERO);
             if (!gcashService.refund(order.getPaymentNo(), amt))
             {
-                throw new RuntimeException("Refund failed; please try again later");
+                throw new RuntimeException("退款失败,请稍后重试");
             }
         }
 
@@ -474,11 +474,11 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null)
         {
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         }
         if ("REFUNDED".equalsIgnoreCase(order.getPaymentStatus()))
         {
-            throw new RuntimeException("Order already refunded");
+            throw new RuntimeException("订单已退款");
         }
 
         // 线上单(PayMongo，paymentMethod=GCASH) vs 现金单(COD / 到店 STORE)
@@ -489,11 +489,11 @@ public class MallOrderServiceImpl implements IMallOrderService
         {
             if (!paid)
             {
-                throw new RuntimeException("Online order is not paid; cancel it instead of refund");
+                throw new RuntimeException("线上订单未支付,请取消订单而非退款");
             }
             if (order.getPaymentNo() == null || order.getPaymentNo().isEmpty())
             {
-                throw new RuntimeException("Missing payment reference; cannot refund via PayMongo");
+                throw new RuntimeException("缺少支付凭证,无法退款");
             }
             // 注：网关退款 HTTP 调用放在事务内（后台低频操作可接受）；失败则抛出、不改库不退分。
             BigDecimal amt = order.getPaidAmount() != null ? order.getPaidAmount()
@@ -501,7 +501,7 @@ public class MallOrderServiceImpl implements IMallOrderService
             boolean ok = gcashService.refund(order.getPaymentNo(), amt);
             if (!ok)
             {
-                throw new RuntimeException("PayMongo refund failed; please retry or refund in the PayMongo dashboard");
+                throw new RuntimeException("退款失败,请稍后重试");
             }
         }
         // 现金单：不调网关，仅在系统内标记（钱由店员线下退给顾客）
@@ -561,31 +561,31 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null || !order.getMemberId().equals(memberId))
         {
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         }
         if (!"3".equals(order.getStatus()))
         {
-            throw new RuntimeException("Only completed orders can request a refund");
+            throw new RuntimeException("仅已完成的订单可申请退款");
         }
         if (!"PAID".equalsIgnoreCase(order.getPaymentStatus()))
         {
-            throw new RuntimeException("This order has no online payment to refund");
+            throw new RuntimeException("该订单没有可退款的线上支付");
         }
         if (reason == null || reason.trim().isEmpty())
         {
-            throw new RuntimeException("Please enter a reason");
+            throw new RuntimeException("请填写退款原因");
         }
         // 售后期：完成后 3 天内（用 update_time 近似完成时间）
         Date completed = order.getUpdateTime() != null ? order.getUpdateTime() : order.getCreateTime();
         if (completed != null && System.currentTimeMillis() - completed.getTime() > REFUND_WINDOW_MS)
         {
-            throw new RuntimeException("Refund window has expired (3 days after completion)");
+            throw new RuntimeException("退款期限已过(订单完成后 3 天内可申请)");
         }
         // 防重复：已有进行中(待审/已通过)的申请则拦截
         MallRefundRequest latest = refundRequestMapper.selectLatestByOrderId(orderId);
         if (latest != null && ("PENDING".equals(latest.getStatus()) || "APPROVED".equals(latest.getStatus())))
         {
-            throw new RuntimeException("A refund request is already in progress for this order");
+            throw new RuntimeException("该订单已有正在处理的退款申请");
         }
 
         MallRefundRequest req = new MallRefundRequest();
@@ -618,11 +618,11 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallRefundRequest req = refundRequestMapper.selectById(requestId);
         if (req == null)
         {
-            throw new RuntimeException("Refund request not found");
+            throw new RuntimeException("退款申请不存在");
         }
         if (!"PENDING".equals(req.getStatus()))
         {
-            throw new RuntimeException("This request has already been handled");
+            throw new RuntimeException("该申请已处理");
         }
         // 真退：线上走 PayMongo / 现金标记，并回滚库存 + 退积分 + 推送顾客
         refundOrder(req.getOrderId(), operator);
@@ -641,11 +641,11 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallRefundRequest req = refundRequestMapper.selectById(requestId);
         if (req == null)
         {
-            throw new RuntimeException("Refund request not found");
+            throw new RuntimeException("退款申请不存在");
         }
         if (!"PENDING".equals(req.getStatus()))
         {
-            throw new RuntimeException("This request has already been handled");
+            throw new RuntimeException("该申请已处理");
         }
         req.setStatus("REJECTED");
         req.setHandleBy(operator);
@@ -689,7 +689,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = orderMapper.selectOrderByOrderNoForUpdate(orderNo);
         if (order == null)
         {
-            throw new RuntimeException("Order not found: " + orderNo);
+            throw new RuntimeException("订单不存在:" + orderNo);
         }
         if ("PAID".equals(order.getPaymentStatus()))
         {
@@ -697,7 +697,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
         if ("4".equals(order.getStatus()))
         {
-            throw new RuntimeException("Order is cancelled, cannot mark as paid: " + orderNo);
+            throw new RuntimeException("订单已取消,无法标记为已支付:" + orderNo);
         }
         // 金额校验：实付必须等于订单应付（按「分」整数比对，避免精度问题）。不符则拒绝置 PAID，留待人工核查。
         if (amount != null)
@@ -709,7 +709,7 @@ public class MallOrderServiceImpl implements IMallOrderService
             long expectedC = expected.movePointRight(2).setScale(0, java.math.RoundingMode.HALF_UP).longValueExact();
             if (paidC != expectedC)
             {
-                throw new RuntimeException("Amount mismatch for " + orderNo
+                throw new RuntimeException("金额不匹配:" + orderNo
                         + ": paid=" + paidC + " expected=" + expectedC + " (centavos)");
             }
         }
@@ -773,11 +773,11 @@ public class MallOrderServiceImpl implements IMallOrderService
             MallProduct p = productMapper.selectProductById(item.getProductId());
             if (p == null || !"0".equals(p.getStatus()))
             {
-                throw new RuntimeException("Product not available: " + item.getProductId());
+                throw new RuntimeException("商品已下架:" + item.getProductId());
             }
             if (p.getStock() < item.getQuantity())
             {
-                throw new RuntimeException("Insufficient stock: " + p.getName());
+                throw new RuntimeException("库存不足:" + p.getName());
             }
             item.setProductName(p.getName());
             item.setProductImage(p.getImageUrl());
@@ -794,7 +794,7 @@ public class MallOrderServiceImpl implements IMallOrderService
             int affected = productMapper.deductStock(item.getProductId(), item.getQuantity());
             if (affected == 0)
             {
-                throw new RuntimeException("Insufficient stock: " + item.getProductName());
+                throw new RuntimeException("库存不足:" + item.getProductName());
             }
         }
 
@@ -832,7 +832,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = orderMapper.selectOrderByOrderNoForUpdate(orderNo);
         if (order == null)
         {
-            throw new RuntimeException("Order not found: " + orderNo);
+            throw new RuntimeException("订单不存在:" + orderNo);
         }
         if ("PAID".equals(order.getPaymentStatus()))
         {
@@ -840,7 +840,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         }
         if ("4".equals(order.getStatus()))
         {
-            throw new RuntimeException("Order is cancelled: " + orderNo);
+            throw new RuntimeException("订单已取消:" + orderNo);
         }
         // 注意：撮合单实付为浮动值（≤订单额），不做等额校验
         order.setPaymentStatus("PAID");
@@ -926,16 +926,16 @@ public class MallOrderServiceImpl implements IMallOrderService
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null)
         {
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         }
         if (!"IN_STORE".equals(order.getOrderSource()) || !"STORE".equalsIgnoreCase(order.getPaymentMethod()))
         {
-            throw new RuntimeException("Not an in-store order");
+            throw new RuntimeException("非到店订单");
         }
         if (!"0".equals(order.getStatus()))
         {
             // 幂等保护：非待确认状态不重复确认/发奖励
-            throw new RuntimeException("Order is not awaiting payment confirmation");
+            throw new RuntimeException("订单未处于待确认收款状态");
         }
 
         Date now = new Date();
@@ -1005,7 +1005,7 @@ public class MallOrderServiceImpl implements IMallOrderService
         if (cashReceived == null || cashReceived.compareTo(total) < 0)
         {
             // 同一事务内抛出 → createOrder 的库存扣减一并回滚
-            throw new RuntimeException("Cash received is less than total payable");
+            throw new RuntimeException("收款金额小于应付总额");
         }
         BigDecimal change = cashReceived.subtract(total);
 

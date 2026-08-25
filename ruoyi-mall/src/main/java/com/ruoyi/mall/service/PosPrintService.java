@@ -57,7 +57,7 @@ public class PosPrintService
         if (cfg.ip == null || cfg.ip.isEmpty())
         {
             log.warn("[POS-PRINT] printer ip not configured; skip printing order {}", order.getOrderNo());
-            throw new RuntimeException("Printer IP not configured");
+            throw new RuntimeException("打印机 IP 未配置");
         }
 
         byte[] data = buildEscPos(order, cfg);
@@ -74,7 +74,7 @@ public class PosPrintService
         catch (IOException e)
         {
             log.error("[POS-PRINT] failed to print order {} to {}:{} — {}", order.getOrderNo(), cfg.ip, cfg.port, e.getMessage());
-            throw new RuntimeException("Print failed: " + e.getMessage());
+            throw new RuntimeException("打印失败:" + e.getMessage());
         }
     }
 

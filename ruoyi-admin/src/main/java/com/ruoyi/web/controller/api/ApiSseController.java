@@ -32,11 +32,11 @@ public class ApiSseController
     {
         if (token == null || token.isEmpty())
         {
-            throw new RuntimeException("Missing token");
+            throw new RuntimeException("缺少登录令牌");
         }
         if (!jwtUtils.validateToken(token))
         {
-            throw new RuntimeException("Invalid or expired token");
+            throw new RuntimeException("登录令牌无效或已过期");
         }
         Long memberId = jwtUtils.getMemberIdFromToken(token);
         return sseService.subscribe(memberId);

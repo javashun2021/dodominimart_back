@@ -55,7 +55,7 @@ public class TesterInviteController extends BaseController
     {
         if (emails == null || emails.trim().isEmpty())
         {
-            return error("Please enter at least one email address.");
+            return error("请至少输入一个邮箱地址。");
         }
 
         // 拆分 + 去重（保持顺序）

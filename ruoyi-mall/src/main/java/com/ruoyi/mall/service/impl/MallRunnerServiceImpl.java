@@ -57,7 +57,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         MallRunnerApplication existing = appMapper.selectByMemberId(app.getMemberId());
         if (existing != null && "1".equals(existing.getStatus()))
         {
-            throw new RuntimeException("Already an approved runner");
+            throw new RuntimeException("你已是认证骑手");
         }
         app.setApplyTime(new Date());
         appMapper.insertOrUpdate(app);
@@ -86,13 +86,13 @@ public class MallRunnerServiceImpl implements IMallRunnerService
 
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null)
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         if (!"1".equals(order.getStatus()))
-            throw new RuntimeException("Order is not available for delivery");
+            throw new RuntimeException("该订单当前不可接单");
         if (order.getRunnerMemberId() != null)
-            throw new RuntimeException("Order already taken by another runner");
+            throw new RuntimeException("订单已被其他骑手接单");
         if (memberId.equals(order.getMemberId()))
-            throw new RuntimeException("Cannot deliver your own order");
+            throw new RuntimeException("不能配送自己的订单");
 
         // 模型C 跨店防护：骑手已绑定门店时，只能接本店订单（防止直接猜 orderId 抢别店的单）
         MallRunnerApplication runnerApp = appMapper.selectByMemberId(memberId);
@@ -100,7 +100,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
                 && order.getStoreId() != null
                 && !runnerApp.getStoreId().equals(order.getStoreId()))
         {
-            throw new RuntimeException("This order belongs to another store");
+            throw new RuntimeException("该订单属于其他门店");
         }
 
         order.setRunnerMemberId(memberId);
@@ -110,7 +110,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         int affected = orderMapper.updateRunnerInfo(order);
         if (affected == 0)
         {
-            throw new RuntimeException("Order already taken by another runner");
+            throw new RuntimeException("订单已被其他骑手接单");
         }
         MallOrder accepted = orderMapper.selectOrderById(orderId);
 
@@ -146,11 +146,11 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     {
         MallOrder order = orderMapper.selectOrderById(orderId);
         if (order == null)
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         if (!memberId.equals(order.getRunnerMemberId()))
-            throw new RuntimeException("You are not the runner for this order");
+            throw new RuntimeException("你不是该订单的配送骑手");
         if (!"2".equals(order.getStatus()))
-            throw new RuntimeException("Order is not in delivering status");
+            throw new RuntimeException("订单不在配送中状态");
 
         order.setStatus("3");
         order.setUpdateTime(new Date());
@@ -230,15 +230,15 @@ public class MallRunnerServiceImpl implements IMallRunnerService
     {
         MallOrder order = orderMapper.selectOrderById(rating.getOrderId());
         if (order == null)
-            throw new RuntimeException("Order not found");
+            throw new RuntimeException("订单不存在");
         if (!rating.getRaterMemberId().equals(order.getMemberId()))
-            throw new RuntimeException("Order does not belong to you");
+            throw new RuntimeException("该订单不属于你");
         if (!"3".equals(order.getStatus()))
-            throw new RuntimeException("Order is not completed yet");
+            throw new RuntimeException("订单尚未完成");
         if (order.getRunnerMemberId() == null)
-            throw new RuntimeException("No runner for this order");
+            throw new RuntimeException("该订单没有配送骑手");
         if (ratingMapper.selectByOrderId(rating.getOrderId()) != null)
-            throw new RuntimeException("Already rated");
+            throw new RuntimeException("已评价过");
 
         rating.setRunnerMemberId(order.getRunnerMemberId());
         rating.setCreateTime(new Date());
@@ -380,7 +380,7 @@ public class MallRunnerServiceImpl implements IMallRunnerService
         MallRunnerApplication app = appMapper.selectByMemberId(memberId);
         if (app == null || !"1".equals(app.getStatus()))
         {
-            throw new RuntimeException("Runner not approved");
+            throw new RuntimeException("骑手未通过审核");
         }
     }
 }

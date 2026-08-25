@@ -56,7 +56,7 @@ public class MallMemberController extends BaseController
     {
         if (!Arrays.asList("customer", "cashier", "admin").contains(role))
         {
-            return AjaxResult.error("Invalid role");
+            return AjaxResult.error("角色无效");
         }
         return toAjax(memberService.updateRole(memberId, role));
     }

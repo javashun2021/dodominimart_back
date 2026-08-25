@@ -34,7 +34,7 @@ public abstract class BaseApiController
                 return jwtUtils.getMemberIdFromToken(token);
             }
         }
-        throw new RuntimeException("Not authenticated");
+        throw new RuntimeException("未登录或登录已过期");
     }
 
     private static final int MAX_PAGE_SIZE = 200;

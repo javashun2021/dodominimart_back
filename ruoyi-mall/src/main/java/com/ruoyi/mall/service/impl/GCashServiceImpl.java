@@ -106,14 +106,14 @@ public class GCashServiceImpl implements IGCashService
             if (urlNode.isMissingNode() || urlNode.asText().isEmpty())
             {
                 log.error("PayMongo createPayment unexpected response: {}", json);
-                throw new RuntimeException("Failed to create PayMongo checkout session");
+                throw new RuntimeException("创建支付会话失败");
             }
             return urlNode.asText();
         }
         catch (Exception e)
         {
             log.error("PayMongo createPayment error for order {}: {}", orderId, e.getMessage());
-            throw new RuntimeException("Online payment unavailable: " + e.getMessage());
+            throw new RuntimeException("线上支付暂不可用:" + e.getMessage());
         }
     }
 

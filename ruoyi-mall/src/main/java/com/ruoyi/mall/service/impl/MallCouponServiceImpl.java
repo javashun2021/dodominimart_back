@@ -42,7 +42,7 @@ public class MallCouponServiceImpl implements IMallCouponService
         MallCoupon tpl = couponMapper.selectCouponById(couponId);
         if (tpl == null || tpl.getStatus() != 0)
         {
-            throw new RuntimeException("Coupon not found or disabled");
+            throw new RuntimeException("优惠券不存在或已停用");
         }
         issueCoupon(tpl, memberId);
     }
@@ -71,19 +71,19 @@ public class MallCouponServiceImpl implements IMallCouponService
         MallMemberCoupon mc = memberCouponMapper.selectByIdForUpdate(memberCouponId);
         if (mc == null || !mc.getMemberId().equals(memberId))
         {
-            return CouponDiscountResult.error("Coupon not found");
+            return CouponDiscountResult.error("优惠券不存在");
         }
         if (mc.getStatus() == 1)
         {
-            return CouponDiscountResult.error("Coupon already used");
+            return CouponDiscountResult.error("优惠券已使用");
         }
         if (mc.getStatus() == 2 || new Date().after(mc.getExpiresAt()))
         {
-            return CouponDiscountResult.error("Coupon has expired");
+            return CouponDiscountResult.error("优惠券已过期");
         }
         if (mc.getIsFirstOrderOnly() == 1 && !isFirstOrder)
         {
-            return CouponDiscountResult.error("This coupon is for your first order only");
+            return CouponDiscountResult.error("该优惠券仅限首单使用");
         }
         BigDecimal minOrder = mc.getMinOrderAmount() != null ? mc.getMinOrderAmount() : BigDecimal.ZERO;
         if (subtotal.compareTo(minOrder) < 0)
@@ -114,7 +114,7 @@ public class MallCouponServiceImpl implements IMallCouponService
             }
             return CouponDiscountResult.ok(discount, false);
         }
-        return CouponDiscountResult.error("Unknown coupon type");
+        return CouponDiscountResult.error("未知的优惠券类型");
     }
 
     @Override

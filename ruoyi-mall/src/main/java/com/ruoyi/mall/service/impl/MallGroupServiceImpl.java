@@ -157,12 +157,12 @@ public class MallGroupServiceImpl implements IMallGroupService
         MallGroupActivity activity = activityMapper.selectActivityById(activityId);
         if (activity == null || !"0".equals(activity.getStatus()))
         {
-            throw new RuntimeException("Group activity is not available");
+            throw new RuntimeException("拼团活动不可用");
         }
         Date now = new Date();
         if (now.before(activity.getStartTime()) || now.after(activity.getEndTime()))
         {
-            throw new RuntimeException("Activity is not in valid time range");
+            throw new RuntimeException("活动不在有效时间内");
         }
 
         String inviteCode = generateInviteCode();
@@ -220,12 +220,12 @@ public class MallGroupServiceImpl implements IMallGroupService
     public MallGroupOrder joinGroup(String inviteCode, Long memberId, int quantity, Long addressId)
     {
         MallGroupOrder groupOrder = groupOrderMapper.selectGroupOrderByInviteCode(inviteCode);
-        if (groupOrder == null) throw new RuntimeException("Group not found");
-        if (!"0".equals(groupOrder.getStatus())) throw new RuntimeException("Group is no longer active");
-        if (new Date().after(groupOrder.getExpireTime())) throw new RuntimeException("Group has expired");
+        if (groupOrder == null) throw new RuntimeException("拼团不存在");
+        if (!"0".equals(groupOrder.getStatus())) throw new RuntimeException("拼团已结束");
+        if (new Date().after(groupOrder.getExpireTime())) throw new RuntimeException("拼团已过期");
         if (memberMapper.selectMember(groupOrder.getGroupOrderId(), memberId) != null)
         {
-            throw new RuntimeException("Already joined this group");
+            throw new RuntimeException("你已参加该拼团");
         }
 
         MallGroupMember member = new MallGroupMember();
@@ -324,15 +324,15 @@ public class MallGroupServiceImpl implements IMallGroupService
     {
         MallGroupOrder groupOrder = groupOrderMapper.selectGroupOrderByInviteCode(inviteCode);
         if (groupOrder == null)
-            throw new RuntimeException("Group not found");
+            throw new RuntimeException("拼团不存在");
         if (!"0".equals(groupOrder.getStatus()))
-            throw new RuntimeException("Group is no longer active");
+            throw new RuntimeException("拼团已结束");
         if (!memberId.equals(groupOrder.getInitiatorMemberId()))
-            throw new RuntimeException("Only the initiator can close the group");
+            throw new RuntimeException("只有团长可以结束拼团");
 
         MallGroupActivity activity = activityMapper.selectActivityById(groupOrder.getActivityId());
         if (groupOrder.getCurrentSize() < activity.getMinGroupSize())
-            throw new RuntimeException("Minimum group size not reached yet");
+            throw new RuntimeException("尚未达到成团人数");
 
         completeGroup(groupOrder, activity);
         return getGroupDetail(inviteCode);

@@ -99,7 +99,7 @@ public class MallMemberServiceImpl implements IMallMemberService
     {
         if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches())
         {
-            throw new RuntimeException("Invalid email format");
+            throw new RuntimeException("邮箱格式不正确");
         }
         String normalizedEmail = email.trim();
 
@@ -109,7 +109,7 @@ public class MallMemberServiceImpl implements IMallMemberService
             long secondsSince = (System.currentTimeMillis() - latest.getCreateTime().getTime()) / 1000;
             if (secondsSince < 60)
             {
-                throw new RuntimeException("Please wait 60 seconds before requesting another code");
+                throw new RuntimeException("请等待 60 秒后再获取验证码");
             }
         }
 
@@ -133,15 +133,15 @@ public class MallMemberServiceImpl implements IMallMemberService
     {
         if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches())
         {
-            throw new RuntimeException("Invalid email format");
+            throw new RuntimeException("邮箱格式不正确");
         }
         if (password == null || password.length() < 8)
         {
-            throw new RuntimeException("Password must be at least 8 characters");
+            throw new RuntimeException("密码至少 8 位");
         }
         if (nickName == null || nickName.trim().isEmpty())
         {
-            throw new RuntimeException("nickName is required");
+            throw new RuntimeException("请填写昵称");
         }
 
         String normalizedEmail = email.trim();
@@ -149,17 +149,17 @@ public class MallMemberServiceImpl implements IMallMemberService
         MallVerifyCode record = verifyCodeMapper.selectLatestByEmail(normalizedEmail);
         if (record == null || record.getUsed() != 0 || record.getExpiresAt().before(new Date()))
         {
-            throw new RuntimeException("Invalid or expired verification code");
+            throw new RuntimeException("验证码无效或已过期");
         }
         if (record.getAttempts() != null && record.getAttempts() >= 5)
         {
             verifyCodeMapper.markUsed(record.getId());
-            throw new RuntimeException("Too many attempts. Please request a new verification code");
+            throw new RuntimeException("验证次数过多，请重新获取验证码");
         }
         if (!record.getCode().equals(code))
         {
             verifyCodeMapper.incrementAttempts(record.getId());
-            throw new RuntimeException("Invalid or expired verification code");
+            throw new RuntimeException("验证码无效或已过期");
         }
         verifyCodeMapper.markUsed(record.getId());
 
@@ -168,9 +168,9 @@ public class MallMemberServiceImpl implements IMallMemberService
         {
             if (existing.getPasswordHash() != null)
             {
-                throw new RuntimeException("Email already registered");
+                throw new RuntimeException("该邮箱已注册");
             }
-            throw new RuntimeException("Email already linked to a social account. Please use Google or Apple Sign-In.");
+            throw new RuntimeException("该邮箱已绑定第三方账号,请使用对应方式登录。");
         }
 
         MallMember member = new MallMember();
@@ -204,7 +204,7 @@ public class MallMemberServiceImpl implements IMallMemberService
         }
         if (!"0".equals(member.getStatus()))
         {
-            throw new RuntimeException("Account is disabled");
+            throw new RuntimeException("账号已被禁用");
         }
         return member;
     }
@@ -227,23 +227,23 @@ public class MallMemberServiceImpl implements IMallMemberService
     {
         if (newPassword == null || newPassword.length() < 6 || newPassword.length() > 32)
         {
-            throw new RuntimeException("Password must be 6-32 characters");
+            throw new RuntimeException("密码长度需为 6-32 位");
         }
         MallMember member = memberMapper.selectMemberById(memberId);
         if (member == null)
         {
-            throw new RuntimeException("Member not found");
+            throw new RuntimeException("用户不存在");
         }
         if (member.getEmail() == null || member.getEmail().trim().isEmpty())
         {
-            throw new RuntimeException("Your account has no email, cannot set a password");
+            throw new RuntimeException("你的账号未绑定邮箱,无法设置密码");
         }
         // 已有密码：必须校验旧密码
         if (member.getPasswordHash() != null)
         {
             if (oldPassword == null || !BCRYPT.matches(oldPassword, member.getPasswordHash()))
             {
-                throw new RuntimeException("Current password is incorrect");
+                throw new RuntimeException("当前密码不正确");
             }
         }
         memberMapper.updatePassword(memberId, BCRYPT.encode(newPassword));
