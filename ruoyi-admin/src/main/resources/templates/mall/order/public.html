@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title th:text="${shopName} + ' — Order'">Order</title>
+    <title th:text="${shopName} + ' — 订单'">订单</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; background: #f4f5f7; color: #222;
@@ -34,35 +34,35 @@
         <img class="logo" th:src="@{/img/receipt-logo.jpg}" alt="logo">
         <div class="shop-name" th:text="${shopName}">DODOMINIMART</div>
         <div class="muted" th:if="${shopAddress != null and shopAddress != ''}" th:text="${shopAddress}"></div>
-        <div class="muted" th:if="${shopPhone != null and shopPhone != ''}" th:text="'Tel: ' + ${shopPhone}"></div>
+        <div class="muted" th:if="${shopPhone != null and shopPhone != ''}" th:text="'电话: ' + ${shopPhone}"></div>
     </div>
 
     <div class="card">
-        <h4>Order</h4>
+        <h4>订单信息</h4>
         <div class="info">
-            <p><strong>Order No:</strong> <span th:text="${order.orderNo}"></span></p>
-            <p><strong>Date:</strong> <span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm')}"></span></p>
-            <p><strong>Type:</strong>
+            <p><strong>订单号：</strong> <span th:text="${order.orderNo}"></span></p>
+            <p><strong>下单时间：</strong> <span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm')}"></span></p>
+            <p><strong>类型：</strong>
                 <span th:switch="${order.orderSource}">
-                    <span th:case="'IN_STORE'">In-Store</span>
-                    <span th:case="*">Delivery</span>
+                    <span th:case="'IN_STORE'">到店自提</span>
+                    <span th:case="*">配送</span>
                 </span>
-                &nbsp;|&nbsp; <strong>Payment:</strong> <span th:text="${order.paymentMethod}"></span>
+                &nbsp;|&nbsp; <strong>支付方式：</strong> <span th:text="${order.paymentMethod}"></span>
             </p>
-            <p><strong>Status:</strong>
+            <p><strong>状态：</strong>
                 <span th:switch="${order.status}">
-                    <span th:case="'0'" class="badge" style="background:#f0ad4e">Pending</span>
-                    <span th:case="'1'" class="badge" style="background:#337ab7">Confirmed</span>
-                    <span th:case="'2'" class="badge" style="background:#5bc0de">Delivering</span>
-                    <span th:case="'3'" class="badge" style="background:#1ab394">Completed</span>
-                    <span th:case="'4'" class="badge" style="background:#999">Cancelled</span>
+                    <span th:case="'0'" class="badge" style="background:#f0ad4e">待确认</span>
+                    <span th:case="'1'" class="badge" style="background:#337ab7">已确认</span>
+                    <span th:case="'2'" class="badge" style="background:#5bc0de">配送中</span>
+                    <span th:case="'3'" class="badge" style="background:#1ab394">已完成</span>
+                    <span th:case="'4'" class="badge" style="background:#999">已取消</span>
                 </span>
             </p>
         </div>
     </div>
 
     <div class="card">
-        <h4>Items</h4>
+        <h4>订单商品</h4>
         <table>
             <thead>
                 <tr>
@@ -83,21 +83,21 @@
         </table>
         <div class="totals" style="margin-top:10px">
             <div class="row" th:if="${order.couponDiscount != null and order.couponDiscount.signum() > 0}">
-                <span>Coupon Discount</span><span th:text="'-' + ${order.couponDiscount} + ' 元'"></span>
+                <span>优惠券抵扣</span><span th:text="'-' + ${order.couponDiscount} + ' 元'"></span>
             </div>
             <div class="row" th:if="${order.pointsUsed > 0}">
-                <span>Points Used</span><span th:text="'-' + ${order.pointsUsed} + ' 元'"></span>
+                <span>积分抵扣 (<span th:text="${order.pointsUsed}"></span> 分)</span><span th:text="'-' + ${order.pointsUsed / 10} + ' 元'"></span>
             </div>
             <div class="row" th:if="${order.deliveryFee != null and order.deliveryFee.signum() > 0}">
-                <span>Delivery Fee</span><span th:text="${order.deliveryFee} + ' 元'"></span>
+                <span>配送费</span><span th:text="${order.deliveryFee} + ' 元'"></span>
             </div>
             <div class="row grand">
-                <span>TOTAL</span><span th:text="${order.totalAmount} + ' 元'"></span>
+                <span>应付金额</span><span th:text="${order.totalAmount} + ' 元'"></span>
             </div>
         </div>
     </div>
 
-    <a class="open-app" th:href="${appScheme}">Open in App</a>
+    <a class="open-app" th:href="${appScheme}">用 App 打开</a>
 
     <div class="footer" th:text="${shopFooter}">Thank you for shopping!</div>
 
