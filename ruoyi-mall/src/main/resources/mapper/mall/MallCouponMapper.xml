@@ -42,6 +42,12 @@
         <include refid="selectCouponVo"/> where status = 0 order by coupon_id asc
     </select>
 
+    <select id="selectAmountOffTemplate" parameterType="java.math.BigDecimal" resultMap="MallCouponResult">
+        <include refid="selectCouponVo"/>
+        where status = 0 and type = 'amount_off' and discount_amount = #{discountAmount}
+        order by coupon_id asc limit 1
+    </select>
+
     <insert id="insertCoupon" parameterType="com.ruoyi.mall.domain.MallCoupon" useGeneratedKeys="true" keyProperty="couponId">
         insert into mall_coupon(name, type, discount_amount, discount_percent,
                                 max_discount_amount, min_order_amount, valid_days,

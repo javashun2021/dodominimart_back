@@ -54,4 +54,23 @@ public interface MallOrderMapper
 
     /** 统计某会员历史订单总数（含已取消，防止取消后重新触发首单奖励） */
     int countAllByMemberId(Long memberId);
+
+    // ── 外部导入单 ──
+
+    /** 幂等去重：按外部订单号(存入 merchant_out_trade_no)查已导入的订单 */
+    MallOrder selectOrderByMerchantOutTradeNo(String merchantOutTradeNo);
+
+    /** 导入单模拟接单：写入 runner/接单时间/到达时间/状态 */
+    int assignImportRunner(@org.apache.ibatis.annotations.Param("orderId") Long orderId,
+                           @org.apache.ibatis.annotations.Param("runnerMemberId") Long runnerMemberId,
+                           @org.apache.ibatis.annotations.Param("acceptedTime") java.util.Date acceptedTime,
+                           @org.apache.ibatis.annotations.Param("arrivalTime") java.util.Date arrivalTime,
+                           @org.apache.ibatis.annotations.Param("status") String status,
+                           @org.apache.ibatis.annotations.Param("updateTime") java.util.Date updateTime);
+
+    /** 扫描到点(arrival_time<=now)仍配送中的导入单，返回 orderId 列表 */
+    List<Long> selectArrivedImports(@org.apache.ibatis.annotations.Param("limit") int limit);
+
+    /** 到点完成：置 status=3、update_time=arrival_time */
+    int completeArrived(@org.apache.ibatis.annotations.Param("orderId") Long orderId);
 }

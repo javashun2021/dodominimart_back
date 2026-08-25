@@ -41,6 +41,8 @@ public class MallMember implements Serializable
     private String inviteCode;
     /** 邀请人会员ID */
     private Long referrerId;
+    /** 外部会员标识（字符串；外部系统导入订单时的 userId，与内部 member_id 解耦） */
+    private String externalId;
     /** 非DB：已完成订单数（邀请记录接口填充） */
     private int completedOrderCount;
 
@@ -102,6 +104,9 @@ public class MallMember implements Serializable
 
     public Long getReferrerId() { return referrerId; }
     public void setReferrerId(Long referrerId) { this.referrerId = referrerId; }
+
+    public String getExternalId() { return externalId; }
+    public void setExternalId(String externalId) { this.externalId = externalId; }
 
     public int getCompletedOrderCount() { return completedOrderCount; }
     public void setCompletedOrderCount(int completedOrderCount) { this.completedOrderCount = completedOrderCount; }

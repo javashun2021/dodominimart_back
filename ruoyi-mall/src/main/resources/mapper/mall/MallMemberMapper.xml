@@ -22,10 +22,11 @@
         <result property="points"        column="points"         />
         <result property="inviteCode"    column="invite_code"    />
         <result property="referrerId"    column="referrer_id"    />
+        <result property="externalId"    column="external_id"    />
     </resultMap>
 
     <sql id="selectMemberVo">
-        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, gender, birthday, status, role, password_hash, create_time, update_time, fcm_token, points, invite_code, referrer_id
+        select member_id, google_id, apple_id, email, nick_name, avatar_url, phone, gender, birthday, status, role, password_hash, create_time, update_time, fcm_token, points, invite_code, referrer_id, external_id
         from mall_member
     </sql>
 
@@ -59,6 +60,10 @@
         <include refid="selectMemberVo"/> where phone = #{phone} order by member_id limit 1
     </select>
 
+    <select id="selectMemberByExternalId" parameterType="String" resultMap="MallMemberResult">
+        <include refid="selectMemberVo"/> where external_id = #{externalId} order by member_id limit 1
+    </select>
+
     <select id="selectMembersByIds" resultMap="MallMemberResult">
         <include refid="selectMemberVo"/>
         where member_id in
@@ -68,8 +73,8 @@
     </select>
 
     <insert id="insertMember" parameterType="com.ruoyi.mall.domain.MallMember" useGeneratedKeys="true" keyProperty="memberId">
-        insert into mall_member(google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, create_time)
-        values(#{googleId}, #{appleId}, #{email}, #{nickName}, #{avatarUrl}, #{phone}, #{status}, #{passwordHash}, #{createTime})
+        insert into mall_member(google_id, apple_id, email, nick_name, avatar_url, phone, status, password_hash, external_id, create_time)
+        values(#{googleId}, #{appleId}, #{email}, #{nickName}, #{avatarUrl}, #{phone}, #{status}, #{passwordHash}, #{externalId}, #{createTime})
     </insert>
 
     <update id="updateMember" parameterType="com.ruoyi.mall.domain.MallMember">

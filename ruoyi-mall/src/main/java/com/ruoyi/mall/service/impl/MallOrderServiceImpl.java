@@ -8,7 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.mall.domain.MallAddress;
@@ -17,6 +20,7 @@ import com.ruoyi.mall.domain.MallOrderItem;
 import com.ruoyi.mall.domain.MallProduct;
 import com.ruoyi.mall.domain.MallPaymentRecord;
 import com.ruoyi.mall.domain.MallRefundRequest;
+import com.ruoyi.mall.domain.MallRunnerApplication;
 import com.ruoyi.mall.mapper.MallAddressMapper;
 import com.ruoyi.mall.mapper.MallRefundRequestMapper;
 import com.ruoyi.mall.mapper.MallFlashSaleMapper;
@@ -24,6 +28,7 @@ import com.ruoyi.mall.mapper.MallOrderItemMapper;
 import com.ruoyi.mall.mapper.MallOrderMapper;
 import com.ruoyi.mall.mapper.MallPaymentRecordMapper;
 import com.ruoyi.mall.mapper.MallProductMapper;
+import com.ruoyi.mall.mapper.MallRunnerApplicationMapper;
 import com.ruoyi.mall.service.FcmService;
 import com.ruoyi.mall.domain.CouponDiscountResult;
 import com.ruoyi.mall.service.IMallCouponService;
@@ -63,9 +68,19 @@ public class MallOrderServiceImpl implements IMallOrderService
     private IGCashService gcashService;
     @Autowired
     private MallRefundRequestMapper refundRequestMapper;
+    @Autowired
+    private MallRunnerApplicationMapper runnerAppMapper;
+
+    private static final Logger log = LoggerFactory.getLogger(MallOrderServiceImpl.class);
 
     /** 完成后退款（售后）申请时限：3 天 */
     private static final long REFUND_WINDOW_MS = 3L * 24 * 60 * 60 * 1000;
+
+    /** 外部导入单：配送到达 = payTime + 随机[min,max]小时 */
+    @Value("${mall.external.arrive-min-hours:10}")
+    private int arriveMinHours;
+    @Value("${mall.external.arrive-max-hours:30}")
+    private int arriveMaxHours;
 
     @Override
     public List<MallOrder> selectOrderList(MallOrder order)
@@ -875,6 +890,178 @@ public class MallOrderServiceImpl implements IMallOrderService
         order.setCancelReason(reason != null ? reason : "聚合支付上游下单失败");
         order.setUpdateTime(new Date());
         orderMapper.updateOrder(order);
+    }
+
+    // ───────────────────────── 外部订单导入 ─────────────────────────
+
+    @Override
+    @Transactional
+    public MallOrder createExternalPaidOrder(Long memberId, List<MallOrderItem> items,
+                                             String outOrderNo, Date createTime, Date payTime,
+                                             BigDecimal payAmount, BigDecimal floatAmount)
+    {
+        if (items == null || items.isEmpty())
+        {
+            throw new RuntimeException("导入明细为空");
+        }
+        // Pass1：常规价快照 + 校验库存（不走闪购，保证合计=名义额 N）
+        for (MallOrderItem item : items)
+        {
+            MallProduct p = productMapper.selectProductById(item.getProductId());
+            if (p == null || !"0".equals(p.getStatus()))
+            {
+                throw new RuntimeException("商品已下架:" + item.getProductId());
+            }
+            if (p.getStock() < item.getQuantity())
+            {
+                throw new RuntimeException("库存不足:" + p.getName());
+            }
+            item.setProductName(p.getName());
+            item.setProductImage(p.getImageUrl());
+            item.setPrice(p.getPrice());
+            item.setOriginalPrice(p.getPrice());
+            item.setSubtotal(p.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+        BigDecimal total = items.stream().map(MallOrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Pass2：原子扣库存
+        for (MallOrderItem item : items)
+        {
+            int affected = productMapper.deductStock(item.getProductId(), item.getQuantity());
+            if (affected == 0)
+            {
+                throw new RuntimeException("库存不足:" + item.getProductName());
+            }
+        }
+
+        // 金额对平：差价 gap = N - 付款价 P，积分尽量扣(0.1元步长) + 券补零头
+        long nCents = total.movePointRight(2).setScale(0, BigDecimal.ROUND_HALF_UP).longValueExact();
+        long pCents = payAmount.movePointRight(2).setScale(0, BigDecimal.ROUND_HALF_UP).longValueExact();
+        long fCents = floatAmount == null ? 0
+                : floatAmount.movePointRight(2).setScale(0, BigDecimal.ROUND_HALF_UP).longValueExact();
+        long gapCents = Math.max(0, nCents - pCents);
+
+        int balance = pointsService.getBalance(memberId);
+        long pointsCoverCents = Math.min((gapCents / 10) * 10, (long) balance * 10);
+        int pointsUsed = (int) (pointsCoverCents / 10);
+        long couponCents = gapCents - pointsCoverCents;
+        BigDecimal couponDiscount = BigDecimal.valueOf(couponCents, 2);
+        BigDecimal subsidy = BigDecimal.valueOf(fCents, 2);
+        BigDecimal paidAmount = BigDecimal.valueOf(pCents - fCents, 2); // 最终实付 = P - F
+
+        boolean paid = payTime != null;
+        String orderNo = generateOrderNo();
+
+        // 补差券：按精确面额发一张并立即核销
+        Long memberCouponId = null;
+        if (couponCents > 0)
+        {
+            memberCouponId = couponService.issueAndUseAdjustmentCoupon(memberId, couponDiscount, orderNo);
+        }
+
+        MallOrder order = new MallOrder();
+        order.setOrderNo(orderNo);
+        order.setMemberId(memberId);
+        order.setAddressSnapshot("");
+        order.setTotalAmount(total);
+        order.setStatus(paid ? "1" : "0");
+        order.setPaymentMethod("IMPORT");
+        order.setRemark("外部导入单");
+        order.setOrderSource("EXTERNAL");
+        order.setPointsUsed(pointsUsed);
+        order.setMemberCouponId(memberCouponId);
+        order.setCouponDiscount(couponDiscount);
+        order.setDeliveryFee(BigDecimal.ZERO);
+        order.setCreateTime(createTime != null ? createTime : new Date());
+        orderMapper.insertOrder(order); // payment_status 落 'UNPAID'
+
+        for (MallOrderItem item : items)
+        {
+            item.setOrderId(order.getOrderId());
+        }
+        orderItemMapper.insertOrderItemBatch(items);
+
+        orderMapper.updateAggregateInfo(order.getOrderId(), outOrderNo, subsidy);
+        order.setMerchantOutTradeNo(outOrderNo);
+        order.setSubsidy(subsidy);
+
+        // 扣积分（deduct 不强制整百；不足只会扣到 0，这里已按余额上限拆分）
+        if (pointsUsed > 0)
+        {
+            pointsService.deduct(memberId, pointsUsed, orderNo);
+        }
+
+        // 未支付：待支付单，不置已付、不进配送
+        if (!paid)
+        {
+            order.setPaymentStatus("UNPAID");
+            return order;
+        }
+
+        // 已支付：置 PAID + 回填支付时间 + 实付
+        MallOrder pay = new MallOrder();
+        pay.setOrderId(order.getOrderId());
+        pay.setPaymentStatus("PAID");
+        pay.setPaidAmount(paidAmount);
+        pay.setPaymentTime(payTime);
+        pay.setStatus("1");
+        pay.setUpdateTime(payTime);
+        orderMapper.updateOrder(pay);
+        order.setPaymentStatus("PAID");
+        order.setPaidAmount(paidAmount);
+        order.setPaymentTime(payTime);
+
+        // 模拟配送闭环
+        simulateImportDelivery(order, payTime);
+        return order;
+    }
+
+    /** 从跑腿员池随机指派骑手接单 → 配送中；到达=payTime+随机[min,max]h；到达已过则当场完成 */
+    private void simulateImportDelivery(MallOrder order, Date payTime)
+    {
+        List<MallRunnerApplication> pool = runnerAppMapper.selectOnlineApprovedRunners();
+        if (pool == null || pool.isEmpty())
+        {
+            log.warn("[Import] 跑腿员池为空，跳过配送模拟 orderNo={}", order.getOrderNo());
+            return; // 留在 status=1（已支付/已确认）
+        }
+        MallRunnerApplication runner = pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+
+        int minH = Math.max(0, arriveMinHours);
+        int maxH = Math.max(minH, arriveMaxHours);
+        long spanMin = (long) (maxH - minH) * 60;
+        long extraMin = spanMin > 0 ? ThreadLocalRandom.current().nextLong(0, spanMin + 1) : 0;
+        long deltaMs = ((long) minH * 60 + extraMin) * 60_000L;
+        Date arrival = new Date(payTime.getTime() + deltaMs);
+
+        boolean completeNow = !arrival.after(new Date());
+        String status = completeNow ? "3" : "2";
+        Date updTime = completeNow ? arrival : new Date();
+
+        orderMapper.assignImportRunner(order.getOrderId(), runner.getMemberId(),
+                payTime, arrival, status, updTime);
+        order.setRunnerMemberId(runner.getMemberId());
+        order.setRunnerAcceptedTime(payTime);
+        order.setArrivalTime(arrival);
+        order.setStatus(status);
+    }
+
+    @Override
+    @Transactional
+    public int advanceArrivedImports(int limit)
+    {
+        List<Long> ids = orderMapper.selectArrivedImports(limit);
+        int done = 0;
+        for (Long id : ids)
+        {
+            if (orderMapper.completeArrived(id) > 0) done++;
+        }
+        if (!ids.isEmpty())
+        {
+            log.info("[Import] 配送到点完成：扫描 {} 单，完成 {} 单", ids.size(), done);
+        }
+        return done;
     }
 
     @Override

@@ -32,6 +32,12 @@ public interface IMallCouponService
     /** 在 createOrder 事务内调用：标记券为已使用 */
     void markUsed(Long memberCouponId, Long memberId, String orderNo);
 
+    /**
+     * 外部导入单补差专用：按精确面额取/建一张 amount_off「补差券」模板，
+     * 发放给会员并立即核销到该订单。返回生成的会员券实例 ID（amount<=0 返回 null）。
+     */
+    Long issueAndUseAdjustmentCoupon(Long memberId, BigDecimal amount, String orderNo);
+
     // ── 管理后台 ──────────────────────────────────────────────────────────────
 
     /** 分页查询会员持券记录（含关联信息） */

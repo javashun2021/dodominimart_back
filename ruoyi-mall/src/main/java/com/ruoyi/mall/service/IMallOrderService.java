@@ -54,6 +54,20 @@ public interface IMallOrderService
     /** 撮合订单作废（上游下单失败时）：回补库存 + 置已取消 */
     void cancelAggregateOrder(String orderNo, String reason);
 
+    // ── 外部订单导入 ──
+    /**
+     * 外部已支付订单导入（事务）：按 items 从商品库快照建单(扣库存) → 差价(N−付款价)用积分尽量扣+补差券补齐
+     * → 记 subsidy=平台补助 → 传了 payTime 则置 PAID(实付=付款价−补助) 并模拟配送闭环(随机指派骑手→配送中→到达=payTime+10~30h→到点完成)。
+     * @param payAmount   付款价 P（名义额 N 已由 items 保证 ≥ P）
+     * @param floatAmount 平台补助 F（[0,1)，最终实付 = P − F）
+     */
+    MallOrder createExternalPaidOrder(Long memberId, List<MallOrderItem> items,
+                                      String outOrderNo, java.util.Date createTime, java.util.Date payTime,
+                                      BigDecimal payAmount, BigDecimal floatAmount);
+
+    /** 定时任务：把到达时间已过、仍处于配送中的导入单推进为已完成，返回完成条数 */
+    int advanceArrivedImports(int limit);
+
     /**
      * 后台整单退款：线上(PayMongo)走 API 真退、现金单(COD/到店)仅标记；
      * 同时回滚库存 + 退还下单时抵扣的积分，并置订单为已退款/已取消。

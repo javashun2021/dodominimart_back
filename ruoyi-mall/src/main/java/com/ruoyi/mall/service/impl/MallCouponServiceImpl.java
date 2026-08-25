@@ -124,6 +124,48 @@ public class MallCouponServiceImpl implements IMallCouponService
         memberCouponMapper.markUsed(memberCouponId, orderNo, new Date());
     }
 
+    @Override
+    @Transactional
+    public Long issueAndUseAdjustmentCoupon(Long memberId, BigDecimal amount, String orderNo)
+    {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+        {
+            return null;
+        }
+        BigDecimal amt = amount.setScale(2, RoundingMode.HALF_UP);
+        MallCoupon tpl = getOrCreateAmountOffTemplate(amt);
+        MallMemberCoupon mc = new MallMemberCoupon();
+        mc.setCouponId(tpl.getCouponId());
+        mc.setMemberId(memberId);
+        mc.setStatus(0);
+        mc.setExpiresAt(addDays(new Date(), tpl.getValidDays() > 0 ? tpl.getValidDays() : 1));
+        memberCouponMapper.insertMemberCoupon(mc);
+        memberCouponMapper.markUsed(mc.getId(), orderNo, new Date());
+        return mc.getId();
+    }
+
+    /** 取/建一张精确面额的 amount_off 补差券模板（min_order_amount=0，有效期1天） */
+    private MallCoupon getOrCreateAmountOffTemplate(BigDecimal amount)
+    {
+        MallCoupon tpl = couponMapper.selectAmountOffTemplate(amount);
+        if (tpl != null && tpl.getStatus() == 0)
+        {
+            return tpl;
+        }
+        tpl = new MallCoupon();
+        tpl.setName("补差券¥" + amount.toPlainString());
+        tpl.setType("amount_off");
+        tpl.setDiscountAmount(amount);
+        tpl.setDiscountPercent(0);
+        tpl.setMaxDiscountAmount(null);
+        tpl.setMinOrderAmount(BigDecimal.ZERO);
+        tpl.setValidDays(1);
+        tpl.setIsFirstOrderOnly(0);
+        tpl.setStatus(0);
+        couponMapper.insertCoupon(tpl);
+        return tpl;
+    }
+
     // ── 管理后台 ──────────────────────────────────────────────────────────────
 
     @Override

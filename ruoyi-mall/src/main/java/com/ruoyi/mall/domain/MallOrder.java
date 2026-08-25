@@ -83,12 +83,17 @@ public class MallOrder implements Serializable
     private String merchantOutTradeNo;
     /** 聚合支付：平台补贴（名义额 - 实付MOSS额） */
     private BigDecimal subsidy;
+    /** 外部导入单：预计/实际送达时间（跑腿模拟到达；到点由定时任务置完成） */
+    private Date arrivalTime;
 
     public String getMerchantOutTradeNo() { return merchantOutTradeNo; }
     public void setMerchantOutTradeNo(String merchantOutTradeNo) { this.merchantOutTradeNo = merchantOutTradeNo; }
 
     public BigDecimal getSubsidy() { return subsidy; }
     public void setSubsidy(BigDecimal subsidy) { this.subsidy = subsidy; }
+
+    public Date getArrivalTime() { return arrivalTime; }
+    public void setArrivalTime(Date arrivalTime) { this.arrivalTime = arrivalTime; }
 
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }

@@ -82,4 +82,75 @@ public final class AmountComposer
         }
         return picks;
     }
+
+    /**
+     * 撮合出「合计 ≥ 目标、且超出最小」的商品组合（用于单品凑不到目标时的兜底）。
+     * 同商品可重复(数量>1)，最多 maxItems 件。
+     *
+     * @param priceByProduct 候选商品 productId -> 单价(分)
+     * @param targetCents    目标金额(分)，命中结果合计 ≥ 该值
+     * @param maxItems       最多件数（含数量）
+     * @return 命中返回 [productId,数量] 列表；凑不出(超护栏/超件数)返回 null
+     */
+    public static List<Pick> composeAtLeast(Map<Long, Integer> priceByProduct, long targetCents, int maxItems)
+    {
+        if (targetCents <= 0 || targetCents > MAX_TARGET_CENTS || maxItems <= 0) return null;
+        if (priceByProduct == null || priceByProduct.isEmpty()) return null;
+
+        int T = (int) targetCents;
+
+        Map<Integer, Long> priceToProduct = new LinkedHashMap<>();
+        int maxPrice = 0;
+        for (Map.Entry<Long, Integer> e : priceByProduct.entrySet())
+        {
+            Integer c = e.getValue();
+            if (c != null && c > 0)
+            {
+                priceToProduct.putIfAbsent(c, e.getKey());
+                if (c > maxPrice) maxPrice = c;
+            }
+        }
+        if (priceToProduct.isEmpty()) return null;
+
+        // 至多超出一个最贵单品的价 → 搜索区间 [T, T+maxPrice]
+        int CAP = T + maxPrice;
+        final int INF = Integer.MAX_VALUE;
+        int[] dp = new int[CAP + 1];
+        int[] from = new int[CAP + 1];
+        Arrays.fill(dp, INF);
+        dp[0] = 0;
+        for (int a = 1; a <= CAP; a++)
+        {
+            for (Integer c : priceToProduct.keySet())
+            {
+                if (c <= a && dp[a - c] != INF && dp[a - c] + 1 < dp[a])
+                {
+                    dp[a] = dp[a - c] + 1;
+                    from[a] = c;
+                }
+            }
+        }
+        // 取 ≥T 且件数≤maxItems 的最小合计（超出最小）
+        int best = -1;
+        for (int a = T; a <= CAP; a++)
+        {
+            if (dp[a] != INF && dp[a] <= maxItems) { best = a; break; }
+        }
+        if (best < 0) return null;
+
+        Map<Integer, Integer> countByPrice = new HashMap<>();
+        int a = best;
+        while (a > 0)
+        {
+            int c = from[a];
+            countByPrice.merge(c, 1, Integer::sum);
+            a -= c;
+        }
+        List<Pick> picks = new ArrayList<>();
+        for (Map.Entry<Integer, Integer> e : countByPrice.entrySet())
+        {
+            picks.add(new Pick(priceToProduct.get(e.getKey()), e.getValue()));
+        }
+        return picks;
+    }
 }

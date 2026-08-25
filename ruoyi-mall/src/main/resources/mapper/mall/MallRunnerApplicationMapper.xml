@@ -82,4 +82,12 @@
         update mall_runner_application set store_id = #{storeId} where app_id = #{appId}
     </update>
 
+    <select id="selectOnlineApprovedRunners" resultMap="AppResult">
+        select a.*, m.nick_name, m.avatar_url, s.name as store_name
+        from mall_runner_application a
+        left join mall_member m on m.member_id = a.member_id
+        left join mall_store s on s.store_id = a.store_id
+        where a.status = '1' and a.is_online = '1'
+    </select>
+
 </mapper>

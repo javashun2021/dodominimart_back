@@ -21,4 +21,7 @@ public interface MallRunnerApplicationMapper
     /** 指派/更新骑手归属门店 */
     int updateStore(@org.apache.ibatis.annotations.Param("appId") Long appId,
                     @org.apache.ibatis.annotations.Param("storeId") Long storeId);
+
+    /** 审核通过(status=1)且在线(is_online=1)的骑手（供外部导入单随机指派） */
+    List<MallRunnerApplication> selectOnlineApprovedRunners();
 }

@@ -21,6 +21,9 @@ public interface MallMemberMapper
     /** 按手机号查会员（POS 收银台关联会员用，取最早一个） */
     MallMember selectMemberByPhone(String phone);
 
+    /** 按外部会员标识查会员（外部订单导入 find-or-create 用） */
+    MallMember selectMemberByExternalId(String externalId);
+
     int insertMember(MallMember member);
 
     int updateMember(MallMember member);
