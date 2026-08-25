@@ -89,9 +89,11 @@ FROM mall_member m WHERE m.email = 'sys_runner5@sys.local'
   AND NOT EXISTS (SELECT 1 FROM mall_runner_application a WHERE a.member_id = m.member_id);
 
 -- 3) sys_job：配送到点完成 ----------------------------------------------------
+-- 注意：本分支 ScheduleJob 用 job_name 作为 Spring bean 名（见示例任务 job_name='ryTask'），
+--       故 job_name 必须 = bean 名 'orderDeliveryTask'，job_group 仅作显示分组。
 INSERT INTO sys_job (job_id, job_name, job_group, method_name, method_params,
     cron_expression, misfire_policy, status, create_by, create_time, remark)
-SELECT 101, '导入单配送到点完成', 'orderDeliveryTask', 'advanceArrived', '',
+SELECT 101, 'orderDeliveryTask', '订单导入-配送到点', 'advanceArrived', '',
     '0 0/5 * * * ?', '3', '0', 'admin', NOW(), '扫描到达时间已过、仍配送中的外部导入单并置为已完成'
 FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM sys_job WHERE job_group = 'orderDeliveryTask' AND method_name = 'advanceArrived');
+WHERE NOT EXISTS (SELECT 1 FROM sys_job WHERE job_name = 'orderDeliveryTask' AND method_name = 'advanceArrived');

@@ -138,7 +138,7 @@
             html += '</div>';
             html += '<div class="text-right">';
             html += '<div style="font-size:12px;color:#888;">' + runner.orders.length + ' orders · Pending total</div>';
-            html += '<div class="total-fee">₱' + parseFloat(runner.totalFee).toFixed(2) + '</div>';
+            html += '<div class="total-fee">¥' + parseFloat(runner.totalFee).toFixed(2) + '</div>';
             html += '</div>';
             html += '</div>';
 
@@ -156,7 +156,7 @@
                 html += '<td class="cb-col"><input type="checkbox" class="order-cb" value="' + order.orderId + '" data-runner="' + runner.runnerMemberId + '" onchange="updateCount()"/></td>';
                 html += '<td style="color:#999;">' + (j + 1) + '</td>';
                 html += '<td><span class="text-navy">' + escHtml(order.orderNo) + '</span></td>';
-                html += '<td style="text-align:right;font-weight:600;">₱' + parseFloat(order.deliveryFee).toFixed(2) + '</td>';
+                html += '<td style="text-align:right;font-weight:600;">¥' + parseFloat(order.deliveryFee).toFixed(2) + '</td>';
                 html += '</tr>';
             });
             html += '</tbody></table>';

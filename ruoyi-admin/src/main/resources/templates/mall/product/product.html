@@ -79,7 +79,7 @@
                     return v ? '<img src="' + v + '" height="40" style="border-radius:4px">' : '-';
                 }},
                 {field: 'name',      title: 'Product Name'},
-                {field: 'price',     title: 'Price (PHP)', formatter: function(v) { return '₱' + v; }},
+                {field: 'price',     title: 'Price (元)', formatter: function(v) { return '¥' + v; }},
                 {field: 'stock',     title: 'Stock'},
                 {field: 'status',    title: 'Status', align: 'center',
                     formatter: function(v) {

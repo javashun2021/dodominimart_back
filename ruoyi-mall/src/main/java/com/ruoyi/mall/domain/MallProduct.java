@@ -27,7 +27,7 @@ public class MallProduct extends BaseEntity
 
     private String description;
 
-    @Excel(name = "售价(PHP)")
+    @Excel(name = "售价(元)")
     private BigDecimal price;
 
     @Excel(name = "库存")

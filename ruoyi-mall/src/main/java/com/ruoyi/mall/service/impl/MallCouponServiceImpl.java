@@ -89,7 +89,7 @@ public class MallCouponServiceImpl implements IMallCouponService
         if (subtotal.compareTo(minOrder) < 0)
         {
             return CouponDiscountResult.error(
-                    "Minimum order amount ₱" + minOrder.toPlainString() + " required");
+                    "Minimum order amount ¥" + minOrder.toPlainString() + " required");
         }
 
         String type = mc.getType();

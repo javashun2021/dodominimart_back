@@ -19,7 +19,7 @@
                     <div class="col-sm-6">
                         <p><strong>Order No：</strong><span th:text="${order.orderNo}"></span></p>
                         <p><strong>Order Time：</strong><span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
-                        <p><strong>Total Amount：</strong>₱<span th:text="${order.totalAmount}"></span></p>
+                        <p><strong>Total Amount：</strong>¥<span th:text="${order.totalAmount}"></span></p>
                         <p>
                             <strong>Payment：</strong>
                             <span th:text="${order.paymentMethod ?: 'COD'}"></span>
@@ -64,10 +64,10 @@
                         <tr>
                             <th>Image</th>
                             <th>Product Name</th>
-                            <th>Original (PHP)</th>
-                            <th>Paid (PHP)</th>
+                            <th>Original (元)</th>
+                            <th>Paid (元)</th>
                             <th>Qty</th>
-                            <th>Subtotal (PHP)</th>
+                            <th>Subtotal (元)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,18 +86,18 @@
                             <td>
                                 <span th:if="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}"
                                       style="color:#999;text-decoration:line-through"
-                                      th:text="'₱' + ${item.originalPrice}"></span>
+                                      th:text="'¥' + ${item.originalPrice}"></span>
                                 <span th:unless="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}">-</span>
                             </td>
-                            <td th:text="'₱' + ${item.price}"></td>
+                            <td th:text="'¥' + ${item.price}"></td>
                             <td th:text="${item.quantity}"></td>
-                            <td th:text="'₱' + ${item.subtotal}"></td>
+                            <td th:text="'¥' + ${item.subtotal}"></td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
                             <td colspan="5" class="text-right">Items Subtotal</td>
-                            <td>₱<span th:text="${#aggregates.sum(order.items.![subtotal])}"></span></td>
+                            <td>¥<span th:text="${#aggregates.sum(order.items.![subtotal])}"></span></td>
                         </tr>
                         <tr th:if="${order.memberCouponId != null}" style="color:#1ab394">
                             <td colspan="5" class="text-right">
@@ -106,18 +106,18 @@
                             </td>
                             <td th:with="isFree=${couponType == 'free_delivery' or (couponType == null and (order.couponDiscount == null or order.couponDiscount.signum() == 0))}">
                                 <span th:if="${isFree}">Free Delivery</span>
-                                <span th:unless="${isFree}">−₱<span th:text="${order.couponDiscount}"></span></span>
+                                <span th:unless="${isFree}">−¥<span th:text="${order.couponDiscount}"></span></span>
                             </td>
                         </tr>
                         <tr th:if="${order.pointsUsed > 0}" style="color:#1ab394">
                             <td colspan="5" class="text-right">
                                 Points Used (<span th:text="${order.pointsUsed}"></span> pts)
                             </td>
-                            <td>−₱<span th:text="${order.pointsUsed / 10}"></span></td>
+                            <td>−¥<span th:text="${order.pointsUsed / 10}"></span></td>
                         </tr>
                         <tr>
                             <td colspan="5" class="text-right"><strong>Total Payable</strong></td>
-                            <td><strong>₱<span th:text="${order.totalAmount}"></span></strong></td>
+                            <td><strong>¥<span th:text="${order.totalAmount}"></span></strong></td>
                         </tr>
                     </tfoot>
                 </table>

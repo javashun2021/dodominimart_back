@@ -60,8 +60,8 @@
                         return '<b>' + v + '</b> / ' + row.minGroupSize;
                     }
                 },
-                {field: 'currentPrice',  title: 'Current Price (PHP)', align: 'right',
-                    formatter: function(v) { return v ? '₱' + v : '-'; }
+                {field: 'currentPrice',  title: 'Current Price (元)', align: 'right',
+                    formatter: function(v) { return v ? '¥' + v : '-'; }
                 },
                 {field: 'status',        title: 'Status', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }

@@ -186,7 +186,7 @@ public class ApiOrderController extends BaseApiController
                 telegramNotifyService.notify("🛒 New Order " + order.getOrderNo()
                         + "\nStore: " + storeName
                         + "\nCustomer: " + name
-                        + "\nAmount: ₱" + order.getTotalAmount()
+                        + "\nAmount: ¥" + order.getTotalAmount()
                         + "\nPayment: " + paymentMethod);
             }
             catch (Exception ignored) {}

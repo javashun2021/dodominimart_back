@@ -50,11 +50,11 @@
                     return map[v] || v;
                 }},
                 {field: 'discountAmount', title: 'Amount Off', width: 100, formatter: function(v, row) {
-                    if (row.type === 'amount_off') return '₱' + v;
-                    if (row.type === 'percent_off') return row.discountPercent + '%' + (row.maxDiscountAmount ? ' (max ₱' + row.maxDiscountAmount + ')' : '');
+                    if (row.type === 'amount_off') return '¥' + v;
+                    if (row.type === 'percent_off') return row.discountPercent + '%' + (row.maxDiscountAmount ? ' (max ¥' + row.maxDiscountAmount + ')' : '');
                     return '—';
                 }},
-                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '₱' + v : 'None'; }},
+                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '¥' + v : 'None'; }},
                 {field: 'validDays',      title: 'Valid Days', width: 80},
                 {field: 'isFirstOrderOnly', title: 'First Order?', width: 100, formatter: function(v) {
                     return v === 1 ? '<span class="badge badge-warning">Yes</span>' : 'No';

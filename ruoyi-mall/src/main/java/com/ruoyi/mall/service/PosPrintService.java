@@ -26,7 +26,7 @@ public class PosPrintService
 {
     private static final Logger log = LoggerFactory.getLogger(PosPrintService.class);
 
-    // 80mm 热敏纸常见 42 字符宽（Font A）。金额统一用 "P" 前缀规避 ₱ 编码坑。
+    // 80mm 热敏纸常见 42 字符宽（Font A）。金额用全角 "￥" 前缀（GBK 可编码，半角 ¥ 在 GBK 会变 ?）。
     private static final int LINE_WIDTH = 42;
 
     /** 打印参数（由 admin 层从 sys_config 组装传入） */
@@ -109,8 +109,8 @@ public class PosPrintService
                 for (MallOrderItem it : order.getItems())
                 {
                     writeLine(b, nz(it.getProductName()));
-                    String left  = "  " + it.getQuantity() + " x P" + money(it.getPrice());
-                    String right = "P" + money(it.getSubtotal());
+                    String left  = "  " + it.getQuantity() + " x ￥" + money(it.getPrice());
+                    String right = "￥" + money(it.getSubtotal());
                     writeLine(b, pad(left, right));
                 }
             }
@@ -120,22 +120,22 @@ public class PosPrintService
             if (order.getPointsUsed() > 0)
             {
                 writeLine(b, pad("Points Used (" + order.getPointsUsed() + ")",
-                        "-P" + money(BigDecimal.valueOf(order.getPointsUsed() / 10L))));
+                        "-￥" + money(BigDecimal.valueOf(order.getPointsUsed() / 10L))));
             }
             if (order.getCouponDiscount() != null && order.getCouponDiscount().signum() > 0)
             {
-                writeLine(b, pad("Coupon", "-P" + money(order.getCouponDiscount())));
+                writeLine(b, pad("Coupon", "-￥" + money(order.getCouponDiscount())));
             }
             b.write(new byte[]{0x1B, 0x45, 0x01});    // ESC E 1 加粗
-            writeLine(b, pad("TOTAL", "P" + money(order.getTotalAmount())));
+            writeLine(b, pad("TOTAL", "￥" + money(order.getTotalAmount())));
             b.write(new byte[]{0x1B, 0x45, 0x00});    // 取消加粗
             if (order.getCashReceived() != null)
             {
-                writeLine(b, pad("Cash", "P" + money(order.getCashReceived())));
+                writeLine(b, pad("Cash", "￥" + money(order.getCashReceived())));
             }
             if (order.getChangeDue() != null)
             {
-                writeLine(b, pad("Change", "P" + money(order.getChangeDue())));
+                writeLine(b, pad("Change", "￥" + money(order.getChangeDue())));
             }
             writeLine(b, line('-'));
 
@@ -177,13 +177,13 @@ public class PosPrintService
             for (MallOrderItem it : order.getItems())
             {
                 sb.append(nz(it.getProductName())).append('\n');
-                sb.append(pad("  " + it.getQuantity() + " x P" + money(it.getPrice()),
-                        "P" + money(it.getSubtotal()))).append('\n');
+                sb.append(pad("  " + it.getQuantity() + " x ￥" + money(it.getPrice()),
+                        "￥" + money(it.getSubtotal()))).append('\n');
             }
         }
-        sb.append(pad("TOTAL", "P" + money(order.getTotalAmount()))).append('\n');
-        if (order.getCashReceived() != null) sb.append(pad("Cash", "P" + money(order.getCashReceived()))).append('\n');
-        if (order.getChangeDue() != null)    sb.append(pad("Change", "P" + money(order.getChangeDue()))).append('\n');
+        sb.append(pad("TOTAL", "￥" + money(order.getTotalAmount()))).append('\n');
+        if (order.getCashReceived() != null) sb.append(pad("Cash", "￥" + money(order.getCashReceived()))).append('\n');
+        if (order.getChangeDue() != null)    sb.append(pad("Change", "￥" + money(order.getChangeDue()))).append('\n');
         return sb.toString();
     }
 

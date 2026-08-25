@@ -54,7 +54,7 @@
             </div>
             <div class="modal-body">
                 <table class="table table-bordered info-table">
-                    <tr><th>Order No</th><td id="rv-orderNo"></td><th style="width:90px;">Amount</th><td>₱<span id="rv-amount"></span></td></tr>
+                    <tr><th>Order No</th><td id="rv-orderNo"></td><th style="width:90px;">Amount</th><td>¥<span id="rv-amount"></span></td></tr>
                     <tr><th>Customer</th><td id="rv-member"></td><th>Applied At</th><td id="rv-createTime"></td></tr>
                     <tr><th>Reason</th><td colspan="3" id="rv-reason"></td></tr>
                 </table>
@@ -113,7 +113,7 @@
                 {field: 'requestId',  title: 'ID', width: 60},
                 {field: 'orderNo',    title: 'Order No'},
                 {field: 'memberNick', title: 'Customer', formatter: function(v) { return v || '-'; }},
-                {field: 'amount',     title: 'Amount', formatter: function(v) { return v != null ? '₱' + v : '-'; }},
+                {field: 'amount',     title: 'Amount', formatter: function(v) { return v != null ? '¥' + v : '-'; }},
                 {field: 'reason',     title: 'Reason', formatter: function(v) {
                     return '<div class="reason-cell" title="' + (v ? $('<div>').text(v).html() : '') + '">' + (v || '-') + '</div>';
                 }},

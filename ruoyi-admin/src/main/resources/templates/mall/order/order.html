@@ -68,7 +68,7 @@
             columns: [
                 {checkbox: true},
                 {field: 'orderNo',      title: 'Order No'},
-                {field: 'totalAmount',  title: 'Amount (PHP)', formatter: function(v) { return '₱' + v; }},
+                {field: 'totalAmount',  title: 'Amount (元)', formatter: function(v) { return '¥' + v; }},
                 {field: 'orderSource',  title: 'Type', align: 'center',
                     formatter: function(v) { return sourceMap[v] || v; }
                 },

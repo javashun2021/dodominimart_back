@@ -79,11 +79,11 @@
                 }},
                 {field: 'discountAmount', title: 'Value', width: 100, formatter: function(v, row) {
                     if (row.type === 'free_delivery') return '<i class="fa fa-truck"></i> Free';
-                    if (row.type === 'amount_off')    return '₱' + (v || 0);
+                    if (row.type === 'amount_off')    return '¥' + (v || 0);
                     if (row.type === 'percent_off')   return row.discountPercent + '%';
                     return '—';
                 }},
-                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '₱' + v : 'None'; }},
+                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '¥' + v : 'None'; }},
                 {field: 'status',     title: 'Status',    width: 90, formatter: function(v) {
                     var map = {0: '<span class="badge badge-primary">Unused</span>',
                                1: '<span class="badge badge-success">Used</span>',
