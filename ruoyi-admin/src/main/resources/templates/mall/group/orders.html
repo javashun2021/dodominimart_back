@@ -52,23 +52,23 @@
             modalName: "Group Order",
             columns: [
                 {checkbox: true},
-                {field: 'inviteCode',    title: 'Invite Code'},
-                {field: 'activityTitle', title: 'Activity Name'},
-                {field: 'productName',   title: 'Product'},
-                {field: 'currentSize',   title: 'Current Size', align: 'center',
+                {field: 'inviteCode',    title: '邀请码'},
+                {field: 'activityTitle', title: '活动名称'},
+                {field: 'productName',   title: '商品'},
+                {field: 'currentSize',   title: '当前人数', align: 'center',
                     formatter: function(v, row) {
                         return '<b>' + v + '</b> / ' + row.minGroupSize;
                     }
                 },
-                {field: 'currentPrice',  title: 'Current Price (元)', align: 'right',
-                    formatter: function(v) { return v ? '¥' + v : '-'; }
+                {field: 'currentPrice',  title: '当前价', align: 'right',
+                    formatter: function(v) { return v ? v + ' 元' : '-'; }
                 },
-                {field: 'status',        title: 'Status', align: 'center',
+                {field: 'status',        title: '状态', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }
                 },
-                {field: 'expireTime',    title: 'Expires At'},
-                {field: 'createTime',    title: 'Created At'},
-                {title: 'Action', align: 'center',
+                {field: 'expireTime',    title: '过期时间'},
+                {field: 'createTime',    title: '创建时间'},
+                {title: '操作', align: 'center',
                     formatter: function(v, row) {
                         return '<a class="btn btn-info btn-xs" href="' + prefix + '/orders/' + row.groupOrderId + '/members"><i class="fa fa-users"></i> View Members</a>';
                     }

@@ -67,20 +67,20 @@
             modalName: "Order",
             columns: [
                 {checkbox: true},
-                {field: 'orderNo',      title: 'Order No'},
-                {field: 'totalAmount',  title: 'Amount (元)', formatter: function(v) { return '¥' + v; }},
-                {field: 'orderSource',  title: 'Type', align: 'center',
+                {field: 'orderNo',      title: '订单号'},
+                {field: 'totalAmount',  title: '金额', formatter: function(v) { return v + ' 元'; }},
+                {field: 'orderSource',  title: '类型', align: 'center',
                     formatter: function(v) { return sourceMap[v] || v; }
                 },
-                {field: 'paymentMethod', title: 'Payment', align: 'center',
+                {field: 'paymentMethod', title: '支付方式', align: 'center',
                     formatter: function(v) { return payMap[v] || v; }
                 },
-                {field: 'status',       title: 'Status', align: 'center',
+                {field: 'status',       title: '状态', align: 'center',
                     formatter: function(v) { return statusMap[v] || v; }
                 },
-                {field: 'remark',       title: 'Remark'},
-                {field: 'createTime',   title: 'Order Time', sortable: true},
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {field: 'remark',       title: '备注'},
+                {field: 'createTime',   title: '下单时间', sortable: true},
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-info btn-xs" href="' + prefix + '/detail/' + row.orderId + '"><i class="fa fa-eye"></i>Detail</a> ');
                     a.push('<a class="btn btn-default btn-xs" onclick="printReceipt(' + row.orderId + ')"><i class="fa fa-print"></i>Print</a> ');

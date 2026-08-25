@@ -74,22 +74,22 @@
             modalName: "Product",
             columns: [
                 {checkbox: true},
-                {field: 'productId', title: 'ID'},
-                {field: 'imageUrl',  title: 'Image', formatter: function(v) {
+                {field: 'productId', title: '编号'},
+                {field: 'imageUrl',  title: '图片', formatter: function(v) {
                     return v ? '<img src="' + v + '" height="40" style="border-radius:4px">' : '-';
                 }},
-                {field: 'name',      title: 'Product Name'},
-                {field: 'price',     title: 'Price (元)', formatter: function(v) { return '¥' + v; }},
-                {field: 'stock',     title: 'Stock'},
-                {field: 'status',    title: 'Status', align: 'center',
+                {field: 'name',      title: '商品名称'},
+                {field: 'price',     title: '价格', formatter: function(v) { return v + ' 元'; }},
+                {field: 'stock',     title: '库存'},
+                {field: 'status',    title: '状态', align: 'center',
                     formatter: function(v) {
                         return v === '0'
                             ? '<span class="badge badge-primary">Active</span>'
                             : '<span class="badge badge-default">Inactive</span>';
                     }
                 },
-                {field: 'createTime', title: 'Created At'},
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {field: 'createTime', title: '创建时间'},
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.productId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
                     a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.productId + '\')"><i class="fa fa-remove"></i>Delete</a>');

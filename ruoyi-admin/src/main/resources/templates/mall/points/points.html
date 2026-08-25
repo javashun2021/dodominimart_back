@@ -34,21 +34,21 @@
             showSearch: true,
             formId: "points-form",
             columns: [
-                {field: 'logId',        title: 'ID',     width: 80},
-                {field: 'memberId',     title: 'Member ID', width: 100},
-                {field: 'delta',        title: 'Points Change', width: 100, formatter: function(v) {
+                {field: 'logId',        title: '编号',     width: 80},
+                {field: 'memberId',     title: '会员ID', width: 100},
+                {field: 'delta',        title: '积分变动', width: 100, formatter: function(v) {
                     var color = v > 0 ? '#27ae60' : '#e74c3c';
                     var sign  = v > 0 ? '+' : '';
                     return '<b style="color:' + color + '">' + sign + v + '</b>';
                 }},
-                {field: 'balanceAfter', title: 'Balance After', width: 110},
-                {field: 'source',       title: 'Source', width: 120, formatter: function(v) {
+                {field: 'balanceAfter', title: '变动后余额', width: 110},
+                {field: 'source',       title: '来源', width: 120, formatter: function(v) {
                     var map = {1:'Order Complete', 2:'Review Reward', 3:'Welcome Gift', 4:'Points Redeemed', 5:'Referral Reward', 7:'Order Refund'};
                     return map[v] || v;
                 }},
-                {field: 'sourceId',     title: 'Reference ID'},
-                {field: 'remark',       title: 'Remark'},
-                {field: 'createTime',   title: 'Time'}
+                {field: 'sourceId',     title: '关联ID'},
+                {field: 'remark',       title: '备注'},
+                {field: 'createTime',   title: '时间'}
             ]
         });
     });

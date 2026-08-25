@@ -14,60 +14,60 @@
         <div class="col-sm-12">
 
             <div class="ibox-content detail-section">
-                <h4>Order Information</h4>
+                <h4>订单信息</h4>
                 <div class="row">
                     <div class="col-sm-6">
-                        <p><strong>Order No：</strong><span th:text="${order.orderNo}"></span></p>
-                        <p><strong>Order Time：</strong><span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
-                        <p><strong>Total Amount：</strong>¥<span th:text="${order.totalAmount}"></span></p>
+                        <p><strong>订单号：</strong><span th:text="${order.orderNo}"></span></p>
+                        <p><strong>下单时间：</strong><span th:text="${#dates.format(order.createTime,'yyyy-MM-dd HH:mm:ss')}"></span></p>
+                        <p><strong>订单金额：</strong><span th:text="${order.totalAmount}"></span> 元</p>
                         <p>
-                            <strong>Payment：</strong>
+                            <strong>支付方式：</strong>
                             <span th:text="${order.paymentMethod ?: 'COD'}"></span>
                             <span th:if="${order.paymentStatus != null and order.paymentStatus != ''}"
                                   th:text="'(' + ${order.paymentStatus} + ')'"></span>
                         </p>
-                        <p><strong>Member Note：</strong><span th:text="${order.remark ?: '-'}"></span></p>
+                        <p><strong>会员备注：</strong><span th:text="${order.remark ?: '-'}"></span></p>
                     </div>
                     <div class="col-sm-6">
                         <p>
-                            <strong>Status：</strong>
+                            <strong>状态：</strong>
                             <span th:switch="${order.status}">
-                                <span th:case="'0'" class="badge" style="background:#f0ad4e">Pending</span>
-                                <span th:case="'1'" class="badge badge-primary">Confirmed</span>
-                                <span th:case="'2'" class="badge" style="background:#5bc0de">Delivering</span>
-                                <span th:case="'3'" class="badge badge-success">Completed</span>
-                                <span th:case="'4'" class="badge badge-default">Cancelled</span>
+                                <span th:case="'0'" class="badge" style="background:#f0ad4e">待确认</span>
+                                <span th:case="'1'" class="badge badge-primary">已确认</span>
+                                <span th:case="'2'" class="badge" style="background:#5bc0de">配送中</span>
+                                <span th:case="'3'" class="badge badge-success">已完成</span>
+                                <span th:case="'4'" class="badge badge-default">已取消</span>
                             </span>
                         </p>
                         <p th:if="${order.cancelReason != null and order.cancelReason != ''}">
-                            <strong>Cancel Reason：</strong><span th:text="${order.cancelReason}"></span>
+                            <strong>取消原因：</strong><span th:text="${order.cancelReason}"></span>
                         </p>
                     </div>
                 </div>
             </div>
 
             <div class="ibox-content detail-section">
-                <h4>Delivery Address</h4>
+                <h4>收货地址</h4>
                 <div th:if="${addrFull != null and addrFull != ''}">
-                    <p th:if="${addrLabel != null and addrLabel != ''}"><strong>Receiver：</strong><span th:text="${addrLabel}"></span></p>
-                    <p th:if="${addrPhone != null and addrPhone != ''}"><strong>Phone：</strong><span th:text="${addrPhone}"></span></p>
-                    <p><strong>Address：</strong><span th:text="${addrFull}"></span></p>
+                    <p th:if="${addrLabel != null and addrLabel != ''}"><strong>收货人：</strong><span th:text="${addrLabel}"></span></p>
+                    <p th:if="${addrPhone != null and addrPhone != ''}"><strong>手机号：</strong><span th:text="${addrPhone}"></span></p>
+                    <p><strong>地址：</strong><span th:text="${addrFull}"></span></p>
                 </div>
                 <p th:unless="${addrFull != null and addrFull != ''}"
-                   th:text="${order.addressSnapshot != null and order.addressSnapshot != '' ? order.addressSnapshot : 'In-store pickup / No address'}"></p>
+                   th:text="${order.addressSnapshot != null and order.addressSnapshot != '' ? order.addressSnapshot : '到店自提 / 无地址'}"></p>
             </div>
 
             <div class="ibox-content detail-section">
-                <h4>Order Items</h4>
+                <h4>订单商品</h4>
                 <table class="table table-bordered items-table">
                     <thead>
                         <tr>
-                            <th>Image</th>
-                            <th>Product Name</th>
-                            <th>Original (元)</th>
-                            <th>Paid (元)</th>
-                            <th>Qty</th>
-                            <th>Subtotal (元)</th>
+                            <th>图片</th>
+                            <th>商品名称</th>
+                            <th>原价</th>
+                            <th>售价</th>
+                            <th>数量</th>
+                            <th>小计</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,58 +86,58 @@
                             <td>
                                 <span th:if="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}"
                                       style="color:#999;text-decoration:line-through"
-                                      th:text="'¥' + ${item.originalPrice}"></span>
+                                      th:text="${item.originalPrice} + ' 元'"></span>
                                 <span th:unless="${item.originalPrice != null and item.originalPrice.compareTo(item.price) > 0}">-</span>
                             </td>
-                            <td th:text="'¥' + ${item.price}"></td>
+                            <td th:text="${item.price} + ' 元'"></td>
                             <td th:text="${item.quantity}"></td>
-                            <td th:text="'¥' + ${item.subtotal}"></td>
+                            <td th:text="${item.subtotal} + ' 元'"></td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="5" class="text-right">Items Subtotal</td>
-                            <td>¥<span th:text="${#aggregates.sum(order.items.![subtotal])}"></span></td>
+                            <td colspan="5" class="text-right">商品小计</td>
+                            <td><span th:text="${#aggregates.sum(order.items.![subtotal])}"></span> 元</td>
                         </tr>
                         <tr th:if="${order.memberCouponId != null}" style="color:#1ab394">
                             <td colspan="5" class="text-right">
-                                Coupon<span th:if="${couponName != null and couponName != ''}"
+                                优惠券<span th:if="${couponName != null and couponName != ''}"
                                             th:text="' (' + ${couponName} + ')'"></span>
                             </td>
                             <td th:with="isFree=${couponType == 'free_delivery' or (couponType == null and (order.couponDiscount == null or order.couponDiscount.signum() == 0))}">
-                                <span th:if="${isFree}">Free Delivery</span>
-                                <span th:unless="${isFree}">−¥<span th:text="${order.couponDiscount}"></span></span>
+                                <span th:if="${isFree}">免运费</span>
+                                <span th:unless="${isFree}">−<span th:text="${order.couponDiscount}"></span> 元</span>
                             </td>
                         </tr>
                         <tr th:if="${order.pointsUsed > 0}" style="color:#1ab394">
                             <td colspan="5" class="text-right">
-                                Points Used (<span th:text="${order.pointsUsed}"></span> pts)
+                                已用积分 (<span th:text="${order.pointsUsed}"></span> 分)
                             </td>
-                            <td>−¥<span th:text="${order.pointsUsed / 10}"></span></td>
+                            <td>−<span th:text="${order.pointsUsed / 10}"></span> 元</td>
                         </tr>
                         <tr>
-                            <td colspan="5" class="text-right"><strong>Total Payable</strong></td>
-                            <td><strong>¥<span th:text="${order.totalAmount}"></span></strong></td>
+                            <td colspan="5" class="text-right"><strong>应付金额</strong></td>
+                            <td><strong><span th:text="${order.totalAmount}"></span> 元</strong></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
             <div class="ibox-content">
-                <a class="btn btn-default" onclick="history.back()"><i class="fa fa-arrow-left"></i> Back to List</a>
-                <a class="btn btn-info" th:onclick="'printReceipt(' + ${order.orderId} + ')'"><i class="fa fa-print"></i> Print Receipt</a>
+                <a class="btn btn-default" onclick="history.back()"><i class="fa fa-arrow-left"></i> 返回列表</a>
+                <a class="btn btn-info" th:onclick="'printReceipt(' + ${order.orderId} + ')'"><i class="fa fa-print"></i> 打印小票</a>
                 <span th:if="${order.status == '0'}">
-                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'1\')'"><i class="fa fa-check"></i> Confirm Order</a>
-                    <a class="btn btn-danger"  th:onclick="'changeStatus(' + ${order.orderId} + ',\'4\')'"><i class="fa fa-ban"></i> Cancel Order</a>
+                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'1\')'"><i class="fa fa-check"></i> 确认订单</a>
+                    <a class="btn btn-danger"  th:onclick="'changeStatus(' + ${order.orderId} + ',\'4\')'"><i class="fa fa-ban"></i> 取消订单</a>
                 </span>
                 <span th:if="${order.status == '1'}">
-                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'2\')'"><i class="fa fa-truck"></i> Start Delivery</a>
+                    <a class="btn btn-primary" th:onclick="'changeStatus(' + ${order.orderId} + ',\'2\')'"><i class="fa fa-truck"></i> 开始配送</a>
                 </span>
                 <span th:if="${order.status == '2'}">
-                    <a class="btn btn-success" th:onclick="'changeStatus(' + ${order.orderId} + ',\'3\')'"><i class="fa fa-flag"></i> Mark Completed</a>
+                    <a class="btn btn-success" th:onclick="'changeStatus(' + ${order.orderId} + ',\'3\')'"><i class="fa fa-flag"></i> 标记完成</a>
                 </span>
                 <span th:if="${order.paymentStatus == 'PAID'}">
-                    <a class="btn btn-warning" th:onclick="'refundOrder(' + ${order.orderId} + ')'"><i class="fa fa-undo"></i> Refund</a>
+                    <a class="btn btn-warning" th:onclick="'refundOrder(' + ${order.orderId} + ')'"><i class="fa fa-undo"></i> 退款</a>
                 </span>
             </div>
 
@@ -154,15 +154,15 @@
     }
 
     function changeStatus(id, status) {
-        var msg = {1:'Confirm Order', 2:'Mark as Delivering', 3:'Mark as Completed', 4:'Cancel Order'}[status];
-        $.modal.confirm('Are you sure to [' + msg + ']?', function() {
+        var msg = {1:'确认订单', 2:'标记配送中', 3:'标记完成', 4:'取消订单'}[status];
+        $.modal.confirm('确定要执行[' + msg + ']吗?', function() {
             $.ajax({
                 url: prefix + '/changeStatus',
                 type: 'POST',
                 data: {orderId: id, status: status},
                 success: function(res) {
                     if (res.code === 0) {
-                        $.modal.alertSuccess('Operation successful');
+                        $.modal.alertSuccess('操作成功');
                         setTimeout(function() { location.reload(); }, 1200);
                     } else {
                         $.modal.alertWarning(res.msg);
@@ -173,8 +173,8 @@
     }
 
     function refundOrder(id) {
-        $.modal.confirm('Refund this order in full?<br>This refunds the customer (PayMongo / cash), restocks the items and returns any points used.', function() {
-            $.modal.loading('Processing refund, please wait...');
+        $.modal.confirm('确定整单退款?<br>将向顾客退款(PayMongo / 现金)、回补库存并退还本单已用积分。', function() {
+            $.modal.loading('正在处理退款,请稍候...');
             $.ajax({
                 url: prefix + '/refund',
                 type: 'POST',
@@ -182,7 +182,7 @@
                 success: function(res) {
                     $.modal.closeLoading();
                     if (res.code === 0) {
-                        $.modal.alertSuccess(res.msg || 'Refund successful');
+                        $.modal.alertSuccess(res.msg || '退款成功');
                         setTimeout(function() { location.reload(); }, 1500);
                     } else {
                         $.modal.alertError(res.msg);
@@ -190,7 +190,7 @@
                 },
                 error: function() {
                     $.modal.closeLoading();
-                    $.modal.alertError('Refund request failed. Please try again.');
+                    $.modal.alertError('退款请求失败,请重试。');
                 }
             });
         });

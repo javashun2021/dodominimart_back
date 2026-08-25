@@ -42,29 +42,29 @@
             modalName: "Member",
             columns: [
                 {checkbox: true},
-                {field: 'memberId',   title: 'Member ID'},
-                {field: 'avatarUrl',  title: 'Avatar', formatter: function(v) {
+                {field: 'memberId',   title: '会员ID'},
+                {field: 'avatarUrl',  title: '头像', formatter: function(v) {
                     return v ? '<img src="' + v + '" height="36" style="border-radius:50%">' : '<i class="fa fa-user-circle fa-2x text-muted"></i>';
                 }},
-                {field: 'nickName',   title: 'Nickname'},
-                {field: 'email',      title: 'Email'},
-                {field: 'phone',      title: 'Phone'},
-                {field: 'status',     title: 'Status', align: 'center',
+                {field: 'nickName',   title: '昵称'},
+                {field: 'email',      title: '邮箱'},
+                {field: 'phone',      title: '手机号'},
+                {field: 'status',     title: '状态', align: 'center',
                     formatter: function(v) {
                         return v === '0'
                             ? '<span class="badge badge-primary">Active</span>'
                             : '<span class="badge badge-danger">Disabled</span>';
                     }
                 },
-                {field: 'role',       title: 'Role', align: 'center',
+                {field: 'role',       title: '角色', align: 'center',
                     formatter: function(v) {
                         if (v === 'cashier') return '<span class="badge" style="background:#1ab394">Cashier</span>';
                         if (v === 'admin')   return '<span class="badge" style="background:#23c6c8">Admin</span>';
                         return '<span class="badge badge-default">Customer</span>';
                     }
                 },
-                {field: 'createTime', title: 'Registered At', sortable: true},
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {field: 'createTime', title: '注册时间', sortable: true},
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     if (row.role === 'cashier') {
                         return '<a class="btn btn-warning btn-xs ' + editFlag + '" onclick="setRole(\'' + row.memberId + '\',\'customer\')"><i class="fa fa-user"></i> Unset Cashier</a>';
                     }

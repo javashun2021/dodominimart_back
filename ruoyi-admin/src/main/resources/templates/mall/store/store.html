@@ -57,17 +57,17 @@
             sortName: "sort",
             columns: [
                 {checkbox: true},
-                {field: 'storeId',       title: 'ID'},
-                {field: 'name',          title: 'Store Name'},
-                {field: 'address',       title: 'Address'},
-                {field: 'phone',         title: 'Phone'},
-                {field: 'businessHours', title: 'Hours'},
-                {field: 'serviceRadiusKm', title: 'Radius(km)', align: 'center'},
-                {field: 'sort',          title: 'Sort', sortable: true},
-                {field: 'status',        title: 'Status', align: 'center',
+                {field: 'storeId',       title: '编号'},
+                {field: 'name',          title: '门店名称'},
+                {field: 'address',       title: '地址'},
+                {field: 'phone',         title: '手机号'},
+                {field: 'businessHours', title: '小时'},
+                {field: 'serviceRadiusKm', title: '半径(km)', align: 'center'},
+                {field: 'sort',          title: '排序', sortable: true},
+                {field: 'status',        title: '状态', align: 'center',
                     formatter: function(v) { return v === '0' ? '<span class="badge badge-primary">Open</span>' : '<span class="badge badge-default">Closed</span>'; }
                 },
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.storeId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
                     a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.storeId + '\')"><i class="fa fa-remove"></i>Delete</a>');

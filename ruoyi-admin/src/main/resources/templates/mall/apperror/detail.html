@@ -8,35 +8,35 @@
             <table class="table table-bordered" style="table-layout:fixed; word-break:break-word;">
                 <tbody>
                     <tr>
-                        <th style="width:120px;">ID</th>
+                        <th style="width:120px;">编号</th>
                         <td th:text="${log.id}"></td>
-                        <th style="width:120px;">Received</th>
+                        <th style="width:120px;">收到</th>
                         <td th:text="${log.createTime != null} ? ${#dates.format(log.createTime,'yyyy-MM-dd HH:mm:ss')} : '-'"></td>
                     </tr>
                     <tr>
-                        <th>Platform</th>
+                        <th>平台</th>
                         <td th:text="${log.platform}"></td>
-                        <th>App Version</th>
+                        <th>App版本</th>
                         <td th:text="${log.appVersion}"></td>
                     </tr>
                     <tr>
-                        <th>Type</th>
+                        <th>类型</th>
                         <td th:text="${log.type}"></td>
-                        <th>Member ID</th>
+                        <th>会员ID</th>
                         <td th:text="${log.memberId != null} ? ${log.memberId} : 'anonymous'"></td>
                     </tr>
                     <tr>
                         <th>IP</th>
                         <td th:text="${log.ip}"></td>
-                        <th>Client Time</th>
+                        <th>客户端时间</th>
                         <td th:text="${log.clientTime}"></td>
                     </tr>
                     <tr>
-                        <th>Context</th>
+                        <th>上下文</th>
                         <td colspan="3" th:text="${log.context}"></td>
                     </tr>
                     <tr>
-                        <th>Message</th>
+                        <th>信息</th>
                         <td colspan="3" style="white-space:pre-wrap;" th:text="${log.message}"></td>
                     </tr>
                 </tbody>

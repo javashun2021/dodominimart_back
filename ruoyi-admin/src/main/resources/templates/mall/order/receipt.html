@@ -108,10 +108,10 @@
     <table class="items">
         <thead>
             <tr>
-                <th>Item</th>
-                <th class="num">Price</th>
-                <th class="num">Qty</th>
-                <th class="num">Amount</th>
+                <th>商品</th>
+                <th class="num">价格</th>
+                <th class="num">数量</th>
+                <th class="num">金额</th>
             </tr>
         </thead>
         <tbody>
@@ -121,9 +121,9 @@
                     <span th:if="${item.spec != null and item.spec != ''}"
                           th:text="'(' + ${item.spec} + ')'"></span>
                 </td>
-                <td class="num" th:text="'¥' + ${item.price}"></td>
+                <td class="num" th:text="${item.price} + ' 元'"></td>
                 <td class="num" th:text="${item.quantity}"></td>
-                <td class="num" th:text="'¥' + ${item.subtotal}"></td>
+                <td class="num" th:text="${item.subtotal} + ' 元'"></td>
             </tr>
         </tbody>
     </table>
@@ -133,16 +133,16 @@
     <!-- Totals -->
     <div class="totals">
         <div class="row" th:if="${order.couponDiscount != null and order.couponDiscount.signum() > 0}">
-            <span>Coupon Discount</span><span th:text="'-¥' + ${order.couponDiscount}"></span>
+            <span>Coupon Discount</span><span th:text="'-' + ${order.couponDiscount} + ' 元'"></span>
         </div>
         <div class="row" th:if="${order.pointsUsed > 0}">
-            <span>Points Used</span><span th:text="'-¥' + ${order.pointsUsed}"></span>
+            <span>Points Used</span><span th:text="'-' + ${order.pointsUsed} + ' 元'"></span>
         </div>
         <div class="row" th:if="${order.deliveryFee != null and order.deliveryFee.signum() > 0}">
-            <span>Delivery Fee</span><span th:text="'¥' + ${order.deliveryFee}"></span>
+            <span>Delivery Fee</span><span th:text="${order.deliveryFee} + ' 元'"></span>
         </div>
         <div class="row grand">
-            <span>TOTAL</span><span th:text="'¥' + ${order.totalAmount}"></span>
+            <span>TOTAL</span><span th:text="${order.totalAmount} + ' 元'"></span>
         </div>
     </div>
 

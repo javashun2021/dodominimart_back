@@ -75,23 +75,23 @@
             uniqueId: "id",
             columns: [
                 {checkbox: true},
-                {field: 'id',          title: 'ID', width: 70, sortable: true},
-                {field: 'createTime',  title: 'Received', sortable: true, width: 150},
-                {field: 'platform',    title: 'Platform', width: 80},
-                {field: 'appVersion',  title: 'Version', width: 90},
-                {field: 'type',        title: 'Type', width: 80, formatter: function(v) {
+                {field: 'id',          title: '编号', width: 70, sortable: true},
+                {field: 'createTime',  title: '收到', sortable: true, width: 150},
+                {field: 'platform',    title: '平台', width: 80},
+                {field: 'appVersion',  title: '版本', width: 90},
+                {field: 'type',        title: '类型', width: 80, formatter: function(v) {
                     var map = {flutter:'label-danger', async:'label-warning', manual:'label-info'};
                     return '<span class="label ' + (map[v] || 'label-default') + '">' + (v || '-') + '</span>';
                 }},
-                {field: 'memberId',    title: 'Member', width: 80, formatter: function(v) { return v || '-'; }},
-                {field: 'message',     title: 'Message', formatter: function(v, row) {
+                {field: 'memberId',    title: '会员', width: 80, formatter: function(v) { return v || '-'; }},
+                {field: 'message',     title: '信息', formatter: function(v, row) {
                     if (!v) return '-';
                     var txt = v.length > 80 ? escHtml(v.substring(0, 80)) + '…' : escHtml(v);
                     return '<a href="javascript:void(0)" class="text-primary" title="Click to view full message" '
                          + 'onclick="showMessage(\'' + row.id + '\')">' + txt + '</a>';
                 }},
                 {field: 'ip',          title: 'IP', width: 110},
-                {title: 'Action', align: 'center', width: 140, formatter: function(v, row) {
+                {title: '操作', align: 'center', width: 140, formatter: function(v, row) {
                     var a = [];
                     if (detailFlag) a.push('<a class="btn btn-info btn-xs" onclick="showDetail(\'' + row.id + '\')"><i class="fa fa-search"></i>Detail</a> ');
                     if (removeFlag) a.push('<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.id + '\')"><i class="fa fa-remove"></i>Delete</a>');
@@ -117,7 +117,7 @@
                  + '</pre></div>';
         layer.open({
             type: 1,
-            title: 'Error Message #' + id,
+            title: '错误信息' + id,
             area: ['680px', '460px'],
             shadeClose: true,
             maxmin: true,

@@ -51,16 +51,16 @@
             modalName: "Flash Sale",
             columns: [
                 {checkbox: true},
-                {field: 'saleId',      title: 'ID'},
-                {field: 'productName', title: 'Product Name'},
-                {field: 'title',       title: 'Activity Name'},
-                {field: 'flashPrice',  title: 'Flash Price (元)'},
-                {field: 'stockLimit',  title: 'Stock Limit'},
-                {field: 'soldCount',   title: 'Sold'},
-                {field: 'perLimit',    title: 'Per Person Limit'},
-                {field: 'startTime',   title: 'Start Time'},
-                {field: 'endTime',     title: 'End Time'},
-                {field: 'status', title: 'Status', align: 'center',
+                {field: 'saleId',      title: '编号'},
+                {field: 'productName', title: '商品名称'},
+                {field: 'title',       title: '活动名称'},
+                {field: 'flashPrice',  title: '秒杀价'},
+                {field: 'stockLimit',  title: '库存上限'},
+                {field: 'soldCount',   title: '已售'},
+                {field: 'perLimit',    title: '每人限购'},
+                {field: 'startTime',   title: '开始时间'},
+                {field: 'endTime',     title: '结束时间'},
+                {field: 'status', title: '状态', align: 'center',
                     formatter: function(v) {
                         var map = {'0': '<span class="badge badge-default">Not Started</span>',
                                    '1': '<span class="badge badge-primary">Active</span>',
@@ -68,7 +68,7 @@
                         return map[v] || v;
                     }
                 },
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     if (row.status !== '2') {
                         a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.saleId + '\')"><i class="fa fa-edit"></i>Edit</a> ');

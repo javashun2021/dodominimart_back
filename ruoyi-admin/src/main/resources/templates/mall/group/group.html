@@ -53,21 +53,21 @@
             modalName: "Group Buy Activity",
             columns: [
                 {checkbox: true},
-                {field: 'activityId',    title: 'ID'},
-                {field: 'productName',   title: 'Product Name'},
-                {field: 'title',         title: 'Activity Name'},
-                {field: 'minGroupSize',  title: 'Min Group Size'},
-                {field: 'durationHours', title: 'Duration (h)'},
-                {field: 'startTime',     title: 'Start Time'},
-                {field: 'endTime',       title: 'End Time'},
-                {field: 'status', title: 'Status', align: 'center',
+                {field: 'activityId',    title: '编号'},
+                {field: 'productName',   title: '商品名称'},
+                {field: 'title',         title: '活动名称'},
+                {field: 'minGroupSize',  title: '最小成团人数'},
+                {field: 'durationHours', title: '时长(小时)'},
+                {field: 'startTime',     title: '开始时间'},
+                {field: 'endTime',       title: '结束时间'},
+                {field: 'status', title: '状态', align: 'center',
                     formatter: function(v) {
                         return v === '0'
                             ? '<span class="badge badge-primary">Active</span>'
                             : '<span class="badge badge-default">Ended</span>';
                     }
                 },
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     if (row.status === '0') {
                         a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.activityId + '\')"><i class="fa fa-edit"></i>Edit</a> ');

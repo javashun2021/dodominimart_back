@@ -45,11 +45,11 @@
             showSearch: true,
             formId: "payment-form",
             columns: [
-                {field: 'recordId',   title: 'ID',     width: 80},
+                {field: 'recordId',   title: '编号',     width: 80},
                 {field: 'orderId',    title: '订单ID', width: 100},
                 {field: 'memberId',   title: '会员ID', width: 100},
-                {field: 'amount',     title: '金额(¥)', width: 110, formatter: function(v) {
-                    return '¥' + parseFloat(v).toFixed(2);
+                {field: 'amount',     title: '金额', width: 110, formatter: function(v) {
+                    return parseFloat(v).toFixed(2) + ' 元';
                 }},
                 {field: 'paymentNo',  title: 'GCash 流水号'},
                 {field: 'status',     title: '状态', width: 90, formatter: function(v) {

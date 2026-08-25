@@ -43,29 +43,29 @@
             modalName: "Coupon",
             columns: [
                 {checkbox: true},
-                {field: 'couponId',       title: 'ID',      width: 60},
-                {field: 'name',           title: 'Name'},
-                {field: 'type',           title: 'Type',    width: 120, formatter: function(v) {
+                {field: 'couponId',       title: '编号',      width: 60},
+                {field: 'name',           title: '名称'},
+                {field: 'type',           title: '类型',    width: 120, formatter: function(v) {
                     var map = {free_delivery: 'Free Delivery', amount_off: 'Amount Off', percent_off: 'Percent Off'};
                     return map[v] || v;
                 }},
-                {field: 'discountAmount', title: 'Amount Off', width: 100, formatter: function(v, row) {
-                    if (row.type === 'amount_off') return '¥' + v;
-                    if (row.type === 'percent_off') return row.discountPercent + '%' + (row.maxDiscountAmount ? ' (max ¥' + row.maxDiscountAmount + ')' : '');
+                {field: 'discountAmount', title: '减免金额', width: 100, formatter: function(v, row) {
+                    if (row.type === 'amount_off') return v + ' 元';
+                    if (row.type === 'percent_off') return row.discountPercent + '%' + (row.maxDiscountAmount ? ' (最多减' + row.maxDiscountAmount + '元)' : '');
                     return '—';
                 }},
-                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '¥' + v : 'None'; }},
-                {field: 'validDays',      title: 'Valid Days', width: 80},
-                {field: 'isFirstOrderOnly', title: 'First Order?', width: 100, formatter: function(v) {
+                {field: 'minOrderAmount', title: '最低订单', width: 90, formatter: function(v) { return v > 0 ? v + ' 元' : 'None'; }},
+                {field: 'validDays',      title: '有效天数', width: 80},
+                {field: 'isFirstOrderOnly', title: '仅首单', width: 100, formatter: function(v) {
                     return v === 1 ? '<span class="badge badge-warning">Yes</span>' : 'No';
                 }},
-                {field: 'status',         title: 'Status', width: 80, formatter: function(v) {
+                {field: 'status',         title: '状态', width: 80, formatter: function(v) {
                     return v === 0
                         ? '<span class="badge badge-primary">Enabled</span>'
                         : '<span class="badge badge-default">Disabled</span>';
                 }},
-                {field: 'createTime',     title: 'Created At'},
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {field: 'createTime',     title: '创建时间'},
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     if (editFlag)   a.push('<a class="btn btn-success btn-xs" onclick="$.operate.edit(\'' + row.couponId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
                     if (removeFlag) a.push('<a class="btn btn-danger btn-xs" onclick="$.operate.remove(\'' + row.couponId + '\')"><i class="fa fa-remove"></i>Delete</a>');

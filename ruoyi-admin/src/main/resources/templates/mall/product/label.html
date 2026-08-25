@@ -70,7 +70,7 @@
         <div class="label" th:each="l : ${labels}">
             <div class="store" th:text="${storeName}">DODOMINIMART</div>
             <div class="pname" th:text="${l.name}">Product Name</div>
-            <div class="price" th:text="'¥' + ${l.price}">¥0.00</div>
+            <div class="price" th:text="${l.price} + ' 元'">0.00 元</div>
             <div class="barcode">
                 <img th:if="${l.barcodeImg != ''}" th:src="${l.barcodeImg}" alt="barcode"/>
                 <div class="code" th:text="${l.code}">P0000000</div>

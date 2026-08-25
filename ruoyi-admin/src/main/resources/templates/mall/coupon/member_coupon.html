@@ -69,31 +69,31 @@
             showColumns: false,
             showToggle: false,
             columns: [
-                {field: 'id',         title: 'ID',        width: 70},
-                {field: 'memberId',   title: 'Member ID', width: 90},
-                {field: 'nickName',   title: 'Nickname',  width: 120, formatter: function(v) { return v || '—'; }},
-                {field: 'couponName', title: 'Coupon Name'},
-                {field: 'type',       title: 'Type',      width: 120, formatter: function(v) {
+                {field: 'id',         title: '编号',        width: 70},
+                {field: 'memberId',   title: '会员ID', width: 90},
+                {field: 'nickName',   title: '昵称',  width: 120, formatter: function(v) { return v || '—'; }},
+                {field: 'couponName', title: '优惠券名称'},
+                {field: 'type',       title: '类型',      width: 120, formatter: function(v) {
                     var map = {free_delivery: 'Free Delivery', amount_off: 'Amount Off', percent_off: 'Percent Off'};
                     return map[v] || v;
                 }},
-                {field: 'discountAmount', title: 'Value', width: 100, formatter: function(v, row) {
+                {field: 'discountAmount', title: '数值', width: 100, formatter: function(v, row) {
                     if (row.type === 'free_delivery') return '<i class="fa fa-truck"></i> Free';
-                    if (row.type === 'amount_off')    return '¥' + (v || 0);
+                    if (row.type === 'amount_off')    return (v || 0) + ' 元';
                     if (row.type === 'percent_off')   return row.discountPercent + '%';
                     return '—';
                 }},
-                {field: 'minOrderAmount', title: 'Min Order', width: 90, formatter: function(v) { return v > 0 ? '¥' + v : 'None'; }},
-                {field: 'status',     title: 'Status',    width: 90, formatter: function(v) {
+                {field: 'minOrderAmount', title: '最低订单', width: 90, formatter: function(v) { return v > 0 ? v + ' 元' : 'None'; }},
+                {field: 'status',     title: '状态',    width: 90, formatter: function(v) {
                     var map = {0: '<span class="badge badge-primary">Unused</span>',
                                1: '<span class="badge badge-success">Used</span>',
                                2: '<span class="badge badge-default">Expired</span>'};
                     return map[v] !== undefined ? map[v] : v;
                 }},
-                {field: 'orderNo',    title: 'Order No',  formatter: function(v) { return v || '—'; }},
-                {field: 'usedTime',   title: 'Used At',   formatter: function(v) { return v || '—'; }},
-                {field: 'expiresAt',  title: 'Expires At'},
-                {field: 'createTime', title: 'Issued At'}
+                {field: 'orderNo',    title: '订单号',  formatter: function(v) { return v || '—'; }},
+                {field: 'usedTime',   title: '使用时间',   formatter: function(v) { return v || '—'; }},
+                {field: 'expiresAt',  title: '过期时间'},
+                {field: 'createTime', title: '发放时间'}
             ]
         });
     });

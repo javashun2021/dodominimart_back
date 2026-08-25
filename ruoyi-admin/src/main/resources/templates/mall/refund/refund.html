@@ -54,9 +54,9 @@
             </div>
             <div class="modal-body">
                 <table class="table table-bordered info-table">
-                    <tr><th>Order No</th><td id="rv-orderNo"></td><th style="width:90px;">Amount</th><td>¥<span id="rv-amount"></span></td></tr>
-                    <tr><th>Customer</th><td id="rv-member"></td><th>Applied At</th><td id="rv-createTime"></td></tr>
-                    <tr><th>Reason</th><td colspan="3" id="rv-reason"></td></tr>
+                    <tr><th>订单号</th><td id="rv-orderNo"></td><th style="width:90px;">金额</th><td><span id="rv-amount"></span> 元</td></tr>
+                    <tr><th>顾客</th><td id="rv-member"></td><th>申请时间</th><td id="rv-createTime"></td></tr>
+                    <tr><th>原因</th><td colspan="3" id="rv-reason"></td></tr>
                 </table>
 
                 <div id="rv-proof-row" style="display:none;">
@@ -110,16 +110,16 @@
             url: prefix + "/list",
             modalName: "Refund Request",
             columns: [
-                {field: 'requestId',  title: 'ID', width: 60},
-                {field: 'orderNo',    title: 'Order No'},
-                {field: 'memberNick', title: 'Customer', formatter: function(v) { return v || '-'; }},
-                {field: 'amount',     title: 'Amount', formatter: function(v) { return v != null ? '¥' + v : '-'; }},
-                {field: 'reason',     title: 'Reason', formatter: function(v) {
+                {field: 'requestId',  title: '编号', width: 60},
+                {field: 'orderNo',    title: '订单号'},
+                {field: 'memberNick', title: '顾客', formatter: function(v) { return v || '-'; }},
+                {field: 'amount',     title: '金额', formatter: function(v) { return v != null ? v + ' 元' : '-'; }},
+                {field: 'reason',     title: '原因', formatter: function(v) {
                     return '<div class="reason-cell" title="' + (v ? $('<div>').text(v).html() : '') + '">' + (v || '-') + '</div>';
                 }},
-                {field: 'status',     title: 'Status', align: 'center', formatter: function(v) { return statusMap[v] || v; }},
-                {field: 'createTime', title: 'Applied At', sortable: true},
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {field: 'status',     title: '状态', align: 'center', formatter: function(v) { return statusMap[v] || v; }},
+                {field: 'createTime', title: '申请时间', sortable: true},
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     return '<a class="btn btn-info btn-xs" onclick=\'openReview(' + JSON.stringify(row) + ')\'><i class="fa fa-eye"></i> View</a>';
                 }}
             ]

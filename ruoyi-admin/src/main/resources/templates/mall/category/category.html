@@ -50,14 +50,14 @@
             sortName: "sort",
             columns: [
                 {checkbox: true},
-                {field: 'categoryId', title: 'ID'},
-                {field: 'name',       title: 'Category Name'},
-                {field: 'sort',       title: 'Sort', sortable: true},
-                {field: 'status',     title: 'Status', align: 'center',
+                {field: 'categoryId', title: '编号'},
+                {field: 'name',       title: '分类名称'},
+                {field: 'sort',       title: '排序', sortable: true},
+                {field: 'status',     title: '状态', align: 'center',
                     formatter: function(v) { return v === '0' ? '<span class="badge badge-primary">Visible</span>' : '<span class="badge badge-default">Hidden</span>'; }
                 },
-                {field: 'createTime', title: 'Created At'},
-                {title: 'Action', align: 'center', formatter: function(v, row) {
+                {field: 'createTime', title: '创建时间'},
+                {title: '操作', align: 'center', formatter: function(v, row) {
                     var a = [];
                     a.push('<a class="btn btn-success btn-xs ' + editFlag + '" onclick="$.operate.edit(\'' + row.categoryId + '\')"><i class="fa fa-edit"></i>Edit</a> ');
                     a.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" onclick="$.operate.remove(\'' + row.categoryId + '\')"><i class="fa fa-remove"></i>Delete</a>');
