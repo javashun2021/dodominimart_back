@@ -306,6 +306,7 @@ public class ShiroConfig
         filterChainDefinitionMap.put("/api/v1/group-orders/my", "jwtAuth");
         filterChainDefinitionMap.put("/api/v1/group-orders/*", "anon");
         filterChainDefinitionMap.put("/api/v1/payment/callback", "anon");
+        filterChainDefinitionMap.put("/api/v1/payment/lakala/callback", "anon");
         filterChainDefinitionMap.put("/api/v1/runner/stats/*", "anon");
         filterChainDefinitionMap.put("/api/v1/banners", "anon");
         filterChainDefinitionMap.put("/api/v1/stores", "anon");    // 门店列表/就近选店：登录前也需展示

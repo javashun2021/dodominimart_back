@@ -87,6 +87,7 @@
                 <version>2.1.1.RELEASE</version>
                 <configuration>
 					<fork>true</fork> <!-- 如果没有该配置，devtools不会生效 -->
+					<includeSystemScope>true</includeSystemScope> <!-- 打包 system scope 依赖（拉卡拉 SDK 本地 jar） -->
 				</configuration>
                 <executions>
                     <execution>

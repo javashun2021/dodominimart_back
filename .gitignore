@@ -43,6 +43,10 @@ nbdist/
 **/firebase-credentials.json
 **/*firebase*adminsdk*.json
 uploadPath/
+# 拉卡拉支付商户私钥/证书（勿入库；服务器上单独放置）
+ruoyi-admin/cert/
+**/cert/lakala/
+*_private_key.pem
 
 !*/build/*.java
 !*/build/*.html
