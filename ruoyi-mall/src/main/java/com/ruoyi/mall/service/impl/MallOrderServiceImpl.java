@@ -278,7 +278,7 @@ public class MallOrderServiceImpl implements IMallOrderService
                 if (memberInfo != null && memberInfo.getReferrerId() != null)
                 {
                     pointsService.earn(memberInfo.getReferrerId(), 200, 6, order.getOrderNo(),
-                            "Referral reward – your invitee placed their first order");
+                            "邀请奖励——好友完成首单");
                 }
             }
         }
