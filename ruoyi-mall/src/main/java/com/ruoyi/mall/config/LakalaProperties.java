@@ -19,8 +19,12 @@ public class LakalaProperties
     private String serialNo;
     /** 银联商户号 merchant_no */
     private String merchantNo;
-    /** 终端号 term_no */
+    /** 终端号 term_no（默认/兜底；未按类型细分时使用） */
     private String termNo;
+    /** 扫码业务终端号（微信/支付宝/云闪付扫码）；留空则回退 termNo */
+    private String termNoScan;
+    /** 银行卡业务终端号；留空则回退 termNo */
+    private String termNoBankcard;
     /** 开放平台服务地址（测试 https://test.wsmsd.cn/sit） */
     private String serverUrl;
     /** SM4 报文加密密钥（仅全报文加密接口需要，收银台标准下单可留空） */
@@ -52,6 +56,23 @@ public class LakalaProperties
 
     public String getTermNo() { return termNo; }
     public void setTermNo(String termNo) { this.termNo = termNo; }
+
+    public String getTermNoScan() { return termNoScan; }
+    public void setTermNoScan(String termNoScan) { this.termNoScan = termNoScan; }
+
+    public String getTermNoBankcard() { return termNoBankcard; }
+    public void setTermNoBankcard(String termNoBankcard) { this.termNoBankcard = termNoBankcard; }
+
+    /**
+     * 按支付类型解析终端号：CARD→银行卡终端，其余→扫码终端；
+     * 对应细分终端未配置时回退到默认 termNo。
+     */
+    public String resolveTermNo(String payType)
+    {
+        boolean card = payType != null && ("CARD".equalsIgnoreCase(payType) || "BANKCARD".equalsIgnoreCase(payType));
+        String picked = card ? termNoBankcard : termNoScan;
+        return (picked != null && !picked.isEmpty()) ? picked : termNo;
+    }
 
     public String getServerUrl() { return serverUrl; }
     public void setServerUrl(String serverUrl) { this.serverUrl = serverUrl; }

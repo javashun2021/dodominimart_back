@@ -89,7 +89,7 @@ public class LakalaPayServiceImpl implements ILakalaPayService
     }
 
     @Override
-    public String createCounterPayment(String orderNo, BigDecimal payableYuan, String subject, String outUserId)
+    public String createCounterPayment(String orderNo, BigDecimal payableYuan, String subject, String outUserId, String payType)
     {
         ensureInit();
         long totalFen = payableYuan.movePointRight(2).setScale(0, BigDecimal.ROUND_HALF_UP).longValueExact();
@@ -98,10 +98,13 @@ public class LakalaPayServiceImpl implements ILakalaPayService
             throw new IllegalArgumentException("拉卡拉下单金额非法: " + payableYuan);
         }
 
+        // 按支付类型选择终端号：扫码 / 银行卡（未细分配置时回退默认 termNo）
+        String termNo = props.resolveTermNo(payType);
+
         V3CcssCounterOrderSpecialCreateRequest req = new V3CcssCounterOrderSpecialCreateRequest();
         req.setOutOrderNo(orderNo);
         req.setMerchantNo(props.getMerchantNo());
-        req.setTermNo(props.getTermNo());
+        req.setTermNo(termNo);
         req.setTotalAmount(totalFen);
         req.setOrderEfficientTime(LocalDateTime.now(ZONE).plusMinutes(props.getOrderEfficientMinutes()).format(EFFICIENT_FMT));
         req.setOrderInfo(subject != null && !subject.isEmpty() ? subject : ("订单 " + orderNo));
@@ -143,7 +146,7 @@ public class LakalaPayServiceImpl implements ILakalaPayService
                 log.warn("[Lakala] 下单响应缺少 counter_url, orderNo={}, resp={}", orderNo, response);
                 throw new RuntimeException("拉卡拉下单未返回收银台链接");
             }
-            log.info("[Lakala] 下单成功 orderNo={}, amountFen={}, counterUrl={}", orderNo, totalFen, counterUrl);
+            log.info("[Lakala] 下单成功 orderNo={}, payType={}, termNo={}, amountFen={}, counterUrl={}", orderNo, payType, termNo, totalFen, counterUrl);
             return counterUrl;
         }
         catch (RuntimeException re)

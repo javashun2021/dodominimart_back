@@ -52,10 +52,12 @@ public class ApiPaymentController extends BaseApiController
      * 发起线上支付
      * POST /api/v1/orders/{id}/pay
      * Body: paymentMethod（表单参数）——默认 LAKALA（拉卡拉收银台）；GCASH 保留兼容。
+     *       payType（表单参数，仅拉卡拉）——SCAN=扫码（默认），CARD/BANKCARD=银行卡；决定使用哪个终端号。
      */
     @PostMapping("/orders/{id}/pay")
     public AjaxResult pay(@org.springframework.web.bind.annotation.PathVariable Long id,
                           @RequestParam(defaultValue = "LAKALA") String paymentMethod,
+                          @RequestParam(defaultValue = "SCAN") String payType,
                           HttpServletRequest request)
     {
         Long memberId = getCurrentMemberId(request);
@@ -95,7 +97,7 @@ public class ApiPaymentController extends BaseApiController
                 return AjaxResult.error("拉卡拉支付暂不可用");
             }
             paymentUrl = lakalaService.createCounterPayment(order.getOrderNo(), payable,
-                    "订单 " + order.getOrderNo(), String.valueOf(memberId));
+                    "订单 " + order.getOrderNo(), String.valueOf(memberId), payType);
         }
 
         // 记录支付流水

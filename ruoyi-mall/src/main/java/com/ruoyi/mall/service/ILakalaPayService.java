@@ -21,9 +21,10 @@ public interface ILakalaPayService
      * @param payableYuan 应付金额（元）
      * @param subject     订单标题（order_info）
      * @param outUserId   下单会员标识（out_user_id，可空）
+     * @param payType     支付类型：SCAN=扫码（默认），CARD/BANKCARD=银行卡；决定使用哪个终端号
      * @return 收银台支付链接
      */
-    String createCounterPayment(String orderNo, BigDecimal payableYuan, String subject, String outUserId);
+    String createCounterPayment(String orderNo, BigDecimal payableYuan, String subject, String outUserId, String payType);
 
     /**
      * 处理拉卡拉异步通知：验签并解析报文。
