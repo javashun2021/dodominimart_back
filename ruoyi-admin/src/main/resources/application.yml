@@ -68,16 +68,23 @@ spring:
     restart:
       # 热部署开关
       enabled: true
-  # 邮件（Gmail SMTP，需替换为真实账号和 App Password）
+  # 邮件（网易 163 SMTP，SSL 465；国内发验证码用，替代被墙/慢的 Gmail）。
+  # password = 163「授权码」（后台开启 SMTP 服务后生成的那串，非登录密码）。
+  # 以下均可用环境变量覆盖：MAIL_HOST/MAIL_PORT/MAIL_USERNAME/MAIL_PASSWORD/MAIL_SSL_ENABLE。
+  # ⚠️ from（mall.mail.from）必须与 username 完全一致，否则 163 拒发。
+  #    如需换号，可在服务器 systemd drop-in 里设 MAIL_USERNAME/MAIL_PASSWORD/MAIL_FROM 覆盖，不用重打包。
+  #    当前默认为已验证可用账号 18522783902@163.com（2026-08 服务器实测 235 登录成功 + 真实发信成功）。
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: minimartdodo@gmail.com
-    password: wpxcbzcsgvmfhdcw
+    host: ${MAIL_HOST:smtp.163.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:18522783902@163.com}
+    password: ${MAIL_PASSWORD:LZii5PTDXJeDNrTZ}
     default-encoding: UTF-8
     properties:
       mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
+      mail.smtp.ssl.enable: ${MAIL_SSL_ENABLE:true}
+      mail.smtp.socketFactory.class: javax.net.ssl.SSLSocketFactory
+      mail.smtp.socketFactory.port: 465
 
 # MyBatis
 mybatis:
@@ -170,8 +177,8 @@ mall:
     # Android/Web 用 Web application 类型；iOS 用 iOS 类型
     clientIds: 600271771039-arouc217r401svt1q2grf409lbj70860.apps.googleusercontent.com,600271771039-p4bmnq6r0np6bignuiqempniupeb7oqt.apps.googleusercontent.com
   mail:
-    from: minimartdodo@gmail.com          # 发件人地址（替换为真实 Gmail 地址）
-    from-name: DodoMiniMart             # 发件人显示名称
+    from: ${MAIL_FROM:18522783902@163.com}   # 必须与 spring.mail.username 完全一致
+    from-name: ${MAIL_FROM_NAME:星智商城}    # 发件人显示名称
   paymongo:
     # PayMongo（菲律宾在线支付，承载 App 里的「GCash」在线支付）。
     # 下面 ${ENV:默认值} 写法：设了环境变量则用环境变量，否则用冒号后的默认值。
@@ -186,6 +193,32 @@ mall:
     # 提示：Webhook 地址 = https://dodominimart.com/api/v1/payment/callback
     #       在 PayMongo 后台/API 注册并订阅 checkout_session.payment.paid 事件。
     #       在线支付总开关仍用 sys_config 的 mall.gcash.enabled（true 才放行）。
+  lakala:
+    # 拉卡拉收银台（线上 H5）——商城线上支付统一走这个。enabled=true 才放行。
+    # 当前为「测试」商户参数（网关 https://test.wsmsd.cn/sit，不涉及真钱）。
+    # ⚠️ 上线换正式参数：appId/serialNo/merchantNo/termNo 换拉卡拉分配的正式值，
+    #    serverUrl 换生产网关，并把 pri-key/证书 换成正式商户自己生成的一套。
+    enabled: ${LAKALA_ENABLED:true}
+    app-id: ${LAKALA_APP_ID:OP10003874}
+    serial-no: ${LAKALA_SERIAL_NO:01a06201eb69}
+    merchant-no: ${LAKALA_MERCHANT_NO:82233807538017X}
+    term-no: ${LAKALA_TERM_NO:M1950186}
+    # 按支付类型选终端：扫码走 term-no-scan，银行卡走 term-no-bankcard；留空则回退 term-no。
+    # 前端发起支付时传 payType=SCAN|CARD 决定用哪个。
+    term-no-scan: ${LAKALA_TERM_NO_SCAN:M1950186}
+    term-no-bankcard: ${LAKALA_TERM_NO_BANKCARD:M1950185}
+    server-url: ${LAKALA_SERVER_URL:https://s2.lakala.com}
+    # SM4 密钥仅「全报文加密」接口需要；收银台标准下单可留空
+    sm4-key: ${LAKALA_SM4_KEY:}
+    # 证书/私钥文件路径（服务器上放置，勿入库）
+    pri-key-path: ${LAKALA_PRI_KEY_PATH:/home/dodominimart/cert/lakala/OP10003874_private_key.pem}
+    lkl-cer-path: ${LAKALA_LKL_CER_PATH:/home/dodominimart/cert/lakala/lkl-apigw-v2.cer}
+    lkl-notify-cer-path: ${LAKALA_LKL_NOTIFY_CER_PATH:/home/dodominimart/cert/lakala/lkl-apigw-v2.cer}
+    # 支付成功异步通知地址（拉卡拉回调本服务，需外网可达且 /api/ 已被 nginx 代理）
+    notify-url: ${LAKALA_NOTIFY_URL:http://zxzwl.top/api/v1/payment/lakala/callback}
+    # 付款完成后浏览器回跳的 H5 落地页
+    callback-url: ${LAKALA_CALLBACK_URL:http://zxzwl.top/pay-success.html}
+    order-efficient-minutes: ${LAKALA_ORDER_EFFICIENT_MINUTES:30}
 
 
 # 代码生成
